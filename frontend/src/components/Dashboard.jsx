@@ -21,6 +21,7 @@ import AttackLogs from './AttackLogs';
 import GeoMap from './GeoMap';
 import ThreatScorePanel from './ThreatScorePanel';
 import AttackGlobeSimple from './AttackGlobeSimple';
+import ThreatIntelFeed from './ThreatIntelFeed';
 import { CommandBarTrigger } from './ui/CommandBar';
 import FilterBadges from './ui/FilterBadges';
 import useAttackStore from '../stores/useAttackStore';
@@ -545,6 +546,11 @@ const Dashboard = () => {
                                     </Box>
                                 </Box>
                             </Box>
+                        </Box>
+
+                        {/* Privacy-Preserving Threat Intelligence Feed */}
+                        <Box sx={{ mb: 2 }}>
+                            <ThreatIntelFeed />
                         </Box>
 
                         {/* Selected Attack Details Panel */}

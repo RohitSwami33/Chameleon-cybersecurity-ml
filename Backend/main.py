@@ -33,6 +33,7 @@ from blockchain_logger import blockchain_logger
 from report_generator import report_generator
 from login_rate_limiter import login_limiter
 from threat_score import threat_score_system
+from threat_intel_service import threat_intel_service
 import asyncio
 
 @asynccontextmanager
@@ -175,8 +176,36 @@ async def submit_trap(user_input: UserInput, request: Request, background_tasks:
     # Convert to dict for storage
     log_dict = log_entry.model_dump()
     
+    # === THREAT INTELLIGENCE SHARING ===
+    # Check if this is a novel attack and create threat report
+    if classification.is_malicious and threat_intel_service.is_novel_attack(
+        user_input.input_text, 
+        classification.attack_type
+    ):
+        threat_report = threat_intel_service.create_threat_report(
+            user_input.input_text,
+            classification.attack_type,
+            ip,
+            classification.confidence
+        )
+        if threat_report:
+            print(f"🔔 Novel attack detected! Created threat intelligence report: {threat_report['pattern_hash'][:16]}...")
+    
     # Background logging
     background_tasks.add_task(log_attack, log_dict)
+    
+    # === PRIVACY-PRESERVING THREAT INTELLIGENCE ===
+    # Generate threat intel report for novel malicious attacks
+    if classification.is_malicious and classification.attack_type in [AttackType.SQLI, AttackType.XSS]:
+        if threat_intel_service.is_novel_attack(user_input.input_text):
+            # Create privacy-preserving threat intelligence report
+            threat_report = threat_intel_service.create_threat_intel_report(
+                attack_type=classification.attack_type.value,
+                payload=user_input.input_text,
+                confidence=classification.confidence,
+                timestamp=log_entry.timestamp
+            )
+            print(f"🔒 Generated privacy-preserving threat intel report: {threat_report['id']}")
     
     # Return response with appropriate status code
     from fastapi.responses import JSONResponse
@@ -527,6 +556,80 @@ async def get_sessions_by_ip(ip_address: str, username: str = Depends(verify_tok
         "total_count": len(matching_sessions)
     }
 
+@app.get("/api/threat-intel/reports")
+async def get_threat_intel_reports(
+    limit: int = 50,
+    username: str = Depends(verify_token)
+):
+    """Get recent threat intelligence reports"""
+    reports = threat_intel_service.get_threat_reports(limit=limit)
+    return {
+        "reports": reports,
+        "count": len(reports)
+    }
+
+@app.get("/api/threat-intel/stats")
+async def get_threat_intel_stats(username: str = Depends(verify_token)):
+    """Get threat intelligence statistics"""
+    stats = threat_intel_service.get_statistics()
+    return stats
+
 @app.get("/api/health")
 async def health_check():
     return {"status": "healthy", "timestamp": datetime.utcnow()}
+
+
+# ============================================================================
+# PRIVACY-PRESERVING THREAT INTELLIGENCE ENDPOINTS
+# ============================================================================
+
+@app.get("/api/threat-intel/feed")
+async def get_threat_intel_feed(
+    limit: int = 50,
+    username: str = Depends(verify_token)
+):
+    """
+    Get the privacy-preserving threat intelligence feed.
+    
+    This feed contains cryptographic commitments to novel attacks
+    without revealing sensitive payload data.
+    """
+    feed = threat_intel_service.get_threat_feed(limit=limit)
+    return {
+        "feed": feed,
+        "count": len(feed),
+        "statistics": threat_intel_service.get_statistics()
+    }
+
+@app.get("/api/threat-intel/statistics")
+async def get_threat_intel_statistics(username: str = Depends(verify_token)):
+    """Get threat intelligence service statistics"""
+    return threat_intel_service.get_statistics()
+
+@app.post("/api/threat-intel/verify-commitment")
+async def verify_threat_commitment(
+    payload: str,
+    commitment: str,
+    salt: str,
+    timestamp: int,
+    username: str = Depends(verify_token)
+):
+    """
+    Verify that a payload matches a cryptographic commitment.
+    
+    This allows consortium members to verify threat intelligence
+    without the original reporter revealing the payload publicly.
+    """
+    commitment_data = {
+        "commitment": commitment,
+        "salt": salt,
+        "timestamp": timestamp
+    }
+    
+    is_valid = threat_intel_service.verify_commitment(payload, commitment_data)
+    
+    return {
+        "valid": is_valid,
+        "commitment": commitment,
+        "verified_at": datetime.utcnow().isoformat()
+    }
