@@ -51,6 +51,7 @@ class DashboardStats(BaseModel):
     benign_attempts: int
     attack_distribution: Dict[str, int]
     top_attackers: List[Dict[str, Any]]
+    geo_locations: List[Dict[str, Any]] = []
     merkle_root: Optional[str] = None
 
 class LoginRequest(BaseModel):

@@ -105,10 +105,11 @@ async def submit_trap(user_input: UserInput, request: Request, background_tasks:
     # Geo Location
     geo_location = await fetch_geo_location(ip)
     
-    # Generate Deception
+    # Generate Deception with input snippet for context-aware responses
     deception = deception_engine.generate_response(
         classification.attack_type, 
-        delay
+        delay,
+        user_input.input_text[:100]  # Pass first 100 chars for context
     )
     
     # Create Log

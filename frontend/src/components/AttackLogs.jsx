@@ -109,6 +109,17 @@ const Row = ({ row, onViewDetails, onGenerateReport }) => {
                                         <TableCell component="th" scope="row" sx={{ borderBottom: 'none', color: 'text.secondary' }}>User Agent:</TableCell>
                                         <TableCell sx={{ borderBottom: 'none' }}>{row.user_agent}</TableCell>
                                     </TableRow>
+                                    {row.geo_location && (
+                                        <TableRow>
+                                            <TableCell component="th" scope="row" sx={{ borderBottom: 'none', color: 'text.secondary' }}>Location:</TableCell>
+                                            <TableCell sx={{ borderBottom: 'none' }}>
+                                                {row.geo_location.city && `${row.geo_location.city}, `}
+                                                {row.geo_location.region && `${row.geo_location.region}, `}
+                                                {row.geo_location.country || 'Unknown'}
+                                                {row.geo_location.isp && ` (${row.geo_location.isp})`}
+                                            </TableCell>
+                                        </TableRow>
+                                    )}
                                     <TableRow>
                                         <TableCell component="th" scope="row" sx={{ borderBottom: 'none', color: 'text.secondary' }}>Blockchain Hash:</TableCell>
                                         <TableCell sx={{ borderBottom: 'none', fontFamily: 'monospace', fontSize: '0.75rem' }}>{row.hash || row.blockchain_hash || 'Pending...'}</TableCell>

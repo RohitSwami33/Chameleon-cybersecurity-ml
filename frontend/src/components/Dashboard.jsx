@@ -21,6 +21,7 @@ import { toast } from 'react-toastify';
 import StatsCards from './StatsCards';
 import AttackChart from './AttackChart';
 import AttackLogs from './AttackLogs';
+import GeoMap from './GeoMap';
 import { getDashboardStats, getAttackLogs, generateReport } from '../services/api';
 import { downloadPDF } from '../utils/helpers';
 
@@ -30,7 +31,8 @@ const Dashboard = () => {
         malicious_attempts: 0,
         benign_attempts: 0,
         merkle_root: null,
-        attack_distribution: {}
+        attack_distribution: {},
+        geo_locations: []
     });
     const [logs, setLogs] = useState([]);
     const [loading, setLoading] = useState(true);
@@ -161,28 +163,38 @@ const Dashboard = () => {
                         <StatsCards stats={stats} />
 
                         <Grid container spacing={3} sx={{ mb: 3 }}>
-                            <Grid item xs={12} md={8}>
-                                {/* Main Chart Area */}
+                            <Grid item xs={12} md={6}>
+                                {/* Attack Distribution Chart */}
                                 <Box sx={{ height: 400 }}>
                                     <AttackChart attackDistribution={stats.attack_distribution} />
                                 </Box>
                             </Grid>
-                            <Grid item xs={12} md={4}>
-                                {/* Secondary Chart or Info - For now we just use the same chart component or could add another one */}
-                                {/* Let's add a placeholder for GeoMap or another metric if needed, 
-                    but for now let's just make the chart take full width or add a summary panel */}
-                                <Box sx={{ height: 400, p: 2, bgcolor: '#1e1e1e', borderRadius: 1, border: '1px solid #333' }}>
+                            <Grid item xs={12} md={6}>
+                                {/* Geographic Attack Origins */}
+                                <Box sx={{ height: 400 }}>
+                                    <GeoMap geoLocations={stats.geo_locations || []} />
+                                </Box>
+                            </Grid>
+                        </Grid>
+
+                        <Grid container spacing={3} sx={{ mb: 3 }}>
+                            <Grid item xs={12}>
+                                <Box sx={{ p: 2, bgcolor: '#1e1e1e', borderRadius: 1, border: '1px solid #333' }}>
                                     <Typography variant="h6" gutterBottom>System Health</Typography>
-                                    <Box sx={{ mt: 2 }}>
-                                        <Typography variant="body2" color="text.secondary">Deception Engine</Typography>
-                                        <Typography variant="body1" color="success.main" sx={{ mb: 2 }}>Active • Low Latency</Typography>
-
-                                        <Typography variant="body2" color="text.secondary">Blockchain Node</Typography>
-                                        <Typography variant="body1" color="success.main" sx={{ mb: 2 }}>Synced • Height: {stats.total_attempts}</Typography>
-
-                                        <Typography variant="body2" color="text.secondary">Tarpit Status</Typography>
-                                        <Typography variant="body1" color="warning.main" sx={{ mb: 2 }}>Engaged (Adaptive)</Typography>
-                                    </Box>
+                                    <Grid container spacing={3}>
+                                        <Grid item xs={12} sm={4}>
+                                            <Typography variant="body2" color="text.secondary">Deception Engine</Typography>
+                                            <Typography variant="body1" color="success.main" sx={{ fontWeight: 600 }}>Active • Low Latency</Typography>
+                                        </Grid>
+                                        <Grid item xs={12} sm={4}>
+                                            <Typography variant="body2" color="text.secondary">Blockchain Node</Typography>
+                                            <Typography variant="body1" color="success.main" sx={{ fontWeight: 600 }}>Synced • Height: {stats.total_attempts}</Typography>
+                                        </Grid>
+                                        <Grid item xs={12} sm={4}>
+                                            <Typography variant="body2" color="text.secondary">Tarpit Status</Typography>
+                                            <Typography variant="body1" color="warning.main" sx={{ fontWeight: 600 }}>Engaged (Adaptive)</Typography>
+                                        </Grid>
+                                    </Grid>
                                 </Box>
                             </Grid>
                         </Grid>

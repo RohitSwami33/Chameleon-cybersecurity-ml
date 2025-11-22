@@ -94,13 +94,41 @@ async def get_dashboard_stats() -> dict:
             "count": doc["count"],
             "last_seen": doc["last_seen"]
         })
+    
+    # Geographic distribution of attacks
+    geo_pipeline = [
+        {"$match": {"geo_location": {"$ne": None}, "classification.is_malicious": True}},
+        {"$group": {
+            "_id": {
+                "country": "$geo_location.country",
+                "city": "$geo_location.city",
+                "latitude": "$geo_location.latitude",
+                "longitude": "$geo_location.longitude"
+            },
+            "count": {"$sum": 1}
+        }},
+        {"$sort": {"count": -1}},
+        {"$limit": 50}
+    ]
+    geo_cursor = database.attack_logs.aggregate(geo_pipeline)
+    geo_locations = []
+    async for doc in geo_cursor:
+        if doc["_id"]["country"]:
+            geo_locations.append({
+                "country": doc["_id"]["country"],
+                "city": doc["_id"]["city"],
+                "latitude": doc["_id"]["latitude"],
+                "longitude": doc["_id"]["longitude"],
+                "count": doc["count"]
+            })
         
     return {
         "total_attempts": total_attempts,
         "malicious_attempts": malicious_attempts,
         "benign_attempts": benign_attempts,
         "attack_distribution": attack_distribution,
-        "top_attackers": top_attackers
+        "top_attackers": top_attackers,
+        "geo_locations": geo_locations
     }
 
 async def get_logs_by_ip(ip_address: str) -> List[dict]:
