@@ -1,0 +1,21 @@
+{
+  "name": "chameleon-deception-system",
+  "version": "1.0.0",
+  "description": "Chameleon Adaptive Deception System - Advanced Cybersecurity Honeypot",
+  "scripts": {
+    "start": "concurrently \"cd Backend && uvicorn main:app --reload\" \"cd frontend && npm run dev\"",
+    "start:backend": "cd Backend && uvicorn main:app --reload",
+    "start:frontend": "cd frontend && npm run dev",
+    "install:all": "cd Backend && pip install -r requirements.txt && cd ../frontend && npm install"
+  },
+  "keywords": [
+    "cybersecurity",
+    "honeypot",
+    "deception"
+  ],
+  "author": "Chameleon Security Team",
+  "license": "MIT",
+  "devDependencies": {
+    "concurrently": "^8.2.2"
+  }
+}
