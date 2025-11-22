@@ -3,7 +3,7 @@ from typing import Optional
 from jose import JWTError, jwt
 from fastapi import HTTPException, status, Depends
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
-from config import settings
+from config import settings, ADMIN_USERNAME, ADMIN_PASSWORD
 
 security = HTTPBearer()
 
@@ -38,4 +38,4 @@ def verify_token(credentials: HTTPAuthorizationCredentials = Depends(security)):
 
 def verify_credentials(username: str, password: str) -> bool:
     """Verify hardcoded credentials"""
-    return username == settings.ADMIN_USERNAME and password == settings.ADMIN_PASSWORD
+    return username == ADMIN_USERNAME and password == ADMIN_PASSWORD

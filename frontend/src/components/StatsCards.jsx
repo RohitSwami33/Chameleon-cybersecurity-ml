@@ -1,5 +1,5 @@
 import React from 'react';
-import { Grid, Card, CardContent, Typography, Box, Tooltip } from '@mui/material';
+import { Card, CardContent, Typography, Box, Tooltip } from '@mui/material';
 import AssessmentIcon from '@mui/icons-material/Assessment';
 import SecurityIcon from '@mui/icons-material/Security';
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
@@ -9,6 +9,7 @@ const StatCard = ({ title, value, icon, color, subtext, tooltip }) => (
     <Card
         sx={{
             height: '100%',
+            minHeight: 160,
             background: `linear-gradient(135deg, ${color}22 0%, ${color}11 100%)`,
             border: `1px solid ${color}44`,
             position: 'relative',
@@ -20,13 +21,13 @@ const StatCard = ({ title, value, icon, color, subtext, tooltip }) => (
             },
         }}
     >
-        <CardContent>
+        <CardContent sx={{ height: '100%', display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
             <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 2 }}>
                 <Box
                     sx={{
                         backgroundColor: `${color}22`,
                         borderRadius: '50%',
-                        p: 1,
+                        p: 1.5,
                         display: 'flex',
                         alignItems: 'center',
                         justifyContent: 'center',
@@ -51,17 +52,19 @@ const StatCard = ({ title, value, icon, color, subtext, tooltip }) => (
                     </Tooltip>
                 )}
             </Box>
-            <Typography variant="h4" component="div" sx={{ fontWeight: 700, mb: 0.5 }}>
-                {value}
-            </Typography>
-            <Typography variant="body2" color="text.secondary" sx={{ fontWeight: 500 }}>
-                {title}
-            </Typography>
-            {subtext && (
-                <Typography variant="caption" sx={{ color: color, mt: 1, display: 'block', fontWeight: 600 }}>
-                    {subtext}
+            <Box>
+                <Typography variant="h3" component="div" sx={{ fontWeight: 700, mb: 1 }}>
+                    {value}
                 </Typography>
-            )}
+                <Typography variant="body1" color="text.secondary" sx={{ fontWeight: 500 }}>
+                    {title}
+                </Typography>
+                {subtext && (
+                    <Typography variant="body2" sx={{ color: color, mt: 1, display: 'block', fontWeight: 600 }}>
+                        {subtext}
+                    </Typography>
+                )}
+            </Box>
         </CardContent>
     </Card>
 );
@@ -74,42 +77,47 @@ const StatsCards = ({ stats }) => {
         : 0;
 
     return (
-        <Grid container spacing={2} sx={{ mb: 2 }}>
-            <Grid item xs={12} sm={6} md={3}>
+        <Box sx={{ 
+            display: 'flex', 
+            gap: 1, 
+            mb: 2,
+            width: '100%'
+        }}>
+            <Box sx={{ flex: 1 }}>
                 <StatCard
                     title="Total Attempts"
                     value={total_attempts}
-                    icon={<AssessmentIcon sx={{ color: '#2196f3' }} />}
+                    icon={<AssessmentIcon sx={{ color: '#2196f3', fontSize: 32 }} />}
                     color="#2196f3"
                 />
-            </Grid>
-            <Grid item xs={12} sm={6} md={3}>
+            </Box>
+            <Box sx={{ flex: 1 }}>
                 <StatCard
                     title="Malicious Attacks"
                     value={malicious_attempts}
-                    icon={<SecurityIcon sx={{ color: '#f44336' }} />}
+                    icon={<SecurityIcon sx={{ color: '#f44336', fontSize: 32 }} />}
                     color="#f44336"
                     subtext={`${maliciousPercentage}% of total traffic`}
                 />
-            </Grid>
-            <Grid item xs={12} sm={6} md={3}>
+            </Box>
+            <Box sx={{ flex: 1 }}>
                 <StatCard
                     title="Benign Requests"
                     value={benign_attempts}
-                    icon={<CheckCircleIcon sx={{ color: '#4caf50' }} />}
+                    icon={<CheckCircleIcon sx={{ color: '#4caf50', fontSize: 32 }} />}
                     color="#4caf50"
                 />
-            </Grid>
-            <Grid item xs={12} sm={6} md={3}>
+            </Box>
+            <Box sx={{ flex: 1 }}>
                 <StatCard
                     title="Chain Integrity"
                     value={merkle_root ? "Verified" : "Pending"}
-                    icon={<VerifiedUserIcon sx={{ color: '#9c27b0' }} />}
+                    icon={<VerifiedUserIcon sx={{ color: '#9c27b0', fontSize: 32 }} />}
                     color="#9c27b0"
                     tooltip={merkle_root ? `Merkle Root: ${merkle_root.substring(0, 20)}...` : "No blocks yet"}
                 />
-            </Grid>
-        </Grid>
+            </Box>
+        </Box>
     );
 };
 

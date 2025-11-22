@@ -39,7 +39,13 @@ export const submitInput = async (inputData) => {
     const response = await api.post('/api/trap/submit', inputData);
     return response.data;
   } catch (error) {
-    throw error.response ? error.response.data : error;
+    // For trap submissions, even "errors" (500, 403, etc.) are deceptive responses
+    // We should return the deception message, not throw an error
+    if (error.response && error.response.data) {
+      // This is a deceptive response from the honeypot
+      return error.response.data;
+    }
+    throw error;
   }
 };
 

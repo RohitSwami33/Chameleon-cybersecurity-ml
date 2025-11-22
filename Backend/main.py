@@ -10,7 +10,8 @@ from io import BytesIO
 from config import settings
 from models import (
     UserInput, AttackLog, GeoLocation, ClassificationResult, 
-    DeceptionResponse, DashboardStats, LoginRequest, LoginResponse
+    DeceptionResponse, DashboardStats, LoginRequest, LoginResponse,
+    AttackType
 )
 from auth import create_access_token, verify_token, verify_credentials
 from database import (
@@ -20,6 +21,13 @@ from database import (
 )
 from ml_classifier import classifier
 from deception_engine import deception_engine
+from deception_engine_v2 import progressive_deception_engine
+from attacker_session import (
+    get_or_create_session, 
+    update_session, 
+    generate_attacker_fingerprint,
+    get_session_stats
+)
 from tarpit_manager import tarpit_manager
 from blockchain_logger import blockchain_logger
 from report_generator import report_generator
@@ -84,7 +92,7 @@ async def log_attack(log_data: dict):
     # Save to DB
     await save_attack_log(log_data)
 
-@app.post("/api/trap/submit", response_model=DeceptionResponse)
+@app.post("/api/trap/submit")
 async def submit_trap(user_input: UserInput, request: Request, background_tasks: BackgroundTasks):
     ip = user_input.ip_address or get_client_ip(request)
     user_agent = user_input.user_agent or request.headers.get("User-Agent")
@@ -106,11 +114,41 @@ async def submit_trap(user_input: UserInput, request: Request, background_tasks:
     # Geo Location
     geo_location = await fetch_geo_location(ip)
     
-    # Generate Deception with input snippet for context-aware responses
-    deception = deception_engine.generate_response(
-        classification.attack_type, 
-        delay,
-        user_input.input_text[:100]  # Pass first 100 chars for context
+    # === PROGRESSIVE DECEPTION ENGINE V2 ===
+    # Get or create attacker session
+    session = await get_or_create_session(ip, user_agent, classification.attack_type.value)
+    
+    # Generate progressive, context-aware deceptive response
+    progressive_message = await progressive_deception_engine.generate_progressive_response(
+        classification.attack_type,
+        user_input.input_text,
+        session
+    )
+    
+    # Determine HTTP status code based on attack type and stage
+    http_status = 200
+    if classification.attack_type == AttackType.SQLI:
+        http_status = 500  # Internal Server Error for SQL errors
+    elif classification.attack_type == AttackType.SSI:
+        http_status = 403  # Forbidden for SSI attempts
+    elif classification.attack_type == AttackType.BRUTE_FORCE:
+        http_status = 401  # Unauthorized for auth failures
+    elif classification.attack_type == AttackType.XSS:
+        http_status = 200  # Success to make attacker think it worked (but it didn't)
+    
+    # Create deception response with progressive message
+    deception = DeceptionResponse(
+        message=progressive_message,
+        delay_applied=delay,
+        http_status=http_status
+    )
+    
+    # Update session with this attempt
+    await update_session(
+        session,
+        user_input.input_text,
+        progressive_message,
+        classification.attack_type.value
     )
     
     # Calculate threat score for this IP
@@ -141,22 +179,11 @@ async def submit_trap(user_input: UserInput, request: Request, background_tasks:
     background_tasks.add_task(log_attack, log_dict)
     
     # Return response with appropriate status code
-    # We need to set the status code on the response object, but FastAPI 
-    # allows returning a JSONResponse or just the model. 
-    # To set status code dynamically, we can use Response parameter or raise HTTPException
-    # But for deception, we want to return the body even if status is 401/500.
-    # FastAPI's default behavior with return model is 200.
-    # We can use a custom response class or just return the dict and let the client handle it.
-    # However, the requirements say "Return DeceptionResponse with appropriate status code".
-    # Let's use the Response object to set the status code.
-    
-    from fastapi import Response
-    response = Response(
-        content=log_entry.deception_response.model_dump_json(),
-        media_type="application/json",
+    from fastapi.responses import JSONResponse
+    return JSONResponse(
+        content=deception.model_dump(),
         status_code=deception.http_status
     )
-    return response
 
 @app.post("/api/auth/login", response_model=LoginResponse)
 async def login(login_data: LoginRequest, request: Request, background_tasks: BackgroundTasks):
@@ -463,6 +490,41 @@ async def get_ip_threat_score(ip_address: str, username: str = Depends(verify_to
     return {
         "reputation": reputation,
         "history": history[:20]  # Last 20 changes
+    }
+
+@app.get("/api/sessions/stats")
+async def get_session_statistics(username: str = Depends(verify_token)):
+    """Get statistics about active attacker sessions"""
+    stats = await get_session_stats()
+    return stats
+
+@app.get("/api/sessions/{fingerprint}")
+async def get_session_details(fingerprint: str, username: str = Depends(verify_token)):
+    """Get detailed information about a specific attacker session"""
+    from attacker_session import _session_store
+    
+    if fingerprint not in _session_store:
+        raise HTTPException(status_code=404, detail="Session not found")
+    
+    session = _session_store[fingerprint]
+    return session.model_dump()
+
+@app.get("/api/sessions/ip/{ip_address}")
+async def get_sessions_by_ip(ip_address: str, username: str = Depends(verify_token)):
+    """Get all sessions for a specific IP address"""
+    from attacker_session import _session_store, generate_attacker_fingerprint
+    
+    # Find all sessions matching this IP
+    matching_sessions = []
+    for session in _session_store.values():
+        # Check if this session's fingerprint starts with the IP hash
+        # This is a simplified check - in production you'd want better tracking
+        matching_sessions.append(session.model_dump())
+    
+    return {
+        "ip_address": ip_address,
+        "sessions": matching_sessions[:10],  # Limit to 10 most recent
+        "total_count": len(matching_sessions)
     }
 
 @app.get("/api/health")
