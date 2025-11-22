@@ -94,7 +94,7 @@ const AttackChart = ({ attackDistribution }) => {
                 </ToggleButtonGroup>
             </Box>
 
-            <Box sx={{ flexGrow: 1, minHeight: 300 }}>
+            <Box sx={{ flexGrow: 1, minHeight: 300, width: '100%', height: 300 }}>
                 <ResponsiveContainer width="100%" height="100%">
                     {chartType === 'pie' ? (
                         <PieChart>

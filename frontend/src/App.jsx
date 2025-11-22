@@ -11,6 +11,7 @@ import Dashboard from './components/Dashboard';
 import Login from './components/Login';
 import ProtectedRoute from './components/ProtectedRoute';
 import BlockchainExplorer from './components/BlockchainExplorer';
+import { CommandBarProvider } from './components/ui/CommandBar';
 
 // Theme Configuration
 const darkTheme = createTheme({
@@ -70,42 +71,44 @@ function App() {
   return (
     <ThemeProvider theme={darkTheme}>
       <CssBaseline />
-      <Router>
-        <div className="app-container">
-          <Routes>
-            <Route path="/" element={<TrapInterface />} />
-            <Route path="/login" element={<Login />} />
-            <Route
-              path="/dashboard"
-              element={
-                <ProtectedRoute>
-                  <Dashboard />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/blockchain"
-              element={
-                <ProtectedRoute>
-                  <BlockchainExplorer />
-                </ProtectedRoute>
-              }
-            />
-          </Routes>
-        </div>
-        <ToastContainer
-          position="bottom-right"
-          autoClose={5000}
-          hideProgressBar={false}
-          newestOnTop
-          closeOnClick
-          rtl={false}
-          pauseOnFocusLoss
-          draggable
-          pauseOnHover
-          theme="dark"
-        />
-      </Router>
+      <CommandBarProvider>
+        <Router>
+          <div className="app-container">
+            <Routes>
+              <Route path="/" element={<TrapInterface />} />
+              <Route path="/login" element={<Login />} />
+              <Route
+                path="/dashboard"
+                element={
+                  <ProtectedRoute>
+                    <Dashboard />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/blockchain"
+                element={
+                  <ProtectedRoute>
+                    <BlockchainExplorer />
+                  </ProtectedRoute>
+                }
+              />
+            </Routes>
+          </div>
+          <ToastContainer
+            position="bottom-right"
+            autoClose={5000}
+            hideProgressBar={false}
+            newestOnTop
+            closeOnClick
+            rtl={false}
+            pauseOnFocusLoss
+            draggable
+            pauseOnHover
+            theme="dark"
+          />
+        </Router>
+      </CommandBarProvider>
     </ThemeProvider>
   );
 }

@@ -1,12 +1,37 @@
-fastapi==0.104.1
-uvicorn==0.24.0
-pymongo==4.6.0
-motor==3.3.2
-tensorflow==2.15.0
-numpy==1.24.3
-python-multipart==0.0.6
-pydantic==2.5.0
-pydantic-settings==2.1.0
-httpx==0.25.2
-reportlab==4.0.7
-python-dotenv==1.0.0
+# Chameleon Adaptive Deception System - Backend Requirements
+# Python Version: 3.12.7
+# Last Updated: 2025-11-23
+
+# Web Framework & Server
+fastapi==0.104.1              # Modern web framework for building APIs
+uvicorn==0.24.0               # ASGI server for FastAPI
+python-multipart==0.0.6       # Form data parsing support
+
+# Database
+pymongo==4.6.0                # MongoDB driver
+motor==3.3.2                  # Async MongoDB driver for FastAPI
+
+# Machine Learning & Data Processing
+tensorflow==2.16.0            # ML framework for attack classification
+numpy==1.24.3                 # Numerical computing library
+
+# Data Validation & Settings
+pydantic==2.5.0               # Data validation using Python type hints
+pydantic-settings==2.1.0      # Settings management for Pydantic
+
+# HTTP Client & Networking
+httpx==0.25.2                 # Async HTTP client for geo-location API
+requests==2.31.0              # HTTP library for blockchain operations
+
+# Security & Authentication
+python-jose[cryptography]==3.3.0  # JWT token handling
+passlib[bcrypt]==1.7.4            # Password hashing
+
+# Blockchain & Web3
+web3==6.11.3                  # Ethereum blockchain integration for immutable logging
+
+# PDF Generation
+reportlab==4.0.7              # PDF generation for incident reports
+
+# Configuration
+python-dotenv==1.0.0          # Environment variable management

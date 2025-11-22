@@ -1,7 +1,7 @@
 import tensorflow as tf
 import numpy as np
 import re
-from config import settings
+from config import settings, MODEL_PATH
 from models import AttackType, ClassificationResult
 import os
 
@@ -17,13 +17,25 @@ class MLClassifier:
         }
         
         try:
-            if os.path.exists(settings.MODEL_PATH):
-                self.model = tf.keras.models.load_model(settings.MODEL_PATH)
-                print(f"Loaded model from {settings.MODEL_PATH}")
+            if os.path.exists(MODEL_PATH):
+                # Register custom objects before loading
+                custom_objects = {
+                    'custom_standardization': lambda x: x,  # Placeholder
+                    'char_split': lambda x: x  # Placeholder
+                }
+                self.model = tf.keras.models.load_model(
+                    MODEL_PATH,
+                    custom_objects=custom_objects,
+                    compile=False  # Skip compilation to avoid issues
+                )
+                print(f"✅ Loaded ML model from {MODEL_PATH}")
             else:
-                print(f"Model file not found at {settings.MODEL_PATH}. Using heuristic fallback only.")
+                print(f"⚠️  Model file not found at {MODEL_PATH}")
+                print(f"⚠️  Using heuristic-based classification only")
         except Exception as e:
-            print(f"Error loading model: {e}")
+            print(f"⚠️  Error loading ML model: {e}")
+            print(f"⚠️  Falling back to heuristic-based classification")
+            self.model = None
             
         self.build_char_mapping()
 

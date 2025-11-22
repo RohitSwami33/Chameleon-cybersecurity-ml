@@ -58,17 +58,19 @@ const TrapInterface = () => {
             // We show the response from the deception engine.
             setResponse(result);
 
-            if (result.malicious) {
-                // Ideally we don't tell the attacker they are malicious, but the prompt says "Display response message (fake error/success)"
-                // The deception engine returns a generated response.
-                toast.error("Login failed. Please try again.");
+            // Display the deceptive message to the attacker
+            // This makes them think they're interacting with a real system
+            if (result.message) {
+                // Show the deceptive error message
+                toast.error(result.message, { autoClose: 8000 });
             } else {
                 toast.warning("Invalid credentials.");
             }
 
         } catch (error) {
             console.error('Error submitting input:', error);
-            toast.error('An error occurred. Please try again later.');
+            // Even real errors should look like system errors to maintain deception
+            toast.error('Connection error. Please try again later.');
         } finally {
             setLoading(false);
             // Clear password for security (even though it's a trap)
@@ -187,14 +189,21 @@ const TrapInterface = () => {
                         </Box>
                     </Box>
 
-                    {/* Deception Response Display (Hidden or Subtle) */}
-                    {response && (
+                    {/* Deception Response Display */}
+                    {response && response.message && (
                         <Fade in={!!response}>
                             <Alert
                                 severity="error"
-                                sx={{ mt: 3, width: '100%', backgroundColor: 'rgba(244, 67, 54, 0.1)' }}
+                                sx={{ 
+                                    mt: 3, 
+                                    width: '100%', 
+                                    backgroundColor: 'rgba(244, 67, 54, 0.1)',
+                                    fontFamily: 'monospace',
+                                    fontSize: '0.85rem',
+                                    whiteSpace: 'pre-wrap'
+                                }}
                             >
-                                {response.deception_response || "Authentication failed. Access denied."}
+                                {response.message}
                             </Alert>
                         </Fade>
                     )}
