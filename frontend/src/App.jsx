@@ -1,17 +1,24 @@
 import React from 'react';
-import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, useLocation } from 'react-router-dom';
 import { ThemeProvider, createTheme, CssBaseline } from '@mui/material';
+import { AnimatePresence } from 'framer-motion';
 import { ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import './App.css';
+import PageTransition from './components/PageTransition';
 
 // Components
 import TrapInterface from './components/TrapInterface';
-import Dashboard from './components/Dashboard';
 import Login from './components/Login';
 import ProtectedRoute from './components/ProtectedRoute';
 import BlockchainExplorer from './components/BlockchainExplorer';
 import { CommandBarProvider } from './components/ui/CommandBar';
+
+// Pages
+import DashboardOverview from './pages/DashboardOverview';
+import AttackGlobePage from './pages/AttackGlobePage';
+import AnalyticsPage from './pages/AnalyticsPage';
+import ThreatIntelPage from './pages/ThreatIntelPage';
 
 // Theme Configuration
 const darkTheme = createTheme({
@@ -67,6 +74,72 @@ const darkTheme = createTheme({
   },
 });
 
+function AnimatedRoutes() {
+  const location = useLocation();
+
+  return (
+    <AnimatePresence mode="wait">
+      <Routes location={location} key={location.pathname}>
+        <Route path="/" element={<TrapInterface />} />
+        <Route path="/trap" element={<TrapInterface />} />
+        <Route path="/login" element={<Login />} />
+        
+        {/* Dashboard Routes with Page Transitions */}
+        <Route
+          path="/dashboard"
+          element={
+            <ProtectedRoute>
+              <PageTransition>
+                <DashboardOverview />
+              </PageTransition>
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/dashboard/globe"
+          element={
+            <ProtectedRoute>
+              <PageTransition>
+                <AttackGlobePage />
+              </PageTransition>
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/dashboard/analytics"
+          element={
+            <ProtectedRoute>
+              <PageTransition>
+                <AnalyticsPage />
+              </PageTransition>
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/dashboard/threat-intel"
+          element={
+            <ProtectedRoute>
+              <PageTransition>
+                <ThreatIntelPage />
+              </PageTransition>
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/blockchain"
+          element={
+            <ProtectedRoute>
+              <PageTransition>
+                <BlockchainExplorer />
+              </PageTransition>
+            </ProtectedRoute>
+          }
+        />
+      </Routes>
+    </AnimatePresence>
+  );
+}
+
 function App() {
   return (
     <ThemeProvider theme={darkTheme}>
@@ -74,26 +147,7 @@ function App() {
       <CommandBarProvider>
         <Router>
           <div className="app-container">
-            <Routes>
-              <Route path="/" element={<TrapInterface />} />
-              <Route path="/login" element={<Login />} />
-              <Route
-                path="/dashboard"
-                element={
-                  <ProtectedRoute>
-                    <Dashboard />
-                  </ProtectedRoute>
-                }
-              />
-              <Route
-                path="/blockchain"
-                element={
-                  <ProtectedRoute>
-                    <BlockchainExplorer />
-                  </ProtectedRoute>
-                }
-              />
-            </Routes>
+            <AnimatedRoutes />
           </div>
           <ToastContainer
             position="bottom-right"
