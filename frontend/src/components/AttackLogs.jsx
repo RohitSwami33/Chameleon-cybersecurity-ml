@@ -157,7 +157,7 @@ const AttackLogs = ({ logs, onViewDetails, onGenerateReport }) => {
     });
 
     return (
-        <Paper sx={{ width: '100%', overflow: 'hidden', mt: 3, p: 2, backgroundColor: '#1e1e1e', backgroundImage: 'none' }}>
+        <Paper sx={{ width: '100%', overflow: 'hidden', mt: 0, p: 2, backgroundColor: '#1e1e1e', backgroundImage: 'none' }}>
             <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2, flexWrap: 'wrap', gap: 2 }}>
                 <Typography variant="h6" component="div" sx={{ fontWeight: 600 }}>
                     Recent Attack Logs

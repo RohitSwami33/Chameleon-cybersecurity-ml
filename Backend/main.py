@@ -24,6 +24,7 @@ from tarpit_manager import tarpit_manager
 from blockchain_logger import blockchain_logger
 from report_generator import report_generator
 from login_rate_limiter import login_limiter
+from threat_score import threat_score_system
 import asyncio
 
 @asynccontextmanager
@@ -111,6 +112,16 @@ async def submit_trap(user_input: UserInput, request: Request, background_tasks:
         delay,
         user_input.input_text[:100]  # Pass first 100 chars for context
     )
+    
+    # Calculate threat score for this IP
+    threat_score = threat_score_system.calculate_threat_score(
+        ip,
+        classification.attack_type,
+        classification.is_malicious
+    )
+    
+    # Get reputation info
+    reputation = threat_score_system.get_ip_reputation(ip)
     
     # Create Log
     log_entry = AttackLog(
@@ -254,6 +265,13 @@ async def get_stats(username: str = Depends(verify_token)):
     merkle_root = blockchain_logger.get_merkle_root_for_recent_logs(recent_logs)
     stats["merkle_root"] = merkle_root
     
+    # Add threat score statistics
+    flagged_ips = threat_score_system.get_flagged_ips(threshold=70)
+    top_threats = threat_score_system.get_top_threats(limit=5)
+    
+    stats["flagged_ips_count"] = len(flagged_ips)
+    stats["top_threats"] = top_threats
+    
     return stats
 
 @app.get("/api/dashboard/logs", response_model=List[AttackLog])
@@ -294,6 +312,157 @@ async def verify_blockchain(username: str = Depends(verify_token)):
     return {
         "integrity": integrity,
         "chain_length": len(blockchain_logger.chain)
+    }
+
+@app.get("/api/threat-scores/flagged")
+async def get_flagged_ips(username: str = Depends(verify_token)):
+    """Get all flagged IPs with low threat scores"""
+    flagged = threat_score_system.get_flagged_ips(threshold=70)
+    return {"flagged_ips": flagged, "count": len(flagged)}
+
+@app.get("/api/threat-scores/top-threats")
+async def get_top_threats(limit: int = 10, username: str = Depends(verify_token)):
+    """Get top threat IPs"""
+    threats = threat_score_system.get_top_threats(limit=limit)
+    return {"top_threats": threats, "count": len(threats)}
+
+@app.get("/api/threat-scores/verify-chain")
+async def verify_score_chain(username: str = Depends(verify_token)):
+    """Verify integrity of threat score blockchain"""
+    integrity = threat_score_system.verify_chain_integrity()
+    return {
+        "integrity": integrity,
+        "chain_length": len(threat_score_system.score_chain)
+    }
+
+@app.get("/api/threat-scores/blockchain")
+async def get_blockchain_data(
+    skip: int = 0, 
+    limit: int = 100,
+    ip_address: Optional[str] = None,
+    username: str = Depends(verify_token)
+):
+    """Get blockchain records with optional IP filtering"""
+    chain = threat_score_system.score_chain
+    
+    # Filter by IP if specified
+    if ip_address:
+        chain = [block for block in chain if block.get("ip_address") == ip_address]
+    
+    # Paginate
+    total = len(chain)
+    records = chain[skip:skip + limit]
+    
+    return {
+        "total": total,
+        "skip": skip,
+        "limit": limit,
+        "records": records,
+        "chain_integrity": threat_score_system.verify_chain_integrity()
+    }
+
+@app.get("/api/threat-scores/blockchain/block/{block_index}")
+async def get_blockchain_block(block_index: int, username: str = Depends(verify_token)):
+    """Get specific blockchain block by index"""
+    if block_index < 0 or block_index >= len(threat_score_system.score_chain):
+        raise HTTPException(status_code=404, detail="Block not found")
+    
+    block = threat_score_system.score_chain[block_index]
+    
+    # Add verification info
+    is_valid = True
+    if block_index > 0:
+        previous_block = threat_score_system.score_chain[block_index - 1]
+        is_valid = block["previous_hash"] == previous_block["hash"]
+    
+    return {
+        "block_index": block_index,
+        "block": block,
+        "is_valid": is_valid,
+        "total_blocks": len(threat_score_system.score_chain)
+    }
+
+@app.get("/api/threat-scores/blockchain/export")
+async def export_blockchain(
+    format: str = "json",
+    ip_address: Optional[str] = None,
+    username: str = Depends(verify_token)
+):
+    """Export blockchain data in various formats"""
+    chain = threat_score_system.score_chain
+    
+    # Filter by IP if specified
+    if ip_address:
+        chain = [block for block in chain if block.get("ip_address") == ip_address]
+    
+    if format == "json":
+        return {
+            "blockchain": chain,
+            "metadata": {
+                "total_blocks": len(chain),
+                "chain_integrity": threat_score_system.verify_chain_integrity(),
+                "exported_at": datetime.utcnow().isoformat(),
+                "filter_ip": ip_address
+            }
+        }
+    else:
+        raise HTTPException(status_code=400, detail="Unsupported format")
+
+@app.get("/api/threat-scores/analytics")
+async def get_threat_analytics(username: str = Depends(verify_token)):
+    """Get comprehensive threat analytics"""
+    chain = threat_score_system.score_chain
+    
+    # Calculate statistics
+    total_ips = len(threat_score_system.ip_scores)
+    total_score_changes = len(chain)
+    
+    # Score distribution
+    score_distribution = {
+        "TRUSTED": 0,
+        "NEUTRAL": 0,
+        "SUSPICIOUS": 0,
+        "MALICIOUS": 0,
+        "CRITICAL": 0
+    }
+    
+    for ip, score in threat_score_system.ip_scores.items():
+        level = threat_score_system.get_reputation_level(score)
+        score_distribution[level] += 1
+    
+    # Attack type distribution
+    attack_types = {}
+    for block in chain:
+        attack_type = block.get("attack_type", "UNKNOWN")
+        attack_types[attack_type] = attack_types.get(attack_type, 0) + 1
+    
+    # Most active IPs
+    ip_activity = {}
+    for block in chain:
+        ip = block.get("ip_address")
+        ip_activity[ip] = ip_activity.get(ip, 0) + 1
+    
+    most_active = sorted(ip_activity.items(), key=lambda x: x[1], reverse=True)[:10]
+    
+    return {
+        "total_ips_tracked": total_ips,
+        "total_score_changes": total_score_changes,
+        "score_distribution": score_distribution,
+        "attack_type_distribution": attack_types,
+        "most_active_ips": [
+            {"ip": ip, "activity_count": count} for ip, count in most_active
+        ],
+        "chain_integrity": threat_score_system.verify_chain_integrity()
+    }
+
+@app.get("/api/threat-scores/{ip_address}")
+async def get_ip_threat_score(ip_address: str, username: str = Depends(verify_token)):
+    """Get threat score and reputation for specific IP"""
+    reputation = threat_score_system.get_ip_reputation(ip_address)
+    history = threat_score_system.get_score_history(ip_address)
+    return {
+        "reputation": reputation,
+        "history": history[:20]  # Last 20 changes
     }
 
 @app.get("/api/health")

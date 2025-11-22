@@ -10,6 +10,7 @@ import TrapInterface from './components/TrapInterface';
 import Dashboard from './components/Dashboard';
 import Login from './components/Login';
 import ProtectedRoute from './components/ProtectedRoute';
+import BlockchainExplorer from './components/BlockchainExplorer';
 
 // Theme Configuration
 const darkTheme = createTheme({
@@ -79,6 +80,14 @@ function App() {
               element={
                 <ProtectedRoute>
                   <Dashboard />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/blockchain"
+              element={
+                <ProtectedRoute>
+                  <BlockchainExplorer />
                 </ProtectedRoute>
               }
             />

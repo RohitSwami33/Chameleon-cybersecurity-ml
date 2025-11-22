@@ -2,11 +2,9 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
     Box,
-    Container,
     Grid,
     Typography,
     Button,
-    IconButton,
     CircularProgress,
     Switch,
     FormControlLabel,
@@ -17,11 +15,13 @@ import {
 import RefreshIcon from '@mui/icons-material/Refresh';
 import SecurityIcon from '@mui/icons-material/Security';
 import LogoutIcon from '@mui/icons-material/Logout';
+import LinkIcon from '@mui/icons-material/Link';
 import { toast } from 'react-toastify';
 import StatsCards from './StatsCards';
 import AttackChart from './AttackChart';
 import AttackLogs from './AttackLogs';
 import GeoMap from './GeoMap';
+import ThreatScorePanel from './ThreatScorePanel';
 import { getDashboardStats, getAttackLogs, generateReport } from '../services/api';
 import { downloadPDF } from '../utils/helpers';
 
@@ -32,7 +32,9 @@ const Dashboard = () => {
         benign_attempts: 0,
         merkle_root: null,
         attack_distribution: {},
-        geo_locations: []
+        geo_locations: [],
+        flagged_ips_count: 0,
+        top_threats: []
     });
     const [logs, setLogs] = useState([]);
     const [loading, setLoading] = useState(true);
@@ -44,6 +46,14 @@ const Dashboard = () => {
 
     const fetchData = useCallback(async () => {
         try {
+            // Check if token exists
+            const token = localStorage.getItem('authToken');
+            if (!token) {
+                toast.error('Please login to access dashboard');
+                navigate('/login');
+                return;
+            }
+
             const [statsData, logsData] = await Promise.all([
                 getDashboardStats(),
                 getAttackLogs(0, 100) // Fetch last 100 logs
@@ -54,13 +64,21 @@ const Dashboard = () => {
             setLastUpdated(new Date());
         } catch (error) {
             console.error('Error fetching dashboard data:', error);
-            toast.error('Failed to fetch dashboard data');
-            // Stop auto-refresh on error to prevent spamming
-            setAutoRefresh(false);
+            
+            // Check if it's an auth error
+            if (error.response && error.response.status === 401) {
+                toast.error('Session expired. Please login again.');
+                localStorage.removeItem('authToken');
+                navigate('/login');
+            } else {
+                toast.error('Failed to fetch dashboard data');
+                // Stop auto-refresh on error to prevent spamming
+                setAutoRefresh(false);
+            }
         } finally {
             setLoading(false);
         }
-    }, []);
+    }, [navigate]);
 
     useEffect(() => {
         fetchData();
@@ -106,9 +124,15 @@ const Dashboard = () => {
     };
 
     return (
-        <Box sx={{ flexGrow: 1, backgroundColor: 'background.default', minHeight: '100vh' }}>
+        <Box sx={{ 
+            flexGrow: 1, 
+            backgroundColor: 'background.default', 
+            minHeight: '100vh',
+            width: '100vw',
+            overflow: 'hidden'
+        }}>
             <AppBar position="static" color="transparent" elevation={0} sx={{ borderBottom: '1px solid rgba(255,255,255,0.1)' }}>
-                <Toolbar>
+                <Toolbar sx={{ px: 2 }}>
                     <SecurityIcon sx={{ mr: 2, color: 'primary.main', fontSize: 32 }} />
                     <Typography variant="h5" component="div" sx={{ flexGrow: 1, fontWeight: 700, letterSpacing: 1 }}>
                         CHAMELEON <Typography component="span" variant="h5" color="primary" sx={{ fontWeight: 700 }}>FORENSICS</Typography>
@@ -142,6 +166,16 @@ const Dashboard = () => {
 
                         <Button
                             variant="outlined"
+                            color="primary"
+                            startIcon={<LinkIcon />}
+                            onClick={() => navigate('/blockchain')}
+                            size="small"
+                        >
+                            Blockchain
+                        </Button>
+
+                        <Button
+                            variant="outlined"
                             color="error"
                             startIcon={<LogoutIcon />}
                             onClick={handleLogout}
@@ -153,7 +187,7 @@ const Dashboard = () => {
                 </Toolbar>
             </AppBar>
 
-            <Container maxWidth="xl" sx={{ mt: 4, mb: 4 }}>
+            <Box sx={{ px: 2, py: 2, width: '100%', boxSizing: 'border-box' }}>
                 {loading && !stats.total_attempts ? (
                     <Box sx={{ display: 'flex', justifyContent: 'center', mt: 10 }}>
                         <CircularProgress />
@@ -162,26 +196,35 @@ const Dashboard = () => {
                     <>
                         <StatsCards stats={stats} />
 
-                        <Grid container spacing={3} sx={{ mb: 3 }}>
-                            <Grid item xs={12} md={6}>
+                        <Grid container spacing={2} sx={{ mb: 2 }}>
+                            <Grid item xs={12} md={4}>
                                 {/* Attack Distribution Chart */}
                                 <Box sx={{ height: 400 }}>
                                     <AttackChart attackDistribution={stats.attack_distribution} />
                                 </Box>
                             </Grid>
-                            <Grid item xs={12} md={6}>
+                            <Grid item xs={12} md={4}>
                                 {/* Geographic Attack Origins */}
                                 <Box sx={{ height: 400 }}>
                                     <GeoMap geoLocations={stats.geo_locations || []} />
                                 </Box>
                             </Grid>
+                            <Grid item xs={12} md={4}>
+                                {/* Threat Score Panel */}
+                                <Box sx={{ height: 400 }}>
+                                    <ThreatScorePanel 
+                                        topThreats={stats.top_threats || []} 
+                                        flaggedCount={stats.flagged_ips_count || 0}
+                                    />
+                                </Box>
+                            </Grid>
                         </Grid>
 
-                        <Grid container spacing={3} sx={{ mb: 3 }}>
+                        <Grid container spacing={2} sx={{ mb: 2 }}>
                             <Grid item xs={12}>
                                 <Box sx={{ p: 2, bgcolor: '#1e1e1e', borderRadius: 1, border: '1px solid #333' }}>
                                     <Typography variant="h6" gutterBottom>System Health</Typography>
-                                    <Grid container spacing={3}>
+                                    <Grid container spacing={2}>
                                         <Grid item xs={12} sm={4}>
                                             <Typography variant="body2" color="text.secondary">Deception Engine</Typography>
                                             <Typography variant="body1" color="success.main" sx={{ fontWeight: 600 }}>Active • Low Latency</Typography>
@@ -206,7 +249,7 @@ const Dashboard = () => {
                         />
                     </>
                 )}
-            </Container>
+            </Box>
         </Box>
     );
 };

@@ -16,7 +16,22 @@ api.interceptors.request.use((config) => {
     config.headers.Authorization = `Bearer ${token}`;
   }
   return config;
+}, (error) => {
+  return Promise.reject(error);
 });
+
+// Handle 401 errors and redirect to login
+api.interceptors.response.use(
+  (response) => response,
+  (error) => {
+    if (error.response && error.response.status === 401) {
+      // Token expired or invalid
+      localStorage.removeItem('authToken');
+      window.location.href = '/login';
+    }
+    return Promise.reject(error);
+  }
+);
 
 
 export const submitInput = async (inputData) => {
@@ -30,9 +45,15 @@ export const submitInput = async (inputData) => {
 
 export const getDashboardStats = async () => {
   try {
+    const token = localStorage.getItem('authToken');
+    console.log('Token exists:', !!token);
+    console.log('Making request to /api/dashboard/stats');
     const response = await api.get('/api/dashboard/stats');
+    console.log('Dashboard stats received:', response.data);
     return response.data;
   } catch (error) {
+    console.error('Dashboard stats error:', error);
+    console.error('Error response:', error.response);
     throw error.response ? error.response.data : error;
   }
 };
@@ -87,6 +108,15 @@ export const verifyBlockchain = async () => {
 export const healthCheck = async () => {
   try {
     const response = await api.get('/api/health');
+    return response.data;
+  } catch (error) {
+    throw error.response ? error.response.data : error;
+  }
+};
+
+export const login = async (username, password) => {
+  try {
+    const response = await api.post('/api/auth/login', { username, password });
     return response.data;
   } catch (error) {
     throw error.response ? error.response.data : error;

@@ -74,7 +74,7 @@ const StatsCards = ({ stats }) => {
         : 0;
 
     return (
-        <Grid container spacing={3} sx={{ mb: 4 }}>
+        <Grid container spacing={2} sx={{ mb: 2 }}>
             <Grid item xs={12} sm={6} md={3}>
                 <StatCard
                     title="Total Attempts"

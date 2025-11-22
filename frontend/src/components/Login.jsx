@@ -12,9 +12,7 @@ import {
 } from '@mui/material';
 import LockOutlinedIcon from '@mui/icons-material/LockOutlined';
 import { toast } from 'react-toastify';
-import axios from 'axios';
-
-const API_URL = import.meta.env.VITE_API_BASE_URL || process.env.REACT_APP_API_BASE_URL || 'http://localhost:8000';
+import { login } from '../services/api';
 
 const Login = () => {
     const [formData, setFormData] = useState({
@@ -39,19 +37,19 @@ const Login = () => {
         setError('');
 
         try {
-            const response = await axios.post(`${API_URL}/api/auth/login`, {
-                username: formData.username,
-                password: formData.password
-            });
+            console.log('Attempting login with:', formData.username);
+            const response = await login(formData.username, formData.password);
 
             // Store token
-            localStorage.setItem('authToken', response.data.access_token);
+            console.log('Login successful, storing token');
+            localStorage.setItem('authToken', response.access_token);
+            console.log('Token stored:', localStorage.getItem('authToken'));
 
             toast.success('Login successful!');
             navigate('/dashboard');
         } catch (error) {
             console.error('Login error:', error);
-            setError(error.response?.data?.detail || 'Invalid username or password');
+            setError(error.detail || 'Invalid username or password');
             toast.error('Login failed');
         } finally {
             setLoading(false);
