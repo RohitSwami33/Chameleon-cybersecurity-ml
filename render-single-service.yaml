@@ -3,7 +3,6 @@ services:
   - type: web
     name: chameleon-system
     env: python
-    runtime: python-3.11
     region: oregon
     plan: free
     branch: main
@@ -12,7 +11,7 @@ services:
     healthCheckPath: /api/health
     envVars:
       - key: PYTHON_VERSION
-        value: 3.11.0
+        value: 3.11.9
       - key: MONGODB_URL
         value: mongodb+srv://privatestudent33_db_user:hk3rc71C0GsEoJf4@cluster0.uiklaos.mongodb.net/?appName=Cluster0
       - key: DATABASE_NAME
