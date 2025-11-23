@@ -90,12 +90,12 @@ VITE_API_BASE_URL=https://chameleon-backend.onrender.com
 
 **Build Command:**
 ```bash
-cd Backend && pip install --upgrade pip && pip install -r requirements.txt
+pip install --upgrade pip && pip install -r Backend/requirements.txt
 ```
 
 **Start Command:**
 ```bash
-cd Backend && uvicorn main:app --host 0.0.0.0 --port $PORT
+cd Backend && python -m uvicorn main:app --host 0.0.0.0 --port $PORT
 ```
 
 **Environment Variables:**

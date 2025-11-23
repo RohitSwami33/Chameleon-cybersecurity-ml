@@ -43,7 +43,7 @@ cd Backend && pip install --upgrade pip && pip install -r requirements.txt
 
 **Start Command:**
 ```bash
-cd Backend && uvicorn main:app --host 0.0.0.0 --port $PORT
+cd Backend && python -m uvicorn main:app --host 0.0.0.0 --port $PORT
 ```
 
 **Environment Variables:**
@@ -99,10 +99,10 @@ JWT_SECRET_KEY=your_secret_key_here
    Runtime: Python 3
    
    Build Command:
-   cd Backend && pip install --upgrade pip && pip install -r requirements.txt
+   pip install --upgrade pip && pip install -r Backend/requirements.txt
    
    Start Command:
-   cd Backend && uvicorn main:app --host 0.0.0.0 --port $PORT
+   cd Backend && python -m uvicorn main:app --host 0.0.0.0 --port $PORT
    
    Plan: Free
    ```
