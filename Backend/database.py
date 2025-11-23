@@ -6,6 +6,7 @@ import pymongo
 from bson import ObjectId
 import certifi
 import logging
+from mock_database import mock_db
 
 logger = logging.getLogger(__name__)
 
@@ -18,18 +19,27 @@ db = Database()
 async def connect_to_mongo():
     """Connect to MongoDB with error handling"""
     try:
-        # MongoDB connection with SSL workaround
         connection_url = settings.MONGODB_URL
         
-        # Create client with relaxed SSL settings for compatibility
-        db.client = AsyncIOMotorClient(
-            connection_url,
-            serverSelectionTimeoutMS=30000,
-            connectTimeoutMS=30000,
-            socketTimeoutMS=30000,
-            tls=True,
-            tlsInsecure=True  # Disable certificate and hostname verification
-        )
+        # Check if connecting to localhost (no TLS needed)
+        is_localhost = "localhost" in connection_url or "127.0.0.1" in connection_url
+        
+        if is_localhost:
+            # Local MongoDB - no TLS
+            db.client = AsyncIOMotorClient(
+                connection_url,
+                serverSelectionTimeoutMS=5000
+            )
+        else:
+            # Remote MongoDB (Atlas) - use TLS
+            db.client = AsyncIOMotorClient(
+                connection_url,
+                serverSelectionTimeoutMS=30000,
+                connectTimeoutMS=30000,
+                socketTimeoutMS=30000,
+                tls=True,
+                tlsInsecure=True
+            )
         
         # Test the connection
         await db.client.admin.command('ping')
@@ -65,10 +75,10 @@ def get_database():
     return db.client[settings.DATABASE_NAME]
 
 async def save_attack_log(log_data: dict) -> str:
-    """Save attack log to MongoDB (if connected)"""
+    """Save attack log to MongoDB or mock database"""
     if not db.connected:
-        logger.warning("MongoDB not connected - attack log not saved")
-        return "no-db-connection"
+        logger.info("Using mock database - saving to in-memory storage")
+        return await mock_db.save_attack_log(log_data)
     
     try:
         database = get_database()
@@ -76,12 +86,12 @@ async def save_attack_log(log_data: dict) -> str:
         return str(result.inserted_id)
     except Exception as e:
         logger.error(f"Error saving attack log: {e}")
-        return "error"
+        return await mock_db.save_attack_log(log_data)
 
 async def get_attack_logs(skip: int, limit: int) -> List[dict]:
-    """Get attack logs from MongoDB (returns empty list if not connected)"""
+    """Get attack logs from MongoDB or mock database"""
     if not db.connected:
-        return []
+        return await mock_db.get_attack_logs(skip, limit)
     
     try:
         database = get_database()
@@ -94,12 +104,12 @@ async def get_attack_logs(skip: int, limit: int) -> List[dict]:
         return logs
     except Exception as e:
         logger.error(f"Error fetching attack logs: {e}")
-        return []
+        return await mock_db.get_attack_logs(skip, limit)
 
 async def get_attack_by_id(log_id: str) -> Optional[dict]:
     """Get specific attack log by ID"""
     if not db.connected:
-        return None
+        return await mock_db.get_attack_by_id(log_id)
     
     try:
         database = get_database()
@@ -110,19 +120,12 @@ async def get_attack_by_id(log_id: str) -> Optional[dict]:
         return log
     except Exception as e:
         logger.error(f"Error fetching attack by ID: {e}")
-        return None
+        return await mock_db.get_attack_by_id(log_id)
 
 async def get_dashboard_stats() -> dict:
-    """Get dashboard statistics (returns defaults if MongoDB not connected)"""
+    """Get dashboard statistics from MongoDB or mock database"""
     if not db.connected:
-        return {
-            "total_attempts": 0,
-            "malicious_attempts": 0,
-            "benign_attempts": 0,
-            "attack_distribution": {},
-            "top_attackers": [],
-            "geo_locations": []
-        }
+        return await mock_db.get_dashboard_stats()
     
     try:
         database = get_database()
@@ -210,7 +213,7 @@ async def get_dashboard_stats() -> dict:
 async def get_logs_by_ip(ip_address: str) -> List[dict]:
     """Get all logs for a specific IP address"""
     if not db.connected:
-        return []
+        return await mock_db.get_logs_by_ip(ip_address)
     
     try:
         database = get_database()
@@ -222,4 +225,4 @@ async def get_logs_by_ip(ip_address: str) -> List[dict]:
         return logs
     except Exception as e:
         logger.error(f"Error fetching logs by IP: {e}")
-        return []
+        return await mock_db.get_logs_by_ip(ip_address)
