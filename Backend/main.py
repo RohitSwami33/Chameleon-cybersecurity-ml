@@ -225,7 +225,7 @@ async def submit_trap(user_input: UserInput, request: Request, background_tasks:
     # === PRIVACY-PRESERVING THREAT INTELLIGENCE ===
     # Generate threat intel report for novel malicious attacks
     if classification.is_malicious and classification.attack_type in [AttackType.SQLI, AttackType.XSS]:
-        if threat_intel_service.is_novel_attack(user_input.input_text):
+        if threat_intel_service.is_novel_attack(user_input.input_text, classification.attack_type):
             # Create privacy-preserving threat intelligence report
             threat_report = threat_intel_service.create_threat_intel_report(
                 attack_type=classification.attack_type.value,

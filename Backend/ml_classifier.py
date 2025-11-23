@@ -99,8 +99,9 @@ class MLClassifier:
         # Try model prediction first
         if self.model:
             try:
-                encoded_input = self.encode_input(text)
-                prediction = self.model.predict(encoded_input, verbose=0)[0]
+                # Try passing raw text as string (model has TextVectorization layer)
+                text_input = np.array([text])  # Shape: (1,) - single string
+                prediction = self.model.predict(text_input, verbose=0)[0]
                 class_idx = np.argmax(prediction)
                 confidence = float(prediction[class_idx])
                 
@@ -108,6 +109,7 @@ class MLClassifier:
                     attack_type = self.idx_to_class.get(class_idx, AttackType.BENIGN)
             except Exception as e:
                 print(f"Prediction error: {e}")
+                # Model failed, will use heuristic fallback
 
         # Fallback if confidence is low or model failed
         if confidence < settings.CONFIDENCE_THRESHOLD:
