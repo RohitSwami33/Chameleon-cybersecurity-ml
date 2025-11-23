@@ -1,6 +1,8 @@
 import axios from 'axios';
 
-const API_URL = import.meta.env.VITE_API_BASE_URL || process.env.REACT_APP_API_BASE_URL || 'http://localhost:8000';
+// In production (Render), use same origin. In development, use localhost
+const isDevelopment = import.meta.env.DEV;
+const API_URL = isDevelopment ? 'http://localhost:8000' : '';
 
 const api = axios.create({
   baseURL: API_URL,

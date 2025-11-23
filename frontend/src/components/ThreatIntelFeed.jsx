@@ -17,7 +17,9 @@ import FingerprintIcon from '@mui/icons-material/Fingerprint';
 import { toast } from 'react-toastify';
 import axios from 'axios';
 
-const API_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000';
+// In production (Render), use same origin. In development, use localhost
+const isDevelopment = import.meta.env.DEV;
+const API_URL = isDevelopment ? 'http://localhost:8000' : '';
 
 const ThreatIntelFeed = () => {
     const [feed, setFeed] = useState([]);
