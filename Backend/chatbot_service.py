@@ -16,7 +16,7 @@ class CybersecurityChatbot:
         
         # Configure the model
         self.model = genai.GenerativeModel(
-            model_name='gemini-2.5-pro',
+            model_name='gemini-pro',
             generation_config={
                 'temperature': 0.7,
                 'top_p': 0.8,
