@@ -19,6 +19,7 @@ import DashboardOverview from './pages/DashboardOverview';
 import AttackGlobePage from './pages/AttackGlobePage';
 import AnalyticsPage from './pages/AnalyticsPage';
 import ThreatIntelPage from './pages/ThreatIntelPage';
+import ChatbotPage from './pages/ChatbotPage';
 
 // Theme Configuration
 const darkTheme = createTheme({
@@ -121,6 +122,16 @@ function AnimatedRoutes() {
             <ProtectedRoute>
               <PageTransition>
                 <ThreatIntelPage />
+              </PageTransition>
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/dashboard/chatbot"
+          element={
+            <ProtectedRoute>
+              <PageTransition>
+                <ChatbotPage />
               </PageTransition>
             </ProtectedRoute>
           }

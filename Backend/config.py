@@ -13,6 +13,7 @@ class Settings(BaseSettings):
     JWT_SECRET_KEY: str = "your-secret-key-change-in-production-2024"
     JWT_ALGORITHM: str = "HS256"
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 60
+    GEMINI_API_KEY: str = "AIzaSyB7w5tQXvg1D7cVuqpeR6cZ5OMzNKCqguY"
 
     class Config:
         env_file = ".env"
