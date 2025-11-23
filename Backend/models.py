@@ -44,6 +44,11 @@ class AttackLog(BaseModel):
     deception_response: DeceptionResponse
     hash: Optional[str] = None
     previous_hash: Optional[str] = None
+    
+    class Config:
+        json_encoders = {
+            datetime: lambda v: v.isoformat() if v else None
+        }
 
 class DashboardStats(BaseModel):
     total_attempts: int

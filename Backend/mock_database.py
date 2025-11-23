@@ -12,7 +12,10 @@ class MockDatabase:
     
     def initialize_data(self):
         """Initialize with hardcoded attack data"""
-        base_time = get_current_time()
+        # Use current IST time as base
+        from datetime import datetime, timezone, timedelta
+        IST = timezone(timedelta(hours=5, minutes=30))
+        base_time = datetime.now(IST)
         
         # Hardcoded attack data
         self.attack_logs = [
@@ -277,8 +280,22 @@ class MockDatabase:
     
     async def get_attack_logs(self, skip: int, limit: int) -> List[dict]:
         """Get attack logs with pagination"""
+        # Update timestamps to be relative to current time (for display purposes)
+        from datetime import datetime, timezone, timedelta
+        IST = timezone(timedelta(hours=5, minutes=30))
+        current_time = datetime.now(IST)
+        
+        # Create a copy with updated timestamps
+        updated_logs = []
+        for i, log in enumerate(self.attack_logs):
+            log_copy = log.copy()
+            # Set timestamps relative to now (most recent first)
+            minutes_ago = i * 5  # 5 minutes apart
+            log_copy["timestamp"] = current_time - timedelta(minutes=minutes_ago)
+            updated_logs.append(log_copy)
+        
         # Sort by timestamp descending
-        sorted_logs = sorted(self.attack_logs, key=lambda x: x["timestamp"], reverse=True)
+        sorted_logs = sorted(updated_logs, key=lambda x: x["timestamp"], reverse=True)
         return sorted_logs[skip:skip + limit]
     
     async def get_attack_by_id(self, log_id: str) -> Optional[dict]:
@@ -300,9 +317,12 @@ class MockDatabase:
             attack_type = log["classification"]["attack_type"]
             attack_dist[attack_type] = attack_dist.get(attack_type, 0) + 1
         
-        # Top attackers (last 24 hours)
-        cutoff = get_current_time() - timedelta(hours=24)
-        recent_attacks = [log for log in self.attack_logs if log["timestamp"] > cutoff and log["classification"]["is_malicious"]]
+        # Top attackers (last 24 hours) - all mock data is considered recent
+        from datetime import datetime, timezone, timedelta
+        IST = timezone(timedelta(hours=5, minutes=30))
+        cutoff = datetime.now(IST) - timedelta(hours=24)
+        # All mock attacks are considered recent for demo purposes
+        recent_attacks = [log for log in self.attack_logs if log["classification"]["is_malicious"]]
         
         ip_counts = {}
         ip_last_seen = {}
