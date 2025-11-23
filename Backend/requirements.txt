@@ -12,7 +12,7 @@ pymongo==4.6.0                # MongoDB driver
 motor==3.3.2                  # Async MongoDB driver for FastAPI
 
 # Machine Learning & Data Processing
-tensorflow==2.16.0            # ML framework for attack classification
+tensorflow==2.16.1            # ML framework for attack classification
 numpy==1.24.3                 # Numerical computing library
 
 # Data Validation & Settings
