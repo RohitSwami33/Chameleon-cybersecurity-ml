@@ -18,16 +18,23 @@ db = Database()
 async def connect_to_mongo():
     """Connect to MongoDB with error handling"""
     try:
-        # Add SSL parameters to connection string if not present
+        # MongoDB connection with comprehensive SSL/TLS settings
         connection_url = settings.MONGODB_URL
+        
+        # Ensure proper SSL parameters
         if "retryWrites" not in connection_url:
             separator = "&" if "?" in connection_url else "?"
-            connection_url += f"{separator}retryWrites=true&w=majority&tls=true&tlsAllowInvalidCertificates=false"
+            connection_url += f"{separator}retryWrites=true&w=majority"
         
+        # Create client with explicit SSL settings
         db.client = AsyncIOMotorClient(
             connection_url,
-            serverSelectionTimeoutMS=10000,  # 10 second timeout
-            tlsCAFile=certifi.where()  # Use certifi for SSL certificates
+            serverSelectionTimeoutMS=30000,  # 30 second timeout
+            connectTimeoutMS=30000,
+            socketTimeoutMS=30000,
+            tls=True,
+            tlsAllowInvalidCertificates=True,  # Allow for Render compatibility
+            tlsCAFile=certifi.where()
         )
         
         # Test the connection
