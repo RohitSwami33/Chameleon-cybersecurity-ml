@@ -13,7 +13,7 @@ services:
       - key: PYTHON_VERSION
         value: 3.10.13
       - key: MONGODB_URL
-        value: mongodb+srv://privatestudent33_db_user:sOTfe7nQeesfAsGF@cluster0.fuhrxya.mongodb.net/chameleon_db?retryWrites=true&w=majority
+        value: mongodb+srv://privatestudent33_db_user:sOTfe7nQeesfAsGF@cluster0.fuhrxya.mongodb.net/chameleon_db?retryWrites=true&w=majority&tlsAllowInvalidCertificates=true
       - key: DATABASE_NAME
         value: chameleon_db
       - key: GEMINI_API_KEY
