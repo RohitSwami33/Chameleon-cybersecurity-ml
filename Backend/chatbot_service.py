@@ -14,9 +14,9 @@ class CybersecurityChatbot:
         """Initialize the chatbot with Gemini API"""
         genai.configure(api_key=api_key)
         
-        # Configure the model
+        # Configure the model - use gemini-2.5-pro
         self.model = genai.GenerativeModel(
-            model_name='gemini-pro',
+            model_name='gemini-2.5-pro',
             generation_config={
                 'temperature': 0.7,
                 'top_p': 0.8,
