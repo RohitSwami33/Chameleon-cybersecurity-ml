@@ -6,6 +6,7 @@ import httpx
 from datetime import datetime
 from typing import List, Optional
 from io import BytesIO
+from utils import get_current_time
 
 from config import settings
 from models import (
@@ -191,7 +192,7 @@ async def submit_trap(user_input: UserInput, request: Request, background_tasks:
     
     # Create Log
     log_entry = AttackLog(
-        timestamp=datetime.utcnow(),
+        timestamp=get_current_time(),
         raw_input=user_input.input_text,
         ip_address=ip,
         user_agent=user_agent,
@@ -251,7 +252,7 @@ async def login(login_data: LoginRequest, request: Request, background_tasks: Ba
     if login_limiter.is_rate_limited(ip):
         # Log the blocked brute force attempt
         log_entry = AttackLog(
-            timestamp=datetime.utcnow(),
+            timestamp=get_current_time(),
             raw_input=f"Blocked login attempt - Username: {login_data.username}",
             ip_address=ip,
             user_agent=user_agent,
@@ -281,7 +282,7 @@ async def login(login_data: LoginRequest, request: Request, background_tasks: Ba
     if is_brute_force:
         # Log the brute force detection
         log_entry = AttackLog(
-            timestamp=datetime.utcnow(),
+            timestamp=get_current_time(),
             raw_input=f"Brute force detected - Username: {login_data.username}",
             ip_address=ip,
             user_agent=user_agent,
@@ -308,7 +309,7 @@ async def login(login_data: LoginRequest, request: Request, background_tasks: Ba
     if not verify_credentials(login_data.username, login_data.password):
         # Failed login - log the failed attempt
         log_entry = AttackLog(
-            timestamp=datetime.utcnow(),
+            timestamp=get_current_time(),
             raw_input=f"Failed login - Username: {login_data.username}",
             ip_address=ip,
             user_agent=user_agent,
