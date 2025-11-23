@@ -41,5 +41,5 @@ pybloom-live==4.0.0           # Bloom filters for pattern matching
 eth-account==0.10.0           # Ethereum account management
 
 # AI Chatbot
-google-generativeai==0.3.2    # Google Gemini API
+google-generativeai==0.8.3    # Google Gemini API (compatible with protobuf>=5.0)
 duckduckgo-search==4.1.1      # DuckDuckGo search for cybersecurity info
