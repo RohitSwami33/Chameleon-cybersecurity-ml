@@ -20,7 +20,8 @@ async def connect_to_mongo():
     try:
         db.client = AsyncIOMotorClient(
             settings.MONGODB_URL,
-            serverSelectionTimeoutMS=5000  # 5 second timeout
+            serverSelectionTimeoutMS=5000,  # 5 second timeout
+            tlsCAFile=certifi.where()  # Use certifi for SSL certificates
         )
         
         # Test the connection
