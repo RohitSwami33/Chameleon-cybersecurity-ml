@@ -1,23 +1,30 @@
 services:
-  # Backend Service
+  # Backend API Service
   - type: web
     name: chameleon-backend
     env: python
+    runtime: python-3.11
     region: oregon
     plan: free
     branch: main
-    buildCommand: pip install --upgrade pip && pip install -r Backend/requirements.txt
-    startCommand: cd Backend && python -m uvicorn main:app --host 0.0.0.0 --port $PORT
+    buildCommand: "pip install --upgrade pip && pip install -r Backend/requirements.txt"
+    startCommand: "cd Backend && python -m uvicorn main:app --host 0.0.0.0 --port $PORT"
+    healthCheckPath: /api/health
     envVars:
       - key: PYTHON_VERSION
-        value: 3.12.0
+        value: 3.11.0
+      - key: MONGODB_URL
+        value: mongodb+srv://privatestudent33_db_user:hk3rc71C0GsEoJf4@cluster0.uiklaos.mongodb.net/?appName=Cluster0
+      - key: DATABASE_NAME
+        value: chameleon_db
       - key: GEMINI_API_KEY
         value: AIzaSyB7w5tQXvg1D7cVuqpeR6cZ5OMzNKCqguY
-      - key: MONGODB_URL
-        sync: false
       - key: JWT_SECRET_KEY
-        generateValue: true
-    healthCheckPath: /api/health
+        value: your-secret-key-change-in-production-2024
+      - key: JWT_ALGORITHM
+        value: HS256
+      - key: ACCESS_TOKEN_EXPIRE_MINUTES
+        value: 60
 
   # Frontend Service
   - type: web
@@ -26,21 +33,14 @@ services:
     region: oregon
     plan: free
     branch: main
-    buildCommand: |
-      cd frontend
-      npm install
-      npm run build
-    startCommand: cd frontend && npm start
+    buildCommand: "cd frontend && npm install && npm run build"
+    startCommand: "cd frontend && npm run preview -- --host 0.0.0.0 --port $PORT"
+    healthCheckPath: /
     envVars:
       - key: NODE_VERSION
         value: 18.17.0
       - key: VITE_API_BASE_URL
-        value: https://chameleon-backend.onrender.com
-    healthCheckPath: /
-
-  # MongoDB Database (Optional - use MongoDB Atlas instead)
-  # - type: pserv
-  #   name: chameleon-mongodb
-  #   env: docker
-  #   plan: free
-  #   dockerfilePath: ./Dockerfile.mongo
+        fromService:
+          type: web
+          name: chameleon-backend
+          envVarKey: RENDER_EXTERNAL_URL

@@ -1,8 +1,9 @@
 from pydantic_settings import BaseSettings
 from typing import Optional
+import os
 
 class Settings(BaseSettings):
-    MONGODB_URL: str = "mongodb://localhost:27017"
+    MONGODB_URL: str = os.getenv("MONGODB_URL", "mongodb://localhost:27017")
     DATABASE_NAME: str = "chameleon_db"
     GEOIP_API_URL: str = "http://ip-api.com/json/"
     TARPIT_THRESHOLD: int = 5
@@ -10,10 +11,11 @@ class Settings(BaseSettings):
     TARPIT_DELAY_MAX: float = 10.0
     CONFIDENCE_THRESHOLD: float = 0.7
     MAX_INPUT_LENGTH: int = 200
-    JWT_SECRET_KEY: str = "your-secret-key-change-in-production-2024"
+    JWT_SECRET_KEY: str = os.getenv("JWT_SECRET_KEY", "your-secret-key-change-in-production-2024")
     JWT_ALGORITHM: str = "HS256"
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 60
-    GEMINI_API_KEY: str = "AIzaSyB7w5tQXvg1D7cVuqpeR6cZ5OMzNKCqguY"
+    GEMINI_API_KEY: str = os.getenv("GEMINI_API_KEY", "AIzaSyB7w5tQXvg1D7cVuqpeR6cZ5OMzNKCqguY")
+    PORT: int = int(os.getenv("PORT", 8000))
 
     class Config:
         env_file = ".env"
