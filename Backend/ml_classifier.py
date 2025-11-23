@@ -96,27 +96,15 @@ class MLClassifier:
         confidence = 0.0
         is_malicious = False
 
-        # Try model prediction first
-        if self.model:
-            try:
-                # Try passing raw text as string (model has TextVectorization layer)
-                text_input = np.array([text])  # Shape: (1,) - single string
-                prediction = self.model.predict(text_input, verbose=0)[0]
-                class_idx = np.argmax(prediction)
-                confidence = float(prediction[class_idx])
-                
-                if confidence >= settings.CONFIDENCE_THRESHOLD:
-                    attack_type = self.idx_to_class.get(class_idx, AttackType.BENIGN)
-            except Exception as e:
-                print(f"Prediction error: {e}")
-                # Model failed, will use heuristic fallback
-
-        # Fallback if confidence is low or model failed
-        if confidence < settings.CONFIDENCE_THRESHOLD:
-            heuristic_type, heuristic_conf = self.heuristic_fallback(text)
-            if heuristic_type != AttackType.BENIGN:
-                attack_type = heuristic_type
-                confidence = heuristic_conf
+        # Disable ML model prediction on Render due to dtype issues
+        # Use heuristic-based detection which works reliably
+        # TODO: Fix ML model compatibility with TensorFlow 2.16.1
+        
+        # Use heuristic detection
+        heuristic_type, heuristic_conf = self.heuristic_fallback(text)
+        if heuristic_type != AttackType.BENIGN:
+            attack_type = heuristic_type
+            confidence = heuristic_conf
 
         is_malicious = attack_type != AttackType.BENIGN
         
