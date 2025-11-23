@@ -762,3 +762,37 @@ async def search_cybersecurity_info(
         "count": len(results),
         "timestamp": datetime.utcnow().isoformat()
     }
+
+
+# ============================================================================
+# SERVE REACT FRONTEND (FOR SINGLE SERVICE DEPLOYMENT)
+# ============================================================================
+
+from fastapi.staticfiles import StaticFiles
+from fastapi.responses import FileResponse
+import os
+
+# Path to frontend build directory
+frontend_dist = os.path.join(os.path.dirname(__file__), "../frontend/dist")
+
+if os.path.exists(frontend_dist):
+    # Mount static assets (CSS, JS, images)
+    app.mount("/assets", StaticFiles(directory=os.path.join(frontend_dist, "assets")), name="assets")
+    
+    # Catch-all route for SPA (Single Page Application)
+    @app.get("/{full_path:path}", include_in_schema=False)
+    async def serve_react_app(full_path: str):
+        """Serve React frontend for all non-API routes"""
+        # Don't serve frontend for API routes
+        if full_path.startswith("api/"):
+            raise HTTPException(status_code=404, detail="API endpoint not found")
+        
+        # Check if specific file exists (for assets, favicon, etc.)
+        file_path = os.path.join(frontend_dist, full_path)
+        if os.path.exists(file_path) and os.path.isfile(file_path):
+            return FileResponse(file_path)
+        
+        # Default to index.html for all other routes (SPA routing)
+        return FileResponse(os.path.join(frontend_dist, "index.html"))
+else:
+    print("⚠️  Frontend dist folder not found. Run 'npm run build' in frontend directory.")
