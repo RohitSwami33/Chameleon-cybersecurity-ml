@@ -21,6 +21,7 @@ import LinkIcon from '@mui/icons-material/Link';
 import LogoutIcon from '@mui/icons-material/Logout';
 import MenuIcon from '@mui/icons-material/Menu';
 import RefreshIcon from '@mui/icons-material/Refresh';
+import SmartToyIcon from '@mui/icons-material/SmartToy';
 import { CommandBarTrigger } from './ui/CommandBar';
 import { toast } from 'react-toastify';
 
@@ -48,6 +49,7 @@ const Navbar = ({ lastUpdated, autoRefresh, setAutoRefresh, onRefresh, useMockGe
         { path: '/dashboard/globe', label: 'Attack Globe', icon: <PublicIcon /> },
         { path: '/dashboard/analytics', label: 'Analytics', icon: <AssessmentIcon /> },
         { path: '/dashboard/threat-intel', label: 'Threat Intel', icon: <SecurityIcon /> },
+        { path: '/dashboard/chatbot', label: 'AI Assistant', icon: <SmartToyIcon /> },
         { path: '/blockchain', label: 'Blockchain', icon: <LinkIcon /> },
     ];
 

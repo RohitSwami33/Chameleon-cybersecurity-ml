@@ -39,3 +39,7 @@ python-dotenv==1.0.0          # Environment variable management
 # Privacy-Preserving Threat Intelligence
 pybloom-live==4.0.0           # Bloom filters for pattern matching
 eth-account==0.10.0           # Ethereum account management
+
+# AI Chatbot
+google-generativeai==0.3.2    # Google Gemini API
+duckduckgo-search==4.1.1      # DuckDuckGo search for cybersecurity info

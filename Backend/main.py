@@ -13,6 +13,20 @@ from models import (
     DeceptionResponse, DashboardStats, LoginRequest, LoginResponse,
     AttackType
 )
+from pydantic import BaseModel
+
+# Chatbot models
+class ChatMessage(BaseModel):
+    message: str
+    use_search: bool = False
+    context: Optional[dict] = None
+
+class ChatResponse(BaseModel):
+    success: bool
+    response: str
+    search_results: List[dict] = []
+    timestamp: str
+    error: Optional[str] = None
 from auth import create_access_token, verify_token, verify_credentials
 from database import (
     connect_to_mongo, close_mongo_connection, save_attack_log, 
@@ -34,6 +48,7 @@ from report_generator import report_generator
 from login_rate_limiter import login_limiter
 from threat_score import threat_score_system
 from threat_intel_service import threat_intel_service
+from chatbot_service import get_chatbot
 import asyncio
 
 @asynccontextmanager
@@ -48,12 +63,24 @@ app = FastAPI(
     lifespan=lifespan
 )
 
+# CORS Configuration - Allow frontend to communicate with backend
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=[
+        "http://localhost:5173",  # Vite default dev server
+        "http://localhost:5174",  # Alternative Vite port
+        "http://localhost:3000",  # React default
+        "http://127.0.0.1:5173",
+        "http://127.0.0.1:5174",
+        "http://127.0.0.1:3000",
+        "https://*.onrender.com",  # Render deployment
+        "https://chameleon-frontend.onrender.com",  # Production frontend
+        "*"  # Allow all origins (for development)
+    ],
     allow_credentials=True,
-    allow_methods=["*"],
+    allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"],
     allow_headers=["*"],
+    expose_headers=["*"],
 )
 
 def get_client_ip(request: Request) -> str:
@@ -632,4 +659,106 @@ async def verify_threat_commitment(
         "valid": is_valid,
         "commitment": commitment,
         "verified_at": datetime.utcnow().isoformat()
+    }
+
+
+# ============================================================================
+# AI CHATBOT ENDPOINTS
+# ============================================================================
+
+@app.post("/api/chatbot/chat", response_model=ChatResponse)
+async def chat_with_bot(
+    chat_message: ChatMessage,
+    username: str = Depends(verify_token)
+):
+    """
+    Chat with the AI cybersecurity assistant
+    
+    Features:
+    - Gemini AI for intelligent responses
+    - DuckDuckGo search for current threat intelligence
+    - Context-aware responses based on system data
+    """
+    # Get chatbot instance with API key from settings
+    chatbot = get_chatbot(settings.GEMINI_API_KEY)
+    
+    # Process the message
+    result = await chatbot.chat(
+        message=chat_message.message,
+        use_search=chat_message.use_search,
+        context=chat_message.context
+    )
+    
+    return ChatResponse(**result)
+
+@app.get("/api/chatbot/history")
+async def get_chat_history(
+    limit: int = 50,
+    username: str = Depends(verify_token)
+):
+    """Get chat history"""
+    chatbot = get_chatbot(settings.GEMINI_API_KEY)
+    history = chatbot.get_chat_history(limit=limit)
+    return {"history": history, "count": len(history)}
+
+@app.post("/api/chatbot/clear-history")
+async def clear_chat_history(username: str = Depends(verify_token)):
+    """Clear chat history"""
+    chatbot = get_chatbot(settings.GEMINI_API_KEY)
+    chatbot.clear_history()
+    return {"success": True, "message": "Chat history cleared"}
+
+@app.post("/api/chatbot/analyze-attack/{log_id}")
+async def analyze_attack_with_ai(
+    log_id: str,
+    username: str = Depends(verify_token)
+):
+    """Use AI to analyze a specific attack log"""
+    # Get the attack log
+    log = await get_attack_by_id(log_id)
+    if not log:
+        raise HTTPException(status_code=404, detail="Log not found")
+    
+    # Get chatbot and analyze
+    chatbot = get_chatbot(settings.GEMINI_API_KEY)
+    analysis = await chatbot.analyze_attack(log.model_dump())
+    
+    return {
+        "log_id": log_id,
+        "analysis": analysis,
+        "timestamp": datetime.utcnow().isoformat()
+    }
+
+@app.post("/api/chatbot/suggest-response")
+async def suggest_response_actions(
+    threat_level: str,
+    attack_type: str,
+    username: str = Depends(verify_token)
+):
+    """Get AI suggestions for responding to a threat"""
+    chatbot = get_chatbot(settings.GEMINI_API_KEY)
+    suggestions = await chatbot.suggest_response(threat_level, attack_type)
+    
+    return {
+        "threat_level": threat_level,
+        "attack_type": attack_type,
+        "suggestions": suggestions,
+        "timestamp": datetime.utcnow().isoformat()
+    }
+
+@app.post("/api/chatbot/search")
+async def search_cybersecurity_info(
+    query: str = Query(..., description="Search query"),
+    max_results: int = Query(5, ge=1, le=10),
+    username: str = Depends(verify_token)
+):
+    """Search DuckDuckGo for cybersecurity information"""
+    chatbot = get_chatbot(settings.GEMINI_API_KEY)
+    results = chatbot.search_web(query, max_results=max_results)
+    
+    return {
+        "query": query,
+        "results": results,
+        "count": len(results),
+        "timestamp": datetime.utcnow().isoformat()
     }

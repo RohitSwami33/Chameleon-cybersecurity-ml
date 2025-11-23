@@ -22,6 +22,7 @@ import GeoMap from './GeoMap';
 import ThreatScorePanel from './ThreatScorePanel';
 import AttackGlobeSimple from './AttackGlobeSimple';
 import ThreatIntelFeed from './ThreatIntelFeed';
+import AIChatbot from './AIChatbot';
 import { CommandBarTrigger } from './ui/CommandBar';
 import FilterBadges from './ui/FilterBadges';
 import useAttackStore from '../stores/useAttackStore';
@@ -548,9 +549,33 @@ const Dashboard = () => {
                             </Box>
                         </Box>
 
-                        {/* Privacy-Preserving Threat Intelligence Feed */}
-                        <Box sx={{ mb: 2 }}>
-                            <ThreatIntelFeed />
+                        {/* AI Chatbot and Threat Intelligence Feed */}
+                        <Box sx={{ 
+                            display: 'flex', 
+                            gap: 2, 
+                            mb: 2,
+                            width: '100%',
+                            flexWrap: 'nowrap'
+                        }}>
+                            {/* AI Security Assistant Chatbot */}
+                            <Box sx={{ 
+                                flex: 1, 
+                                minWidth: 0, 
+                                maxWidth: '50%',
+                                height: 600
+                            }}>
+                                <AIChatbot />
+                            </Box>
+                            
+                            {/* Privacy-Preserving Threat Intelligence Feed */}
+                            <Box sx={{ 
+                                flex: 1, 
+                                minWidth: 0, 
+                                maxWidth: '50%',
+                                height: 600
+                            }}>
+                                <ThreatIntelFeed />
+                            </Box>
                         </Box>
 
                         {/* Selected Attack Details Panel */}
