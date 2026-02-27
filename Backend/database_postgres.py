@@ -295,7 +295,7 @@ async def save_honeypot_log(
         attacker_ip=attacker_ip,
         command_entered=command_entered,
         response_sent=response_sent,
-        metadata=metadata
+        log_metadata=metadata
     )
     session.add(log)
     await session.flush()
@@ -527,7 +527,7 @@ async def get_dashboard_stats(session: AsyncSession) -> Dict[str, Any]:
     
     for log in recent_logs:
         # Extract classification from metadata
-        metadata = log.metadata or {}
+        metadata = log.log_metadata or {}
         classification = metadata.get("classification", {})
         is_malicious = classification.get("is_malicious", False)
         attack_type = classification.get("attack_type", "UNKNOWN")
