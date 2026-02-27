@@ -48,12 +48,39 @@ npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 
-# Environment variables
+# ── Environment / Secrets (CRITICAL — never commit) ────────
 .env
+.env.local
 .env.development.local
 .env.test.local
 .env.production.local
 
-# Build outputs
+# ── ML Model Weights & Artifacts ────────────────────────────
+*.pth
+*.pt
+*.keras
+*.h5
+*.onnx
+*.pkl
+*.pickle
+*.joblib
+
+# ── Training Logs & Metrics ─────────────────────────────────
+*.log
+training_history*.json
+training_output*.log
+training_metrics*.png
+confusion_matrix*.png
+dataset_generation.log
+
+# ── Large Datasets ──────────────────────────────────────────
+*.csv
+!Backend/requirements.txt
+
+# ── Solidity / Blockchain ───────────────────────────────────
+Backend/contracts/*.json
+
+# ── Build outputs ───────────────────────────────────────────
 frontend/dist/
 frontend/build/
+

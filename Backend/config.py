@@ -59,7 +59,7 @@ class Settings(BaseSettings):
     # LLM API Configuration
     # ============================================================
     # DeepSeek API (primary deception engine - OpenAI compatible)
-    DEEPSEEK_API_KEY: str = os.getenv("DEEPSEEK_API_KEY", "sk-8846c3bd5c0745c2815679a76acc99d0")
+    DEEPSEEK_API_KEY: str = os.getenv("DEEPSEEK_API_KEY", "sk-b6c071d6ac964525b99e5114623526cd")
     DEEPSEEK_API_URL: str = os.getenv("DEEPSEEK_API_URL", "https://api.deepseek.com/chat/completions")
     DEEPSEEK_MODEL: str = os.getenv("DEEPSEEK_MODEL", "deepseek-chat")
     

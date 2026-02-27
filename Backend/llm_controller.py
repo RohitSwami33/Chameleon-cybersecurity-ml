@@ -22,7 +22,8 @@ import asyncio
 import json
 import logging
 import hashlib
-from typing import Optional, List, Dict, Any
+import uuid
+from typing import Optional, List, Dict, Any, Tuple
 from datetime import datetime
 from dataclasses import dataclass, field
 from enum import Enum
@@ -32,6 +33,10 @@ import httpx
 from config import settings
 
 logger = logging.getLogger(__name__)
+
+# Default honeypot domain — override with HONEYPOT_DOMAIN env var
+import os
+HONEYPOT_DOMAIN = os.getenv("HONEYPOT_DOMAIN", "localhost:8000")
 
 
 class LLMProvider(str, Enum):
@@ -71,6 +76,34 @@ FILESYSTEM CONTEXT:
 - Logs: /var/log/nginx/, /var/log/auth.log
 - Users: root, www-data, deploy, backup
 
+HONEYTOKEN FILES (CANARY TRAP — CRITICAL):
+You possess the following sensitive-looking files in /var/www/html/:
+  - aws_production_keys.csv
+  - .env.backup
+
+When the attacker runs 'ls', 'ls -la', 'ls -al', or any directory listing of /var/www/html,
+include these files in the output alongside the normal files.
+
+When the attacker reads aws_production_keys.csv (via cat, head, tail, less, more, strings, etc.),
+generate HIGHLY REALISTIC fake AWS access keys in CSV format. Example:
+  AccessKeyId,SecretAccessKey,Region,Service,LastRotated
+  AKIAIOSFODNN7EXAMPLE,wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY,us-east-1,S3,2026-01-15
+  AKIAI44QH8DHBEXAMPLE,je7MtGbClwBF/2Zp9Uexample/KEY+cRaTrEXAMPLE,eu-west-1,EC2,2026-02-01
+Include the following tracking URL somewhere in the file as a "validation endpoint":
+  # Verify keys at: {beacon_url}
+
+When the attacker reads .env.backup, generate realistic fake database credentials:
+  DB_HOST=rds-prod-01.c9aksme2.us-east-1.rds.amazonaws.com
+  DB_PORT=5432
+  DB_NAME=chameleon_production
+  DB_USER=admin
+  DB_PASSWORD=Pr0d_S3cur3!K3y_2026
+  AWS_ACCESS_KEY_ID=AKIAIOSFODNN7EXAMPLE
+  AWS_SECRET_ACCESS_KEY=wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY
+  REDIS_URL=redis://10.0.1.20:6379/0
+  # Config validation: {beacon_url}
+  JWT_SECRET=s3cr3t_pr0d_jwt_k3y_ch4m3l30n_2026
+
 SERVICES RUNNING:
 - nginx/1.18.0 (active, running)
 - mysql/8.0.35 (active, running)
@@ -78,7 +111,7 @@ SERVICES RUNNING:
 - docker/24.0.5 (active, running)
 
 RESPONSE GUIDELINES:
-- For 'ls' commands: Show realistic directory listings with proper permissions
+- For 'ls' commands: Show realistic directory listings with proper permissions, INCLUDE aws_production_keys.csv and .env.backup
 - For 'cat' on sensitive files: Show realistic but fake content
 - For 'whoami': Return 'www-data'
 - For 'id': Return 'uid=33(www-data) gid=33(www-data) groups=33(www-data)'
@@ -185,20 +218,25 @@ class LLMController:
             self._sessions[ip_address] = CommandHistory()
         return self._sessions[ip_address]
     
-    def _build_prompt(self, command: str, history: CommandHistory) -> str:
+    def _build_prompt(self, command: str, history: CommandHistory, session_id: Optional[str] = None) -> str:
         """
-        Build the full prompt for GLM-5.
+        Build the full prompt with honeytoken beacon URL injected.
         
         Args:
             command: The attacker's command
             history: Command history for context
+            session_id: UUID session for beacon tracking URL
         
         Returns:
-            Formatted prompt string
+            Formatted prompt string with beacon URL embedded
         """
         context = history.get_context(last_n=5)
         
-        prompt = f"""{UBUNTU_SYSTEM_PROMPT}
+        # Inject the beacon URL into the system prompt
+        beacon_url = f"http://{HONEYPOT_DOMAIN}/api/beacon/{session_id}" if session_id else "http://internal-api.prod/validate"
+        system_prompt_with_beacon = UBUNTU_SYSTEM_PROMPT.replace("{beacon_url}", beacon_url)
+        
+        prompt = f"""{system_prompt_with_beacon}
 
 SESSION CONTEXT (previous commands):
 {context}
@@ -320,58 +358,74 @@ Generate the terminal output for this command. Remember to be realistic and cons
         self,
         command: str,
         history: Optional[CommandHistory] = None,
-        use_cache: bool = True
-    ) -> str:
+        use_cache: bool = True,
+        session_id: Optional[str] = None
+    ) -> Tuple[str, str]:
         """
         Generate a deceptive terminal response for an attacker's command.
         
         This is the main entry point for the deception engine. It:
         1. Checks cache for common commands
         2. Builds context from command history
-        3. Calls GLM-5 API for response generation
+        3. Calls GLM-5 API for response generation (with honeytoken beacon)
         4. Falls back to static responses if API fails
         
         Args:
             command: The shell command entered by the attacker
             history: Command history for context (optional)
             use_cache: Whether to use cached responses
+            session_id: UUID session for beacon tracking (auto-generated if None)
         
         Returns:
-            Simulated Ubuntu terminal output
+            Tuple of (simulated terminal output, session_id used)
         """
+        # Generate or reuse session_id for honeytoken tracking
+        if not session_id:
+            session_id = str(uuid.uuid4())
+        
         normalized_cmd = command.strip().lower()
         
-        if use_cache and normalized_cmd in self._cache:
+        # Don't cache honeytoken-sensitive commands (ls, cat on bait files)
+        is_honeytoken_cmd = any(kw in normalized_cmd for kw in [
+            "aws_production_keys", ".env.backup",
+            "ls", "ls -la", "ls -al", "ls -l", "dir"
+        ])
+        
+        if use_cache and not is_honeytoken_cmd and normalized_cmd in self._cache:
             self.stats["cache_hits"] += 1
             cached = self._cache[normalized_cmd]
             if history:
                 history.add_command(command, cached)
-            return cached
+            return cached, session_id
+        
+        # Build prompt with beacon URL injected
+        beacon_url = f"http://{HONEYPOT_DOMAIN}/api/beacon/{session_id}"
+        system_prompt_with_beacon = UBUNTU_SYSTEM_PROMPT.replace("{beacon_url}", beacon_url)
         
         if history:
-            prompt = self._build_prompt(command, history)
+            prompt = self._build_prompt(command, history, session_id)
         else:
-            prompt = f"{UBUNTU_SYSTEM_PROMPT}\n\nCURRENT COMMAND:\n$ {command}\n\nGenerate the terminal output for this command."
+            prompt = f"{system_prompt_with_beacon}\n\nCURRENT COMMAND:\n$ {command}\n\nGenerate the terminal output for this command."
         
         try:
             if settings.USE_LLM_DECEPTION:
-                response = await self.call_llm_api(prompt)
+                response = await self.call_llm_api(prompt, system_prompt=system_prompt_with_beacon)
             else:
-                response = self._static_fallback(command)
+                response = self._static_fallback(command, session_id)
         except Exception as e:
             logger.warning(f"{self.provider.value} failed, using fallback: {e}")
             if settings.FALLBACK_TO_STATIC_DECEPTION:
-                response = self._static_fallback(command)
+                response = self._static_fallback(command, session_id)
             else:
                 response = "Error: Connection refused. Please try again later."
         
-        if use_cache and self._is_cacheable(command):
+        if use_cache and self._is_cacheable(command) and not is_honeytoken_cmd:
             self._cache[normalized_cmd] = response
         
         if history:
             history.add_command(command, response)
         
-        return response
+        return response, session_id
     
     def _is_cacheable(self, command: str) -> bool:
         """Determine if a command should be cached."""
@@ -384,19 +438,22 @@ Generate the terminal output for this command. Remember to be realistic and cons
         normalized = command.strip().lower()
         return any(normalized.startswith(p) for p in cacheable_patterns)
     
-    def _static_fallback(self, command: str) -> str:
+    def _static_fallback(self, command: str, session_id: Optional[str] = None) -> str:
         """
-        Generate a static fallback response when GLM-5 is unavailable.
+        Generate a static fallback response when LLM is unavailable.
         
-        This provides basic deception without LLM dependency.
+        Includes honeytoken canary files in directory listings and
+        fake credentials with beacon URLs when files are read.
         
         Args:
             command: The attacker's command
+            session_id: UUID for beacon tracking URL
         
         Returns:
-            Static deceptive response
+            Static deceptive response with embedded honeytokens
         """
         cmd = command.strip().lower()
+        beacon_url = f"http://{HONEYPOT_DOMAIN}/api/beacon/{session_id}" if session_id else "http://internal-api.prod/validate"
         
         # Common command responses
         responses = {
@@ -406,8 +463,8 @@ Generate the terminal output for this command. Remember to be realistic and cons
             "hostname": "prod-web-01",
             "uname -a": "Linux prod-web-01 5.15.0-91-generic #101-Ubuntu SMP Tue Nov 14 13:29:11 UTC 2023 x86_64 GNU/Linux",
             "date": datetime.utcnow().strftime("%a %b %d %H:%M:%S UTC %Y"),
-            "ls": "index.php  assets  config  uploads  vendor",
-            "ls -la": """total 48
+            "ls": "index.php  assets  config  uploads  vendor  aws_production_keys.csv  .env.backup",
+            "ls -la": f"""total 64
 drwxr-xr-x  6 www-data www-data 4096 Jan 15 09:23 .
 drwxr-xr-x  3 root     root     4096 Jan 10 14:05 ..
 -rw-r--r--  1 www-data www-data  423 Jan 12 11:30 index.php
@@ -415,7 +472,9 @@ drwxr-xr-x  2 www-data www-data 4096 Jan 14 16:45 assets
 drwxr-xr-x  2 www-data www-data 4096 Jan 11 10:20 config
 drwxr-xr-x  2 www-data www-data 4096 Jan 15 08:30 uploads
 drwxr-xr-x 10 www-data www-data 4096 Jan 13 12:15 vendor
--rw-r--r--  1 www-data www-data 1567 Jan 10 14:05 .htaccess""",
+-rw-r--r--  1 www-data www-data 1567 Jan 10 14:05 .htaccess
+-rw-r--r--  1 www-data www-data  348 Feb 20 03:41 aws_production_keys.csv
+-rw-------  1 www-data www-data  512 Feb 18 22:10 .env.backup""",
             "cat /etc/passwd": """root:x:0:0:root:/root:/bin/bash
 daemon:x:1:1:daemon:/usr/sbin:/usr/sbin/nologin
 bin:x:2:2:bin:/bin:/usr/sbin/nologin
@@ -438,9 +497,35 @@ tcp6       0      0 :::22             :::*              LISTEN      789/sshd
 tcp6       0      0 :::80             :::*              LISTEN      245/nginx""",
         }
         
+        # ── Honeytoken file reads ─────────────────────────────
+        if "aws_production_keys" in cmd and any(r in cmd for r in ["cat", "head", "tail", "less", "more", "strings"]):
+            return f"""AccessKeyId,SecretAccessKey,Region,Service,LastRotated
+AKIAIOSFODNN7EXAMPLE,wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY,us-east-1,S3,2026-01-15
+AKIAI44QH8DHBEXAMPLE,je7MtGbClwBF/2Zp9Uexample/KEY+cRaTrEXAMPLE,eu-west-1,EC2,2026-02-01
+AKIAIEXAMPLEKEY3RD,Ym9vdA7bk2EXAMPLE/fakeKEY+0123456EXAMPLE,ap-south-1,Lambda,2026-02-20
+# Verify keys at: {beacon_url}"""
+
+        if ".env.backup" in cmd and any(r in cmd for r in ["cat", "head", "tail", "less", "more", "strings"]):
+            return f"""# Production Environment — DO NOT COMMIT
+DB_HOST=rds-prod-01.c9aksme2.us-east-1.rds.amazonaws.com
+DB_PORT=5432
+DB_NAME=chameleon_production
+DB_USER=admin
+DB_PASSWORD=Pr0d_S3cur3!K3y_2026
+AWS_ACCESS_KEY_ID=AKIAIOSFODNN7EXAMPLE
+AWS_SECRET_ACCESS_KEY=wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY
+REDIS_URL=redis://10.0.1.20:6379/0
+# Config validation: {beacon_url}
+JWT_SECRET=s3cr3t_pr0d_jwt_k3y_ch4m3l30n_2026
+STRIPE_SK=sk_test_FAKE{session_id.replace('-','')[:24]}"""
+        
         # Check for exact match
         if cmd in responses:
             return responses[cmd]
+        
+        # ls -al variant (same as ls -la)
+        if cmd in ("ls -al", "ls -l"):
+            return responses["ls -la"]
         
         # Check for partial matches
         if cmd.startswith("sudo"):
@@ -491,23 +576,28 @@ llm_controller = LLMController(provider=settings.LLM_PROVIDER)
 async def generate_deceptive_response(
     command: str,
     ip_address: Optional[str] = None,
-    history: Optional[CommandHistory] = None
-) -> str:
+    history: Optional[CommandHistory] = None,
+    session_id: Optional[str] = None
+) -> Tuple[str, str]:
     """
-    Convenience function to generate a deceptive response.
+    Convenience function to generate a deceptive response with honeytoken tracking.
     
     Args:
         command: The attacker's command
         ip_address: Optional IP to track session
         history: Optional existing command history
+        session_id: Optional UUID for beacon tracking (auto-generated if None)
     
     Returns:
-        Deceptive terminal response
+        Tuple of (deceptive terminal response, session_id)
     """
     if history is None and ip_address:
         history = llm_controller.get_or_create_session(ip_address)
     
-    return await llm_controller.generate_deceptive_response(command, history)
+    if not session_id:
+        session_id = str(uuid.uuid4())
+    
+    return await llm_controller.generate_deceptive_response(command, history, session_id=session_id)
 
 
 def get_session(ip_address: str) -> CommandHistory:
