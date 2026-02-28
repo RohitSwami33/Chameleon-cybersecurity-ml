@@ -1,228 +1,256 @@
-from motor.motor_asyncio import AsyncIOMotorClient
-from config import settings
-from typing import List, Optional, Dict
-from datetime import datetime, timedelta
-import pymongo
-from bson import ObjectId
-import certifi
+"""
+Database layer — reads from PostgreSQL via database_postgres.py.
+
+Every dashboard endpoint (get_attack_logs, get_dashboard_stats …) now queries
+the real `honeypot_logs` table instead of falling back to mock_database.
+"""
+
 import logging
-from mock_database import mock_db
+from typing import List, Optional, Dict, Any
+from datetime import datetime, timedelta
+from uuid import uuid4
+
+from sqlalchemy import select, func, desc, and_
+from sqlalchemy.ext.asyncio import AsyncSession
+
+from database_postgres import db              # singleton Database instance
+from models_sqlalchemy import HoneypotLog
 
 logger = logging.getLogger(__name__)
 
-class Database:
-    client: AsyncIOMotorClient = None
-    connected: bool = False
+# ── helpers ──────────────────────────────────────────────────────────
 
-db = Database()
+def _row_to_dashboard_dict(row: HoneypotLog) -> dict:
+    """
+    Convert a HoneypotLog ORM row → dict matching the AttackLog
+    Pydantic model the frontend expects.
 
-async def connect_to_mongo():
-    """Connect to MongoDB with error handling"""
-    try:
-        connection_url = settings.MONGODB_URL
-        
-        # Check if connecting to localhost (no TLS needed)
-        is_localhost = "localhost" in connection_url or "127.0.0.1" in connection_url
-        
-        if is_localhost:
-            # Local MongoDB - no TLS
-            db.client = AsyncIOMotorClient(
-                connection_url,
-                serverSelectionTimeoutMS=5000
-            )
-        else:
-            # Remote MongoDB (Atlas) - use TLS
-            db.client = AsyncIOMotorClient(
-                connection_url,
-                serverSelectionTimeoutMS=30000,
-                connectTimeoutMS=30000,
-                socketTimeoutMS=30000,
-                tls=True,
-                tlsInsecure=True
-            )
-        
-        # Test the connection
-        await db.client.admin.command('ping')
-        
-        database = db.client[settings.DATABASE_NAME]
-        
-        # Create indexes
-        await database.attack_logs.create_index([("timestamp", pymongo.DESCENDING)])
-        await database.attack_logs.create_index([("ip_address", pymongo.ASCENDING)])
-        await database.attack_logs.create_index([("classification.attack_type", pymongo.ASCENDING)])
-        
-        db.connected = True
-        print("✅ Connected to MongoDB successfully")
-        logger.info("Connected to MongoDB")
-        
-    except Exception as e:
-        db.connected = False
-        print(f"⚠️  WARNING: Could not connect to MongoDB: {e}")
-        print("⚠️  The application will run in LIMITED MODE without database persistence")
-        print("⚠️  To fix: Install MongoDB or use MongoDB Atlas")
-        print("   - Local: https://www.mongodb.com/try/download/community")
-        print("   - Cloud: https://www.mongodb.com/cloud/atlas (FREE)")
-        logger.warning(f"MongoDB connection failed: {e}")
+    The frontend needs:
+        id, timestamp, raw_input, ip_address, user_agent,
+        geo_location, classification, deception_response
+    """
+    meta = row.log_metadata or {}
 
-async def close_mongo_connection():
-    if db.client:
-        db.client.close()
-        print("Closed MongoDB connection")
+    classification = meta.get("classification", {
+        "attack_type": "BENIGN",
+        "confidence": 0.0,
+        "is_malicious": False,
+    })
 
-def get_database():
-    if not db.connected:
-        return None
-    return db.client[settings.DATABASE_NAME]
+    deception_response = meta.get("deception_response", {
+        "message": row.response_sent or "",
+        "delay_applied": 0.0,
+        "http_status": 200,
+    })
+
+    geo_location = meta.get("geo_location", None)
+
+    return {
+        "id": str(row.id),
+        "timestamp": row.timestamp,
+        "raw_input": row.command_entered or "",
+        "ip_address": row.attacker_ip,
+        "user_agent": meta.get("user_agent", ""),
+        "geo_location": geo_location,
+        "classification": classification,
+        "deception_response": deception_response,
+    }
+
+
+# ── CRUD used by main.py endpoints ──────────────────────────────────
 
 async def save_attack_log(log_data: dict) -> str:
-    """Save attack log to MongoDB or mock database"""
-    if not db.connected:
-        logger.info("Using mock database - saving to in-memory storage")
-        return await mock_db.save_attack_log(log_data)
-    
+    """Save an attack log dict into PostgreSQL honeypot_logs."""
+    if not db.connected or not db.session_factory:
+        logger.warning("PostgreSQL not connected — cannot save attack log")
+        return ""
+
     try:
-        database = get_database()
-        result = await database.attack_logs.insert_one(log_data)
-        return str(result.inserted_id)
+        from database_postgres import get_default_tenant
+        async with db.session_factory() as session:
+            tenant_id = log_data.get("tenant_id")
+            if not tenant_id:
+                tenant = await get_default_tenant(session)
+                tenant_id = str(tenant.id) if tenant else str(uuid4())
+                
+            row = HoneypotLog(
+                id=uuid4(),
+                tenant_id=tenant_id,
+                attacker_ip=log_data.get("ip_address", "0.0.0.0"),
+                command_entered=log_data.get("raw_input", ""),
+                response_sent=log_data.get("deception_response", {}).get("message", ""),
+                timestamp=log_data.get("timestamp", datetime.utcnow()),
+                log_metadata={
+                    "classification": log_data.get("classification"),
+                    "deception_response": log_data.get("deception_response"),
+                    "geo_location": log_data.get("geo_location"),
+                    "user_agent": log_data.get("user_agent", ""),
+                },
+            )
+            session.add(row)
+            await session.commit()
+            return str(row.id)
     except Exception as e:
         logger.error(f"Error saving attack log: {e}")
-        return await mock_db.save_attack_log(log_data)
+        return ""
 
-async def get_attack_logs(skip: int, limit: int) -> List[dict]:
-    """Get attack logs from MongoDB or mock database"""
-    if not db.connected:
-        return await mock_db.get_attack_logs(skip, limit)
-    
+
+async def get_attack_logs(skip: int = 0, limit: int = 50) -> List[dict]:
+    """Return paginated attack logs from PostgreSQL (newest first)."""
+    if not db.connected or not db.session_factory:
+        logger.warning("PostgreSQL not connected — returning empty logs")
+        return []
+
     try:
-        database = get_database()
-        cursor = database.attack_logs.find().sort("timestamp", pymongo.DESCENDING).skip(skip).limit(limit)
-        logs = await cursor.to_list(length=limit)
-        
-        for log in logs:
-            log["id"] = str(log["_id"])
-            del log["_id"]
-        return logs
+        async with db.session_factory() as session:
+            stmt = (
+                select(HoneypotLog)
+                .order_by(desc(HoneypotLog.timestamp))
+                .offset(skip)
+                .limit(limit)
+            )
+            result = await session.execute(stmt)
+            rows = result.scalars().all()
+            return [_row_to_dashboard_dict(r) for r in rows]
     except Exception as e:
         logger.error(f"Error fetching attack logs: {e}")
-        return await mock_db.get_attack_logs(skip, limit)
+        return []
+
 
 async def get_attack_by_id(log_id: str) -> Optional[dict]:
-    """Get specific attack log by ID"""
-    if not db.connected:
-        return await mock_db.get_attack_by_id(log_id)
-    
+    """Get a single attack log by UUID."""
+    if not db.connected or not db.session_factory:
+        return None
+
     try:
-        database = get_database()
-        log = await database.attack_logs.find_one({"_id": ObjectId(log_id)})
-        if log:
-            log["id"] = str(log["_id"])
-            del log["_id"]
-        return log
+        from uuid import UUID as _UUID
+        async with db.session_factory() as session:
+            stmt = select(HoneypotLog).where(HoneypotLog.id == _UUID(log_id))
+            result = await session.execute(stmt)
+            row = result.scalar_one_or_none()
+            return _row_to_dashboard_dict(row) if row else None
     except Exception as e:
         logger.error(f"Error fetching attack by ID: {e}")
-        return await mock_db.get_attack_by_id(log_id)
+        return None
+
 
 async def get_dashboard_stats() -> dict:
-    """Get dashboard statistics from MongoDB or mock database"""
-    if not db.connected:
-        return await mock_db.get_dashboard_stats()
-    
+    """Compute live dashboard statistics from PostgreSQL."""
+    empty = {
+        "total_attempts": 0,
+        "malicious_attempts": 0,
+        "benign_attempts": 0,
+        "attack_distribution": {},
+        "top_attackers": [],
+        "geo_locations": [],
+    }
+
+    if not db.connected or not db.session_factory:
+        return empty
+
     try:
-        database = get_database()
-        
-        total_attempts = await database.attack_logs.count_documents({})
-        malicious_attempts = await database.attack_logs.count_documents({"classification.is_malicious": True})
-        benign_attempts = await database.attack_logs.count_documents({"classification.is_malicious": False})
-        
-        # Aggregate attack distribution
-        pipeline = [
-            {"$group": {"_id": "$classification.attack_type", "count": {"$sum": 1}}}
-        ]
-        distribution_cursor = database.attack_logs.aggregate(pipeline)
-        attack_distribution = {}
-        async for doc in distribution_cursor:
-            attack_distribution[doc["_id"]] = doc["count"]
-            
-        # Top attackers in last 24 hours
-        last_24h = datetime.utcnow() - timedelta(hours=24)
-        attacker_pipeline = [
-            {"$match": {"timestamp": {"$gte": last_24h}, "classification.is_malicious": True}},
-            {"$group": {
-                "_id": "$ip_address", 
-                "count": {"$sum": 1},
-                "last_seen": {"$max": "$timestamp"}
-            }},
-            {"$sort": {"count": -1}},
-            {"$limit": 10}
-        ]
-        top_attackers_cursor = database.attack_logs.aggregate(attacker_pipeline)
-        top_attackers = []
-        async for doc in top_attackers_cursor:
-            top_attackers.append({
-                "ip": doc["_id"],
-                "count": doc["count"],
-                "last_seen": doc["last_seen"]
-            })
-        
-        # Geographic distribution of attacks
-        geo_pipeline = [
-            {"$match": {"geo_location": {"$ne": None}, "classification.is_malicious": True}},
-            {"$group": {
-                "_id": {
-                    "country": "$geo_location.country",
-                    "city": "$geo_location.city",
-                    "latitude": "$geo_location.latitude",
-                    "longitude": "$geo_location.longitude"
-                },
-                "count": {"$sum": 1}
-            }},
-            {"$sort": {"count": -1}},
-            {"$limit": 50}
-        ]
-        geo_cursor = database.attack_logs.aggregate(geo_pipeline)
-        geo_locations = []
-        async for doc in geo_cursor:
-            if doc["_id"]["country"]:
-                geo_locations.append({
-                    "country": doc["_id"]["country"],
-                    "city": doc["_id"]["city"],
-                    "latitude": doc["_id"]["latitude"],
-                    "longitude": doc["_id"]["longitude"],
-                    "count": doc["count"]
-                })
-            
-        return {
-            "total_attempts": total_attempts,
-            "malicious_attempts": malicious_attempts,
-            "benign_attempts": benign_attempts,
-            "attack_distribution": attack_distribution,
-            "top_attackers": top_attackers,
-            "geo_locations": geo_locations
-        }
+        async with db.session_factory() as session:
+            # Total rows
+            total = (await session.execute(
+                select(func.count()).select_from(HoneypotLog)
+            )).scalar() or 0
+
+            # Fetch all rows (small dataset) to compute stats from metadata
+            stmt = select(HoneypotLog).order_by(desc(HoneypotLog.timestamp))
+            result = await session.execute(stmt)
+            rows = result.scalars().all()
+
+            malicious = 0
+            benign = 0
+            attack_dist: Dict[str, int] = {}
+            ip_counts: Dict[str, int] = {}
+            ip_last_seen: Dict[str, datetime] = {}
+            geo_counts: Dict[str, dict] = {}
+
+            for row in rows:
+                meta = row.log_metadata or {}
+                classification = meta.get("classification", {})
+                attack_type = classification.get("attack_type", "BENIGN")
+                is_mal = classification.get("is_malicious", False)
+
+                if is_mal:
+                    malicious += 1
+                else:
+                    benign += 1
+
+                attack_dist[attack_type] = attack_dist.get(attack_type, 0) + 1
+
+                # Top attackers
+                if is_mal:
+                    ip = row.attacker_ip
+                    ip_counts[ip] = ip_counts.get(ip, 0) + 1
+                    if ip not in ip_last_seen or row.timestamp > ip_last_seen[ip]:
+                        ip_last_seen[ip] = row.timestamp
+
+                # Geo
+                geo = meta.get("geo_location")
+                if geo and is_mal:
+                    key = f"{geo.get('country', '')}_{geo.get('city', '')}"
+                    if key not in geo_counts:
+                        geo_counts[key] = {
+                            "country": geo.get("country"),
+                            "city": geo.get("city"),
+                            "latitude": geo.get("latitude"),
+                            "longitude": geo.get("longitude"),
+                            "count": 0,
+                        }
+                    geo_counts[key]["count"] += 1
+
+            top_attackers = sorted(
+                [{"ip": ip, "count": c, "last_seen": ip_last_seen[ip]}
+                 for ip, c in ip_counts.items()],
+                key=lambda x: x["count"], reverse=True
+            )[:10]
+
+            geo_locations = sorted(
+                geo_counts.values(), key=lambda x: x["count"], reverse=True
+            )[:50]
+
+            return {
+                "total_attempts": total,
+                "malicious_attempts": malicious,
+                "benign_attempts": benign,
+                "attack_distribution": attack_dist,
+                "top_attackers": top_attackers,
+                "geo_locations": geo_locations,
+            }
+
     except Exception as e:
         logger.error(f"Error fetching dashboard stats: {e}")
-        return {
-            "total_attempts": 0,
-            "malicious_attempts": 0,
-            "benign_attempts": 0,
-            "attack_distribution": {},
-            "top_attackers": [],
-            "geo_locations": []
-        }
+        return empty
+
 
 async def get_logs_by_ip(ip_address: str) -> List[dict]:
-    """Get all logs for a specific IP address"""
-    if not db.connected:
-        return await mock_db.get_logs_by_ip(ip_address)
-    
+    """Get all logs for a specific IP address."""
+    if not db.connected or not db.session_factory:
+        return []
+
     try:
-        database = get_database()
-        cursor = database.attack_logs.find({"ip_address": ip_address}).sort("timestamp", pymongo.DESCENDING)
-        logs = await cursor.to_list(length=None)
-        for log in logs:
-            log["id"] = str(log["_id"])
-            del log["_id"]
-        return logs
+        async with db.session_factory() as session:
+            stmt = (
+                select(HoneypotLog)
+                .where(HoneypotLog.attacker_ip == ip_address)
+                .order_by(desc(HoneypotLog.timestamp))
+            )
+            result = await session.execute(stmt)
+            rows = result.scalars().all()
+            return [_row_to_dashboard_dict(r) for r in rows]
     except Exception as e:
         logger.error(f"Error fetching logs by IP: {e}")
-        return await mock_db.get_logs_by_ip(ip_address)
+        return []
+
+
+# ── Legacy MongoDB stubs (no-op) ────────────────────────────────────
+
+async def connect_to_mongo():
+    """No-op — we use PostgreSQL now."""
+    logger.info("MongoDB disabled — using PostgreSQL for all data")
+
+async def close_mongo_connection():
+    """No-op."""
+    pass
