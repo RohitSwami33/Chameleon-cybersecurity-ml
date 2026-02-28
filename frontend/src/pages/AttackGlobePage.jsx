@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import { Box, CircularProgress, Paper, Typography, Switch, FormControlLabel } from '@mui/material';
+import { Box, CircularProgress, Typography, Switch, FormControlLabel } from '@mui/material';
 import { toast } from 'react-toastify';
 import Navbar from '../components/Navbar';
 import AttackGlobeSimple from '../components/AttackGlobeSimple';
@@ -11,7 +11,6 @@ const AttackGlobePage = () => {
     const [autoRefresh, setAutoRefresh] = useState(true);
     const [lastUpdated, setLastUpdated] = useState(new Date());
     const [useMockGeo, setUseMockGeo] = useState(true);
-    const [selectedAttack, setSelectedAttack] = useState(null);
 
     const mockGeoLocations = [
         { country: 'United States', city: 'New York', latitude: 40.7128, longitude: -74.0060 },
@@ -28,11 +27,7 @@ const AttackGlobePage = () => {
 
     const logsWithGeo = useMockGeo ? logs.map((log, index) => {
         if (!log.geo_location || !log.geo_location.latitude) {
-            const mockGeo = mockGeoLocations[index % mockGeoLocations.length];
-            return {
-                ...log,
-                geo_location: mockGeo
-            };
+            return { ...log, geo_location: mockGeoLocations[index % mockGeoLocations.length] };
         }
         return log;
     }) : logs;
@@ -44,16 +39,13 @@ const AttackGlobePage = () => {
             setLastUpdated(new Date());
         } catch (error) {
             console.error('Error fetching attack logs:', error);
-            toast.error('Failed to fetch attack data');
             setAutoRefresh(false);
         } finally {
             setLoading(false);
         }
     }, []);
 
-    useEffect(() => {
-        fetchData();
-    }, [fetchData]);
+    useEffect(() => { fetchData(); }, [fetchData]);
 
     useEffect(() => {
         if (autoRefresh) {
@@ -62,89 +54,42 @@ const AttackGlobePage = () => {
         }
     }, [autoRefresh, fetchData]);
 
-    const handleRefresh = () => {
-        setLoading(true);
-        fetchData();
-    };
-
-    const handleAttackClick = (attack) => {
-        setSelectedAttack(attack);
-        toast.info(`Selected attack from ${attack.ip_address}`);
-    };
+    const handleRefresh = () => { setLoading(true); fetchData(); };
 
     if (loading && logs.length === 0) {
         return (
-            <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '100vh' }}>
-                <CircularProgress />
+            <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '100vh', backgroundColor: '#050810' }}>
+                <CircularProgress sx={{ color: '#00d4ff' }} />
             </Box>
         );
     }
 
     return (
-        <Box sx={{ 
-            flexGrow: 1, 
-            backgroundColor: 'background.default', 
-            minHeight: '100vh',
-        }}>
-            <Navbar 
-                lastUpdated={lastUpdated}
-                autoRefresh={autoRefresh}
-                setAutoRefresh={setAutoRefresh}
-                onRefresh={handleRefresh}
-            />
+        <Box sx={{ flexGrow: 1, minHeight: '100vh', display: 'flex', flexDirection: 'column', backgroundColor: '#050810' }}>
+            <Box sx={{ zIndex: 20 }}>
+                <Navbar
+                    lastUpdated={lastUpdated}
+                    autoRefresh={autoRefresh}
+                    setAutoRefresh={setAutoRefresh}
+                    onRefresh={handleRefresh}
+                />
+            </Box>
 
-            <Box sx={{ px: 2, py: 3 }}>
-                <Box sx={{ mb: 2, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                    <Typography variant="h4" sx={{ fontWeight: 700 }}>
-                        Global Attack Visualization
-                    </Typography>
-                    <FormControlLabel
-                        control={
-                            <Switch
-                                checked={useMockGeo}
-                                onChange={(e) => setUseMockGeo(e.target.checked)}
-                                color="secondary"
-                                size="small"
-                            />
-                        }
-                        label={<Typography variant="body2">Mock Geo Data</Typography>}
-                    />
-                </Box>
-
+            <Box sx={{ flexGrow: 1, position: 'relative', minHeight: 'calc(100vh - 64px)' }}>
                 <AttackGlobeSimple
                     attacks={logsWithGeo}
                     serverLocation={{ lat: 37.7749, lon: -122.4194 }}
-                    onAttackClick={handleAttackClick}
-                    maxArcs={100}
                 />
 
-                {selectedAttack && (
-                    <Paper sx={{ mt: 2, p: 3, bgcolor: '#1e1e1e' }}>
-                        <Typography variant="h6" gutterBottom>Selected Attack Details</Typography>
-                        <Box sx={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 2 }}>
-                            <Box>
-                                <Typography variant="body2" color="text.secondary">IP Address</Typography>
-                                <Typography variant="body1">{selectedAttack.ip_address}</Typography>
-                            </Box>
-                            <Box>
-                                <Typography variant="body2" color="text.secondary">Attack Type</Typography>
-                                <Typography variant="body1">{selectedAttack.classification?.attack_type}</Typography>
-                            </Box>
-                            <Box>
-                                <Typography variant="body2" color="text.secondary">Location</Typography>
-                                <Typography variant="body1">
-                                    {selectedAttack.geo_location?.city}, {selectedAttack.geo_location?.country}
-                                </Typography>
-                            </Box>
-                            <Box>
-                                <Typography variant="body2" color="text.secondary">Timestamp</Typography>
-                                <Typography variant="body1">
-                                    {new Date(selectedAttack.timestamp).toLocaleString()}
-                                </Typography>
-                            </Box>
-                        </Box>
-                    </Paper>
-                )}
+                <Box sx={{ position: 'absolute', bottom: 24, left: 24, zIndex: 10 }}>
+                    <FormControlLabel
+                        control={
+                            <Switch checked={useMockGeo} onChange={(e) => setUseMockGeo(e.target.checked)} size="small"
+                                sx={{ '& .MuiSwitch-switchBase.Mui-checked': { color: '#00d4ff' }, '& .MuiSwitch-switchBase.Mui-checked + .MuiSwitch-track': { backgroundColor: '#00d4ff' } }} />
+                        }
+                        label={<Typography variant="body2" sx={{ color: '#7a9bbf', fontSize: '0.8rem', fontWeight: 600 }}>USE MOCK GEO-DATA</Typography>}
+                    />
+                </Box>
             </Box>
         </Box>
     );

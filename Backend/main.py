@@ -647,6 +647,60 @@ async def generate_report(ip_address: str, username: str = Depends(verify_token)
 # Blockchain
 # ========================================================================
 
+
+# ========================================================================
+# Honeypot Logging (attacker-facing — no auth required)
+# ========================================================================
+
+@app.post("/api/honeypot/log")
+async def honeypot_log(request: Request):
+    """
+    Receives attacker fingerprints from the TrapInterface decoy page.
+
+    The frontend silently POSTs browser fingerprints (credentials attempted,
+    canvas hash, fonts, WebGL renderer, timezone) on every interaction.
+    These are logged to PostgreSQL for forensic correlation.
+    """
+    try:
+        body = await request.json()
+    except Exception:
+        return {"status": "logged"}
+
+    event_type = body.get("event", "UNKNOWN")
+    event_data = body.get("data", {})
+
+    # Extract attacker IP from proxy headers
+    forwarded = request.headers.get("x-forwarded-for", "")
+    attacker_ip = forwarded.split(",")[0].strip() if forwarded else (request.client.host if request.client else "unknown")
+
+    logger.warning(
+        "🍯 HONEYPOT TRIGGERED: event=%s ip=%s data=%s",
+        event_type, attacker_ip, str(event_data)[:200],
+    )
+
+    # Persist to PostgreSQL
+    try:
+        async with db.get_session() as session:
+            log = HoneypotLog(
+                tenant_id=DEFAULT_TENANT_ID,
+                attacker_ip=attacker_ip,
+                command_entered=f"[HONEYPOT] {event_type}",
+                response_sent="Decoy interaction logged",
+                log_metadata={
+                    "honeypot_event": event_type,
+                    "fingerprint_data": event_data,
+                    "user_agent": request.headers.get("user-agent", ""),
+                    "referer": request.headers.get("referer", ""),
+                },
+            )
+            session.add(log)
+            await session.commit()
+    except Exception as e:
+        logger.error("Failed to persist honeypot log: %s", e)
+
+    return {"status": "logged"}
+
+
 @app.get("/api/blockchain/verify")
 async def verify_blockchain(username: str = Depends(verify_token)):
     integrity = blockchain_logger.verify_chain_integrity()
@@ -656,6 +710,21 @@ async def verify_blockchain(username: str = Depends(verify_token)):
 # ========================================================================
 # Threat Scores
 # ========================================================================
+
+@app.get("/api/threat-scores/")
+async def list_all_threat_scores(username: str = Depends(verify_token)):
+    """List all tracked IP reputation scores."""
+    scores = []
+    for ip, score in threat_score_system.ip_scores.items():
+        level = threat_score_system.get_reputation_level(score)
+        scores.append({
+            "ip_address": ip,
+            "score": score,
+            "reputation_level": level,
+        })
+    scores.sort(key=lambda x: x["score"], reverse=True)
+    return {"scores": scores, "total": len(scores)}
+
 
 @app.get("/api/threat-scores/flagged")
 async def get_flagged_ips(username: str = Depends(verify_token)):

@@ -5,7 +5,6 @@ import {
     Box,
     ToggleButton,
     ToggleButtonGroup,
-    useTheme
 } from '@mui/material';
 import {
     PieChart,
@@ -23,10 +22,15 @@ import {
 import PieChartIcon from '@mui/icons-material/PieChart';
 import BarChartIcon from '@mui/icons-material/BarChart';
 import { getAttackTypeColor } from '../utils/helpers';
+import TiltCard from './TiltCard';
 
+/**
+ * AttackChart — Attack distribution as Pie or Bar chart
+ * @see Section 3 — AttackChart Rules
+ * Toggle between pie and bar, custom active shape, design token colors
+ */
 const AttackChart = ({ attackDistribution }) => {
     const [chartType, setChartType] = useState('pie');
-    const theme = useTheme();
 
     const handleChartTypeChange = (event, newType) => {
         if (newType !== null) {
@@ -34,27 +38,28 @@ const AttackChart = ({ attackDistribution }) => {
         }
     };
 
-    // Transform data for Recharts
     const data = Object.entries(attackDistribution || {}).map(([name, value]) => ({
         name,
         value,
         color: getAttackTypeColor(name)
     })).filter(item => item.value > 0);
 
-    // Custom Tooltip
     const CustomTooltip = ({ active, payload, label }) => {
         if (active && payload && payload.length) {
             return (
                 <Box
                     sx={{
-                        backgroundColor: 'rgba(30, 30, 30, 0.9)',
-                        border: '1px solid #444',
+                        backgroundColor: 'rgba(10, 15, 30, 0.95)',
+                        border: '1px solid rgba(0, 212, 255, 0.2)',
                         p: 1.5,
-                        borderRadius: 1,
+                        borderRadius: '8px',
+                        backdropFilter: 'blur(8px)',
                     }}
                 >
-                    <Typography variant="body2" sx={{ fontWeight: 600 }}>{label || payload[0].name}</Typography>
-                    <Typography variant="body2" color="text.secondary">
+                    <Typography variant="body2" sx={{ fontWeight: 600, color: '#e8f4fd', fontFamily: '"DM Sans", sans-serif' }}>
+                        {label || payload[0].name}
+                    </Typography>
+                    <Typography variant="body2" sx={{ color: '#7a9bbf', fontFamily: '"IBM Plex Mono", monospace', fontSize: '0.8rem' }}>
                         Count: {payload[0].value}
                     </Typography>
                 </Box>
@@ -64,18 +69,21 @@ const AttackChart = ({ attackDistribution }) => {
     };
 
     return (
-        <Paper
+        <TiltCard
+            glowColor="#00d4ff"
             sx={{
-                p: 3,
+                p: '20px',
                 height: '100%',
                 display: 'flex',
                 flexDirection: 'column',
-                backgroundColor: '#1e1e1e',
-                backgroundImage: 'none',
+                backgroundColor: 'rgba(10, 15, 30, 0.85)',
+                backdropFilter: 'blur(12px)',
+                border: '1px solid rgba(0, 212, 255, 0.08)',
+                borderRadius: '12px',
             }}
         >
-            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
-                <Typography variant="h6" component="h2" sx={{ fontWeight: 600 }}>
+            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
+                <Typography variant="h6" component="h2" sx={{ fontWeight: 600, color: '#e8f4fd', fontSize: '0.95rem' }}>
                     Attack Distribution
                 </Typography>
                 <ToggleButtonGroup
@@ -83,7 +91,17 @@ const AttackChart = ({ attackDistribution }) => {
                     exclusive
                     onChange={handleChartTypeChange}
                     size="small"
-                    aria-label="chart type"
+                    sx={{
+                        '& .MuiToggleButton-root': {
+                            border: '1px solid rgba(0, 212, 255, 0.15)',
+                            color: '#7a9bbf',
+                            padding: '4px 8px',
+                            '&.Mui-selected': {
+                                backgroundColor: 'rgba(0, 212, 255, 0.12)',
+                                color: '#00d4ff',
+                            },
+                        },
+                    }}
                 >
                     <ToggleButton value="pie" aria-label="pie chart">
                         <PieChartIcon fontSize="small" />
@@ -94,7 +112,7 @@ const AttackChart = ({ attackDistribution }) => {
                 </ToggleButtonGroup>
             </Box>
 
-            <Box sx={{ flexGrow: 1, minHeight: 300, width: '100%', height: 300 }}>
+            <Box sx={{ flexGrow: 1, minHeight: 250, width: '100%', height: 250 }}>
                 <ResponsiveContainer width="100%" height="100%">
                     {chartType === 'pie' ? (
                         <PieChart>
@@ -102,25 +120,32 @@ const AttackChart = ({ attackDistribution }) => {
                                 data={data}
                                 cx="50%"
                                 cy="50%"
-                                innerRadius={60}
-                                outerRadius={100}
-                                paddingAngle={5}
+                                innerRadius={50}
+                                outerRadius={85}
+                                paddingAngle={4}
                                 dataKey="value"
+                                stroke="none"
                             >
                                 {data.map((entry, index) => (
-                                    <Cell key={`cell-${index}`} fill={entry.color} stroke="none" />
+                                    <Cell key={`cell-${index}`} fill={entry.color} />
                                 ))}
                             </Pie>
                             <Tooltip content={<CustomTooltip />} />
-                            <Legend verticalAlign="bottom" height={36} />
+                            <Legend
+                                verticalAlign="bottom"
+                                height={36}
+                                formatter={(value) => (
+                                    <span style={{ color: '#7a9bbf', fontSize: '0.75rem', fontFamily: '"DM Sans", sans-serif' }}>{value}</span>
+                                )}
+                            />
                         </PieChart>
                     ) : (
-                        <BarChart data={data} layout="vertical" margin={{ top: 5, right: 30, left: 40, bottom: 5 }}>
-                            <CartesianGrid strokeDasharray="3 3" stroke="#333" horizontal={false} />
-                            <XAxis type="number" stroke="#777" />
-                            <YAxis dataKey="name" type="category" stroke="#777" width={80} />
-                            <Tooltip content={<CustomTooltip />} cursor={{ fill: 'rgba(255, 255, 255, 0.05)' }} />
-                            <Bar dataKey="value" radius={[0, 4, 4, 0]} barSize={20}>
+                        <BarChart data={data} layout="vertical" margin={{ top: 5, right: 20, left: 40, bottom: 5 }}>
+                            <CartesianGrid strokeDasharray="3 3" stroke="rgba(0, 212, 255, 0.06)" horizontal={false} />
+                            <XAxis type="number" stroke="#3d5a7a" tick={{ fontSize: 11 }} />
+                            <YAxis dataKey="name" type="category" stroke="#3d5a7a" width={80} tick={{ fontSize: 11, fill: '#7a9bbf' }} />
+                            <Tooltip content={<CustomTooltip />} cursor={{ fill: 'rgba(0, 212, 255, 0.04)' }} />
+                            <Bar dataKey="value" radius={[0, 6, 6, 0]} barSize={18}>
                                 {data.map((entry, index) => (
                                     <Cell key={`cell-${index}`} fill={entry.color} />
                                 ))}
@@ -129,7 +154,7 @@ const AttackChart = ({ attackDistribution }) => {
                     )}
                 </ResponsiveContainer>
             </Box>
-        </Paper>
+        </TiltCard>
     );
 };
 

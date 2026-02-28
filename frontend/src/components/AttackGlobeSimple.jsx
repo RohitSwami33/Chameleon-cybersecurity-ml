@@ -1,426 +1,328 @@
-import { useMemo, useState } from 'react';
-import { Box, Card, CardContent, Typography } from '@mui/material';
+import React, { useRef, useEffect, useState, useCallback, useMemo, lazy, Suspense } from 'react';
+import { Box, Typography, Chip, Paper, Fade } from '@mui/material';
+import { motion } from 'framer-motion';
+import FiberManualRecordIcon from '@mui/icons-material/FiberManualRecord';
+import LanguageIcon from '@mui/icons-material/Language';
 
-/**
- * Maps attack classification types to hex color codes
- */
-const getAttackColor = (attackType) => {
-    const colorMap = {
-        'SQLI': '#ff4444',
-        'XSS': '#ffaa00',
-        'BRUTE_FORCE': '#ff8800',
-        'SSI': '#4444ff',
-        'BENIGN': '#888888'
-    };
-    return colorMap[attackType] || '#ffffff';
+// Lazy load Spline for performance
+const Spline = lazy(() => import('@splinetool/react-spline'));
+
+const GlobeLoadingSkeleton = () => (
+    <Box sx={{
+        width: '100%',
+        height: '100%',
+        display: 'flex',
+        flexDirection: 'column',
+        justifyContent: 'center',
+        alignItems: 'center',
+        background: 'radial-gradient(circle at center, #0a1128 0%, #050810 100%)',
+        position: 'absolute',
+        top: 0,
+        left: 0,
+        zIndex: 5
+    }}>
+        
+        <motion.div
+            animate={{ rotate: 360 }}
+            transition={{ duration: 4, repeat: Infinity, ease: "linear" }}
+        >
+            <LanguageIcon sx={{ fontSize: 64, color: '#00d4ff', opacity: 0.5 }} />
+        </motion.div>
+        <Typography variant="body2" sx={{ mt: 2, color: '#7a9bbf', fontFamily: '"IBM Plex Mono", monospace' }}>
+            INITIALIZING 3D ENVIRONMENT...
+        </Typography>
+    </Box>
+);
+
+// Map attack types to Spline object nodes if needed
+const getSplineNodeForAttack = (attackType) => {
+    switch (attackType?.toUpperCase()) {
+        case 'SQLI': return 'RedNode';
+        case 'XSS': return 'AmberNode';
+        case 'BENIGN': return 'GreenNode';
+        default: return 'RedNode'; // Default shockwave
+    }
 };
 
-/**
- * Simple 2D Attack Map Component
- * A reliable alternative to the 3D globe using react-simple-maps
- */
-const AttackGlobeSimple = ({
-    attacks = [],
-    serverLocation = { lat: 37.7749, lon: -122.4194 },
-    onAttackClick,
-    maxArcs = 100
-}) => {
-    // State for hover coordinates
-    const [hoverCoords, setHoverCoords] = useState(null);
+const AttackOverlayHUD = ({ attacks = [] }) => {
+    const activeThreats = attacks.filter(a => a.classification?.attack_type !== 'BENIGN').length;
 
-    // Process attacks
-    const processedAttacks = useMemo(() => {
-        return attacks
-            .filter(attack => 
-                attack.geo_location && 
-                attack.geo_location.latitude && 
-                attack.geo_location.longitude
-            )
-            .slice(0, maxArcs);
-    }, [attacks, maxArcs]);
-
-    const handleMarkerClick = (attack) => {
-        if (typeof onAttackClick === 'function') {
-            onAttackClick(attack);
-        }
-    };
-
-    // Convert SVG coordinates to lat/lon
-    const handleMouseMove = (e) => {
-        const svg = e.currentTarget;
-        const rect = svg.getBoundingClientRect();
-        const x = e.clientX - rect.left;
-        const y = e.clientY - rect.top;
-        
-        // Convert to viewBox coordinates
-        const viewBoxX = (x / rect.width) * 1000;
-        const viewBoxY = (y / rect.height) * 500;
-        
-        // Convert to lat/lon
-        const lon = (viewBoxX / 1000) * 360 - 180;
-        const lat = 90 - (viewBoxY / 500) * 180;
-        
-        setHoverCoords({ lat: lat.toFixed(2), lon: lon.toFixed(2) });
-    };
-
-    const handleMouseLeave = () => {
-        setHoverCoords(null);
-    };
+    // Get top 5 recent attacks
+    const recentAttacks = [...attacks].sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()).slice(0, 5);
 
     return (
-        <Card sx={{ 
-            bgcolor: '#1e1e1e', 
-            borderRadius: 1, 
-            border: '1px solid #333',
-            mb: 2
-        }}>
-            <CardContent>
-                <Box sx={{ mb: 2 }}>
-                    <Typography variant="h6" gutterBottom sx={{ fontWeight: 600 }}>
-                        Attack Map
-                    </Typography>
-                    <Typography variant="body2" color="text.secondary">
-                        Real-time visualization of attack origins • {processedAttacks.length} active threats
-                    </Typography>
+        <Box sx={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', pointerEvents: 'none', zIndex: 10 }}>
+            {/* Top-Left: Status */}
+            <Box sx={{ position: 'absolute', top: 24, left: 24, display: 'flex', flexDirection: 'column', gap: 1 }}>
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                    <Chip
+                        icon={<FiberManualRecordIcon sx={{ fontSize: '12px !important', color: '#ff3d71 !important' }} />}
+                        label="LIVE"
+                        size="small"
+                        sx={{
+                            backgroundColor: 'rgba(255, 61, 113, 0.15)',
+                            color: '#ff3d71',
+                            fontWeight: 800,
+                            border: '1px solid rgba(255, 61, 113, 0.3)',
+                            boxShadow: '0 0 12px rgba(255, 61, 113, 0.4)',
+                            '& .MuiChip-icon': { ml: 0.5 },
+                        }}
+                    />
                 </Box>
-                
-                <Box sx={{ 
-                    width: '100%', 
-                    height: { xs: 400, sm: 500, md: 600 },
-                    bgcolor: '#0a0a0a',
-                    borderRadius: 1,
-                    overflow: 'hidden',
-                    position: 'relative'
-                }}>
-                    <svg
-                        width="100%"
-                        height="100%"
-                        viewBox="0 0 1000 500"
-                        style={{ background: 'radial-gradient(circle at 50% 50%, #1a2332 0%, #0a0a0a 100%)' }}
-                        onMouseMove={handleMouseMove}
-                        onMouseLeave={handleMouseLeave}
-                    >
-                        {/* Real World Map as background */}
-                        <image
-                            href="https://upload.wikimedia.org/wikipedia/commons/8/83/Equirectangular_projection_SW.jpg"
-                            x="0"
-                            y="0"
-                            width="1000"
-                            height="500"
-                            opacity="0.3"
-                            preserveAspectRatio="xMidYMid slice"
-                        />
-                        
-                        {/* Filters */}
-                        <defs>
-                            <filter id="glow">
-                                <feGaussianBlur stdDeviation="2" result="coloredBlur"/>
-                                <feMerge>
-                                    <feMergeNode in="coloredBlur"/>
-                                    <feMergeNode in="SourceGraphic"/>
-                                </feMerge>
-                            </filter>
-                            <filter id="textGlow">
-                                <feGaussianBlur stdDeviation="1" result="coloredBlur"/>
-                                <feMerge>
-                                    <feMergeNode in="coloredBlur"/>
-                                    <feMergeNode in="SourceGraphic"/>
-                                </feMerge>
-                            </filter>
-                        </defs>
+                <Typography variant="h6" sx={{ color: '#00d4ff', fontFamily: '"IBM Plex Mono", monospace', fontWeight: 600, textShadow: '0 0 10px rgba(0, 212, 255, 0.5)' }}>
+                    {activeThreats} ACTIVE THREATS
+                </Typography>
+            </Box>
 
-                        {/* Hover coordinates display */}
-                        {hoverCoords && (
-                            <g>
-                                <rect
-                                    x="10"
-                                    y="10"
-                                    width="180"
-                                    height="50"
-                                    fill="rgba(0, 0, 0, 0.8)"
-                                    stroke="#3a8fd9"
-                                    strokeWidth="2"
-                                    rx="5"
-                                />
-                                <text
-                                    x="100"
-                                    y="30"
-                                    fill="#ffffff"
-                                    fontSize="14"
-                                    fontWeight="bold"
-                                    textAnchor="middle"
-                                >
-                                    Latitude: {hoverCoords.lat}°
-                                </text>
-                                <text
-                                    x="100"
-                                    y="50"
-                                    fill="#ffffff"
-                                    fontSize="14"
-                                    fontWeight="bold"
-                                    textAnchor="middle"
-                                >
-                                    Longitude: {hoverCoords.lon}°
-                                </text>
-                            </g>
-                        )}
-
-
-
-                        {/* Grid lines */}
-                        {[...Array(11)].map((_, i) => (
-                            <line
-                                key={`h-${i}`}
-                                x1="0"
-                                y1={i * 50}
-                                x2="1000"
-                                y2={i * 50}
-                                stroke="#1a4d7a"
-                                strokeWidth="0.5"
-                                opacity="0.2"
-                            />
-                        ))}
-                        {[...Array(21)].map((_, i) => (
-                            <line
-                                key={`v-${i}`}
-                                x1={i * 50}
-                                y1="0"
-                                x2={i * 50}
-                                y2="500"
-                                stroke="#1a4d7a"
-                                strokeWidth="0.5"
-                                opacity="0.2"
-                            />
-                        ))}
-
-                        {/* Convert lat/lon to SVG coordinates */}
-                        {processedAttacks.map((attack, index) => {
-                            const attackX = ((attack.geo_location.longitude + 180) / 360) * 1000;
-                            const attackY = ((90 - attack.geo_location.latitude) / 180) * 500;
-                            const serverX = ((serverLocation.lon + 180) / 360) * 1000;
-                            const serverY = ((90 - serverLocation.lat) / 180) * 500;
-                            const color = getAttackColor(attack.classification?.attack_type);
-
-                            return (
-                                <g key={`attack-${index}`}>
-                                    {/* Animated line from attack to server */}
-                                    <line
-                                        x1={attackX}
-                                        y1={attackY}
-                                        x2={serverX}
-                                        y2={serverY}
-                                        stroke={color}
-                                        strokeWidth="3"
-                                        opacity="0.6"
-                                        strokeDasharray="8,4"
-                                        filter="url(#glow)"
-                                    >
-                                        <animate
-                                            attributeName="stroke-dashoffset"
-                                            from="0"
-                                            to="12"
-                                            dur="0.8s"
-                                            repeatCount="indefinite"
-                                        />
-                                        <animate
-                                            attributeName="opacity"
-                                            values="0.3;0.8;0.3"
-                                            dur="2s"
-                                            repeatCount="indefinite"
-                                        />
-                                    </line>
-                                    
-                                    {/* Outer pulse ring */}
-                                    <circle
-                                        cx={attackX}
-                                        cy={attackY}
-                                        r="5"
-                                        fill="none"
-                                        stroke={color}
-                                        strokeWidth="2"
-                                        opacity="0"
-                                    >
-                                        <animate
-                                            attributeName="r"
-                                            values="5;15;25"
-                                            dur="2s"
-                                            repeatCount="indefinite"
-                                        />
-                                        <animate
-                                            attributeName="opacity"
-                                            values="0.8;0.4;0"
-                                            dur="2s"
-                                            repeatCount="indefinite"
-                                        />
-                                    </circle>
-                                    
-                                    {/* Attack marker */}
-                                    <circle
-                                        cx={attackX}
-                                        cy={attackY}
-                                        r="6"
-                                        fill={color}
-                                        stroke="#fff"
-                                        strokeWidth="2"
-                                        style={{ cursor: 'pointer' }}
-                                        onClick={() => handleMarkerClick(attack)}
-                                        filter="url(#glow)"
-                                    >
-                                        <title>
-                                            {`${attack.geo_location.city}, ${attack.geo_location.country} - ${attack.classification?.attack_type}`}
-                                        </title>
-                                        <animate
-                                            attributeName="r"
-                                            values="6;8;6"
-                                            dur="1.5s"
-                                            repeatCount="indefinite"
-                                        />
-                                    </circle>
-                                    
-                                    {/* Country label - NO FILTER for clarity */}
-                                    <text
-                                        x={attackX}
-                                        y={attackY - 18}
-                                        fill="#ffffff"
-                                        fontSize="12"
-                                        fontWeight="bold"
-                                        textAnchor="middle"
-                                        style={{ 
-                                            pointerEvents: 'none',
-                                            textShadow: '1px 1px 3px #000, -1px -1px 3px #000',
-                                            paintOrder: 'stroke fill'
-                                        }}
-                                        stroke="#000"
-                                        strokeWidth="3"
-                                        strokeLinejoin="round"
-                                    >
-                                        {attack.geo_location.country}
-                                    </text>
-                                </g>
-                            );
-                        })}
-
-                        {/* Server marker with enhanced animations */}
-                        <g>
-                            {/* Outer rotating ring */}
-                            <circle
-                                cx={((serverLocation.lon + 180) / 360) * 1000}
-                                cy={((90 - serverLocation.lat) / 180) * 500}
-                                r="20"
-                                fill="none"
-                                stroke="#4a90e2"
-                                strokeWidth="2"
-                                strokeDasharray="4,4"
-                                opacity="0.5"
-                            >
-                                <animateTransform
-                                    attributeName="transform"
-                                    type="rotate"
-                                    from={`0 ${((serverLocation.lon + 180) / 360) * 1000} ${((90 - serverLocation.lat) / 180) * 500}`}
-                                    to={`360 ${((serverLocation.lon + 180) / 360) * 1000} ${((90 - serverLocation.lat) / 180) * 500}`}
-                                    dur="4s"
-                                    repeatCount="indefinite"
-                                />
-                            </circle>
-                            
-                            {/* Pulse ring */}
-                            <circle
-                                cx={((serverLocation.lon + 180) / 360) * 1000}
-                                cy={((90 - serverLocation.lat) / 180) * 500}
-                                r="10"
-                                fill="none"
-                                stroke="#4a90e2"
-                                strokeWidth="3"
-                                opacity="0"
-                            >
-                                <animate
-                                    attributeName="r"
-                                    values="10;25;35"
-                                    dur="2.5s"
-                                    repeatCount="indefinite"
-                                />
-                                <animate
-                                    attributeName="opacity"
-                                    values="0.9;0.5;0"
-                                    dur="2.5s"
-                                    repeatCount="indefinite"
-                                />
-                            </circle>
-                            
-                            {/* Main server marker */}
-                            <circle
-                                cx={((serverLocation.lon + 180) / 360) * 1000}
-                                cy={((90 - serverLocation.lat) / 180) * 500}
-                                r="10"
-                                fill="#4a90e2"
-                                stroke="#fff"
-                                strokeWidth="3"
-                                filter="url(#glow)"
-                            >
-                                <animate
-                                    attributeName="r"
-                                    values="10;12;10"
-                                    dur="2s"
-                                    repeatCount="indefinite"
-                                />
-                            </circle>
-                            
-                            {/* Server label - Clear and bold */}
-                            <text
-                                x={((serverLocation.lon + 180) / 360) * 1000}
-                                y={((90 - serverLocation.lat) / 180) * 500 + 35}
-                                fill="#ffffff"
-                                fontSize="14"
-                                fontWeight="bold"
-                                textAnchor="middle"
-                                style={{ 
-                                    textShadow: '2px 2px 4px #000',
-                                    paintOrder: 'stroke fill'
+            {/* Top-Right: Origin List Card */}
+            <Paper sx={{
+                position: 'absolute',
+                top: 24,
+                right: 24,
+                width: 250,
+                p: 2,
+                backgroundColor: 'rgba(10, 15, 30, 0.6)',
+                backdropFilter: 'blur(12px)',
+                border: '1px solid rgba(0, 212, 255, 0.15)',
+                pointerEvents: 'auto'
+            }}>
+                <Typography variant="overline" sx={{ color: '#7a9bbf', fontWeight: 700, display: 'block', mb: 1 }}>Recent Origins</Typography>
+                <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
+                    {recentAttacks.map((attack, i) => (
+                        <Box key={i} sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid rgba(255,255,255,0.05)', pb: 0.5 }}>
+                            <Box>
+                                <Typography variant="caption" sx={{ color: '#e8f4fd', fontFamily: '"IBM Plex Mono", monospace', display: 'block' }}>
+                                    {attack.ip_address}
+                                </Typography>
+                                <Typography variant="caption" sx={{ color: '#3d5a7a', display: 'block', mt: -0.5, fontSize: '0.65rem' }}>
+                                    {attack.geo_location?.city || 'Unknown'}
+                                </Typography>
+                            </Box>
+                            <Chip
+                                size="small"
+                                label={attack.classification?.attack_type === 'BENIGN' ? 'OK' : 'DENY'}
+                                sx={{
+                                    height: 16,
+                                    fontSize: '0.6rem',
+                                    fontWeight: 'bold',
+                                    color: attack.classification?.attack_type === 'BENIGN' ? '#00e676' : '#ff3d71',
+                                    backgroundColor: attack.classification?.attack_type === 'BENIGN' ? 'rgba(0,230,118,0.1)' : 'rgba(255,61,113,0.1)',
                                 }}
-                                stroke="#000"
-                                strokeWidth="3"
-                                strokeLinejoin="round"
-                            >
-                                SERVER (SF)
-                            </text>
-                        </g>
-                    </svg>
+                            />
+                        </Box>
+                    ))}
+                    {recentAttacks.length === 0 && (
+                        <Typography variant="caption" sx={{ color: '#7a9bbf' }}>No recent activity</Typography>
+                    )}
                 </Box>
+            </Paper>
 
-                <Box sx={{ mt: 2 }}>
-                    <Typography variant="body2" color="text.secondary" sx={{ mb: 1, textAlign: 'center' }}>
-                        Showing attack origins and paths to server (San Francisco)
-                    </Typography>
-                    <Box sx={{ display: 'flex', gap: 2, flexWrap: 'wrap', justifyContent: 'center' }}>
-                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                            <Box sx={{ width: 12, height: 12, bgcolor: '#ff4444', borderRadius: '50%' }} />
-                            <Typography variant="caption">SQL Injection</Typography>
-                        </Box>
-                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                            <Box sx={{ width: 12, height: 12, bgcolor: '#ffaa00', borderRadius: '50%' }} />
-                            <Typography variant="caption">XSS</Typography>
-                        </Box>
-                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                            <Box sx={{ width: 12, height: 12, bgcolor: '#ff8800', borderRadius: '50%' }} />
-                            <Typography variant="caption">Brute Force</Typography>
-                        </Box>
-                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                            <Box sx={{ width: 12, height: 12, bgcolor: '#4444ff', borderRadius: '50%' }} />
-                            <Typography variant="caption">SSI</Typography>
-                        </Box>
-                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                            <Box sx={{ width: 12, height: 12, bgcolor: '#888888', borderRadius: '50%' }} />
-                            <Typography variant="caption">Benign</Typography>
-                        </Box>
-                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                            <Box sx={{ width: 12, height: 12, bgcolor: '#4a90e2', borderRadius: '50%' }} />
-                            <Typography variant="caption">Server (SF)</Typography>
-                        </Box>
+            {/* Bottom-Center: Legend */}
+            <Box sx={{
+                position: 'absolute',
+                bottom: 32,
+                left: '50%',
+                transform: 'translateX(-50%)',
+                display: 'flex',
+                gap: 2,
+                backgroundColor: 'rgba(5, 8, 16, 0.7)',
+                backdropFilter: 'blur(8px)',
+                px: 3,
+                py: 1,
+                borderRadius: '20px',
+                border: '1px solid rgba(255, 255, 255, 0.05)'
+            }}>
+                {[
+                    { label: 'SQL Injection', color: '#ff3d71' },
+                    { label: 'XSS', color: '#ffa500' },
+                    { label: 'Brute Force', color: '#ffea00' },
+                    { label: 'Benign', color: '#00e676' },
+                    { label: 'Server SF', color: '#00d4ff' }
+                ].map(type => (
+                    <Box key={type.label} sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                        <Box sx={{ width: 8, height: 8, borderRadius: '50%', backgroundColor: type.color, boxShadow: `0 0 8px ${type.color}` }} />
+                        <Typography variant="caption" sx={{ color: '#a0b2c6', fontSize: '0.7rem', fontWeight: 600 }}>{type.label}</Typography>
                     </Box>
-                </Box>
-            </CardContent>
-        </Card>
+                ))}
+            </Box>
+        </Box>
     );
 };
 
-export default AttackGlobeSimple;
+// Fallback Map: The original SVG logic
+const geoToSvg = (lat, lon, width = 400, height = 220) => {
+    const x = ((lon + 180) / 360) * width;
+    const y = ((90 - lat) / 180) * height;
+    return { x, y };
+};
+
+const SVGWorldMapFallback = ({ attacks = [], serverLocation = { lat: 37.7749, lon: -122.4194 } }) => {
+    const svgRef = useRef(null);
+    const [dimensions, setDimensions] = useState({ width: 400, height: 220 });
+
+    const serverPoint = useMemo(() => geoToSvg(serverLocation.lat, serverLocation.lon, dimensions.width, dimensions.height), [serverLocation, dimensions]);
+
+    const attackArcs = useMemo(() => {
+        return attacks
+            .filter(a => a.geo_location?.latitude && a.geo_location?.longitude)
+            .slice(0, 50)
+            .map((attack, i) => {
+                const from = geoToSvg(attack.geo_location.latitude, attack.geo_location.longitude, dimensions.width, dimensions.height);
+                const isMalicious = attack.classification?.attack_type !== 'BENIGN';
+                return {
+                    id: `arc-${i}`,
+                    from,
+                    to: serverPoint,
+                    attack,
+                    isMalicious,
+                    color: isMalicious ? '#ff3d71' : '#00e676',
+                };
+            });
+    }, [attacks, serverPoint, dimensions]);
+
+    useEffect(() => {
+        const container = svgRef.current?.parentElement;
+        if (!container) return;
+
+        const observer = new ResizeObserver((entries) => {
+            for (const entry of entries) {
+                const { width } = entry.contentRect;
+                setDimensions({ width: Math.max(300, width), height: Math.max(150, width * 0.55) });
+            }
+        });
+        observer.observe(container);
+        return () => observer.disconnect();
+    }, []);
+
+    return (
+        <Paper
+            sx={{
+                width: '100%',
+                height: '100%',
+                display: 'flex',
+                flexDirection: 'column',
+                backgroundColor: '#050810',
+                overflow: 'hidden',
+                position: 'relative'
+            }}
+        >
+            <Box sx={{
+                flexGrow: 1,
+                position: 'absolute',
+                top: 0,
+                left: 0,
+                width: '100%',
+                height: '100%',
+                background: 'radial-gradient(ellipse at center, rgba(0, 212, 255, 0.03) 0%, transparent 70%)',
+            }}>
+                <svg
+                    ref={svgRef}
+                    viewBox={`0 0 ${dimensions.width} ${dimensions.height}`}
+                    style={{ width: '100%', height: '100%' }}
+                    preserveAspectRatio="xMidYMid meet"
+                >
+                    <defs>
+                        <filter id="glow-red-fallback">
+                            <feGaussianBlur stdDeviation="2" result="blur" />
+                            <feMerge><feMergeNode in="blur" /><feMergeNode in="SourceGraphic" /></feMerge>
+                        </filter>
+                        <filter id="glow-green-fallback">
+                            <feGaussianBlur stdDeviation="1.5" result="blur" />
+                            <feMerge><feMergeNode in="blur" /><feMergeNode in="SourceGraphic" /></feMerge>
+                        </filter>
+                    </defs>
+
+                    {attackArcs.map((arc, i) => {
+                        const midX = (arc.from.x + arc.to.x) / 2;
+                        const midY = Math.min(arc.from.y, arc.to.y) - 25 - Math.random() * 15;
+                        return (
+                            <g key={arc.id}>
+                                <path
+                                    d={`M ${arc.from.x} ${arc.from.y} Q ${midX} ${midY} ${arc.to.x} ${arc.to.y}`}
+                                    fill="none"
+                                    stroke={arc.color}
+                                    strokeWidth={1}
+                                    strokeOpacity={0.4}
+                                    filter={arc.isMalicious ? 'url(#glow-red-fallback)' : 'url(#glow-green-fallback)'}
+                                    strokeDasharray="4,3"
+                                >
+                                    <animate attributeName="stroke-dashoffset" from="14" to="0" dur={`${2 + Math.random() * 2}s`} repeatCount="indefinite" />
+                                </path>
+                                <circle cx={arc.from.x} cy={arc.from.y} r={3} fill={arc.color} fillOpacity={0.8} />
+                            </g>
+                        );
+                    })}
+                    <circle cx={serverPoint.x} cy={serverPoint.y} r={5} fill="#00d4ff" />
+                </svg>
+            </Box>
+            <AttackOverlayHUD attacks={attacks} />
+        </Paper>
+    );
+};
+
+
+export default function AttackGlobeSimple({ attacks = [], serverLocation = { lat: 37.7749, lon: -122.4194 } }) {
+    const splineRef = useRef(null);
+    const [isWebGLSupported, setIsWebGLSupported] = useState(true);
+    const [isSplineLoaded, setIsSplineLoaded] = useState(false);
+    const previousAttacksLength = useRef(attacks.length);
+
+    useEffect(() => {
+        try {
+            const canvas = document.createElement('canvas');
+            const gl = canvas.getContext('webgl') || canvas.getContext('experimental-webgl');
+            if (!gl) setIsWebGLSupported(false);
+        } catch (e) {
+            setIsWebGLSupported(false);
+        }
+    }, []);
+
+    const onLoad = useCallback((splineApp) => {
+        splineRef.current = splineApp;
+        setIsSplineLoaded(true);
+    }, []);
+
+    useEffect(() => {
+        if (isSplineLoaded && splineRef.current && attacks.length > previousAttacksLength.current) {
+            const newAttacks = attacks.slice(previousAttacksLength.current);
+            newAttacks.forEach(attack => {
+                const nodeName = getSplineNodeForAttack(attack.classification?.attack_type);
+                try {
+                    splineRef.current.emitEvent('mouseDown', nodeName);
+                } catch (e) {
+                    console.warn('Spline emitEvent failed:', e);
+                }
+            });
+            previousAttacksLength.current = attacks.length;
+        } else if (attacks.length < previousAttacksLength.current) {
+            previousAttacksLength.current = attacks.length;
+        }
+    }, [attacks, isSplineLoaded]);
+
+    if (!isWebGLSupported) {
+        return <SVGWorldMapFallback attacks={attacks} serverLocation={serverLocation} />;
+    }
+
+    return (
+        <motion.div
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ duration: 0.8, ease: "easeOut" }}
+            style={{ width: '100%', height: '100%', position: 'relative', overflow: 'hidden', background: '#050810' }}
+        >
+            <Suspense fallback={<GlobeLoadingSkeleton />}>
+                <Spline
+                    scene="https://prod.spline.design/4gyZLgu1E43CPGDX/scene.splinecode"
+                    onLoad={onLoad}
+                    style={{ width: '100%', height: '100%', border: 'none' }}
+                />
+            </Suspense>
+
+            <Fade in={isSplineLoaded}>
+                <Box>
+                    <AttackOverlayHUD attacks={attacks} />
+                </Box>
+            </Fade>
+        </motion.div>
+    );
+}

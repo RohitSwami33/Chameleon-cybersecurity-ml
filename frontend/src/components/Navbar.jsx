@@ -1,211 +1,406 @@
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import {
-    AppBar,
-    Toolbar,
-    Typography,
-    Button,
     Box,
+    Typography,
     IconButton,
-    Menu,
-    MenuItem,
-    Chip,
+    Drawer,
+    List,
+    ListItem,
+    ListItemButton,
+    ListItemIcon,
+    ListItemText,
     Switch,
-    FormControlLabel
+    FormControlLabel,
+    Divider,
+    Tooltip,
 } from '@mui/material';
-import SecurityIcon from '@mui/icons-material/Security';
+import { motion, AnimatePresence } from 'framer-motion';
 import DashboardIcon from '@mui/icons-material/Dashboard';
 import PublicIcon from '@mui/icons-material/Public';
 import AssessmentIcon from '@mui/icons-material/Assessment';
+import SecurityIcon from '@mui/icons-material/Security';
+import SmartToyIcon from '@mui/icons-material/SmartToy';
 import LinkIcon from '@mui/icons-material/Link';
 import LogoutIcon from '@mui/icons-material/Logout';
 import MenuIcon from '@mui/icons-material/Menu';
-import RefreshIcon from '@mui/icons-material/Refresh';
-import SmartToyIcon from '@mui/icons-material/SmartToy';
+import CloseIcon from '@mui/icons-material/Close';
 import { CommandBarTrigger } from './ui/CommandBar';
 import { toast } from 'react-toastify';
 
-const Navbar = ({ lastUpdated, autoRefresh, setAutoRefresh, onRefresh, useMockGeo, setUseMockGeo }) => {
+/* ─── Shield SVG brand icon ─────────────────────────────────────────────── */
+const ShieldSVG = () => (
+    <svg
+        width="20"
+        height="20"
+        viewBox="0 0 24 24"
+        fill="none"
+        xmlns="http://www.w3.org/2000/svg"
+        style={{ filter: 'drop-shadow(0 0 6px rgba(0,212,255,0.7))' }}
+    >
+        <path
+            d="M12 2L3 6v6c0 5.25 3.75 10.15 9 11.25C17.25 22.15 21 17.25 21 12V6L12 2z"
+            fill="rgba(0,212,255,0.15)"
+            stroke="#00d4ff"
+            strokeWidth="1.5"
+            strokeLinejoin="round"
+        />
+        <path
+            d="M9 12l2 2 4-4"
+            stroke="#00d4ff"
+            strokeWidth="1.5"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+        />
+    </svg>
+);
+
+/* ─── Nav item definitions ───────────────────────────────────────────────── */
+const NAV_ITEMS = [
+    { path: '/dashboard', label: 'Overview', Icon: DashboardIcon },
+    { path: '/dashboard/globe', label: 'Attack Globe', Icon: PublicIcon },
+    { path: '/dashboard/analytics', label: 'Analytics', Icon: AssessmentIcon },
+    { path: '/dashboard/threat-intel', label: 'Threat Intel', Icon: SecurityIcon },
+    { path: '/dashboard/chatbot', label: 'AI Assistant', Icon: SmartToyIcon },
+    { path: '/blockchain', label: 'Blockchain', Icon: LinkIcon },
+];
+
+/* ─── Shared style tokens ────────────────────────────────────────────────── */
+const NAV_FONT = '"IBM Plex Mono", monospace';
+const BRAND_FONT = '"Orbitron", sans-serif';
+const CYAN = '#00d4ff';
+const AMBER = '#ffab00';
+const MUTED = 'rgba(232, 244, 253, 0.7)';
+
+/* ════════════════════════════════════════════════════════════════════════════
+   NAVBAR COMPONENT
+   ════════════════════════════════════════════════════════════════════════════ */
+const Navbar = ({
+    lastUpdated,
+    autoRefresh,
+    setAutoRefresh,
+    onRefresh,
+    useMockGeo,
+    setUseMockGeo,
+}) => {
     const navigate = useNavigate();
     const location = useLocation();
-    const [mobileMenuAnchor, setMobileMenuAnchor] = useState(null);
+    const [drawerOpen, setDrawerOpen] = useState(false);
+
+    const isActive = (path) => {
+        if (path === '/dashboard') return location.pathname === '/dashboard';
+        return location.pathname === path || location.pathname.startsWith(path + '/');
+    };
 
     const handleLogout = () => {
         localStorage.removeItem('authToken');
-        toast.info('Logged out successfully');
+        toast.info('Session terminated');
         navigate('/login');
     };
 
-    const handleMobileMenuOpen = (event) => {
-        setMobileMenuAnchor(event.currentTarget);
+    /* ── Framer Motion variants ── */
+    const navbarVariants = {
+        hidden: { opacity: 0, y: -20 },
+        visible: {
+            opacity: 1,
+            y: 0,
+            transition: { duration: 0.4, ease: [0.25, 0.46, 0.45, 0.94] },
+        },
     };
-
-    const handleMobileMenuClose = () => {
-        setMobileMenuAnchor(null);
-    };
-
-    const navItems = [
-        { path: '/dashboard', label: 'Overview', icon: <DashboardIcon /> },
-        { path: '/dashboard/globe', label: 'Attack Globe', icon: <PublicIcon /> },
-        { path: '/dashboard/analytics', label: 'Analytics', icon: <AssessmentIcon /> },
-        { path: '/dashboard/threat-intel', label: 'Threat Intel', icon: <SecurityIcon /> },
-        { path: '/dashboard/chatbot', label: 'AI Assistant', icon: <SmartToyIcon /> },
-        { path: '/blockchain', label: 'Blockchain', icon: <LinkIcon /> },
-    ];
-
-    const isActive = (path) => location.pathname === path;
 
     return (
-        <AppBar 
-            position="sticky" 
-            color="transparent" 
-            elevation={0} 
-            sx={{ 
-                borderBottom: '1px solid rgba(255,255,255,0.1)',
-                backdropFilter: 'blur(10px)',
-                backgroundColor: 'rgba(30, 30, 30, 0.8)'
-            }}
-        >
-            <Toolbar sx={{ px: 2 }}>
-                {/* Logo */}
-                <SecurityIcon sx={{ mr: 2, color: 'primary.main', fontSize: 32 }} />
-                <Typography 
-                    variant="h5" 
-                    component="div" 
-                    sx={{ 
-                        flexGrow: { xs: 1, md: 0 },
-                        fontWeight: 700, 
-                        letterSpacing: 1,
-                        mr: 4
-                    }}
+        <>
+            {/* ── Floating pill wrapper ─────────────────────────────────── */}
+            <Box
+                sx={{
+                    position: 'sticky',
+                    top: 0,
+                    zIndex: 1300,
+                    /* give a little breathing room above so the pill floats */
+                    pt: '12px',
+                    px: '12px',
+                    pb: 0,
+                    pointerEvents: 'none',   /* let clicks pass through the gutter */
+                }}
+            >
+                <motion.div
+                    variants={navbarVariants}
+                    initial="hidden"
+                    animate="visible"
+                    style={{ pointerEvents: 'auto' }}
                 >
-                    CHAMELEON <Typography component="span" variant="h5" color="primary" sx={{ fontWeight: 700 }}>FORENSICS</Typography>
-                </Typography>
-
-                {/* Desktop Navigation */}
-                <Box sx={{ display: { xs: 'none', md: 'flex' }, gap: 1, flexGrow: 1 }}>
-                    {navItems.map((item) => (
-                        <Button
-                            key={item.path}
-                            startIcon={item.icon}
-                            onClick={() => navigate(item.path)}
+                    <Box
+                        sx={{
+                            maxWidth: 960,
+                            mx: 'auto',
+                            height: 52,
+                            borderRadius: '999px',
+                            background: 'rgba(8, 14, 28, 0.75)',
+                            backdropFilter: 'blur(24px) saturate(180%)',
+                            WebkitBackdropFilter: 'blur(24px) saturate(180%)',
+                            border: '1px solid rgba(0, 212, 255, 0.12)',
+                            boxShadow: '0 8px 32px rgba(0,0,0,0.4), 0 0 0 1px rgba(0,212,255,0.05)',
+                            display: 'flex',
+                            alignItems: 'center',
+                            px: '24px',
+                            gap: 1.5,
+                        }}
+                    >
+                        {/* ── BRAND ─────────────────────────────────────── */}
+                        <Box
+                            onClick={() => navigate('/dashboard')}
                             sx={{
-                                color: isActive(item.path) ? 'primary.main' : 'text.primary',
-                                borderBottom: isActive(item.path) ? '2px solid' : '2px solid transparent',
-                                borderBottomColor: 'primary.main',
-                                borderRadius: 0,
-                                px: 2,
-                                '&:hover': {
-                                    backgroundColor: 'rgba(25, 118, 210, 0.08)',
-                                }
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: '8px',
+                                cursor: 'pointer',
+                                flexShrink: 0,
+                                userSelect: 'none',
                             }}
                         >
-                            {item.label}
-                        </Button>
-                    ))}
+                            <ShieldSVG />
+                            <Box sx={{ display: 'flex', alignItems: 'baseline', gap: '4px', whiteSpace: 'nowrap' }}>
+                                <Typography
+                                    sx={{
+                                        fontFamily: BRAND_FONT,
+                                        fontWeight: 700,
+                                        fontSize: '13px',
+                                        lineHeight: 1,
+                                        color: '#ffffff',
+                                        letterSpacing: '0.06em',
+                                    }}
+                                >
+                                    CHAMELEON
+                                </Typography>
+                                <Typography
+                                    sx={{
+                                        fontFamily: BRAND_FONT,
+                                        fontWeight: 400,
+                                        fontSize: '13px',
+                                        lineHeight: 1,
+                                        color: CYAN,
+                                        letterSpacing: '0.06em',
+                                    }}
+                                >
+                                    FORENSICS
+                                </Typography>
+                            </Box>
+                        </Box>
+
+                        {/* ── ALWAYS-VISIBLE HAMBURGER (all screen sizes) ── */}
+                        <Box
+                            sx={{
+                                display: 'flex',
+                                ml: 'auto',
+                                alignItems: 'center',
+                                gap: '8px',
+                            }}
+                        >
+                            <IconButton
+                                onClick={() => setDrawerOpen(prev => !prev)}
+                                size="small"
+                                sx={{
+                                    color: CYAN,
+                                    border: `1px solid rgba(0,212,255,0.2)`,
+                                    borderRadius: '999px',
+                                    width: 32,
+                                    height: 32,
+                                    transition: 'background-color 0.2s, transform 0.2s',
+                                    transform: drawerOpen ? 'rotate(90deg)' : 'rotate(0deg)',
+                                    '&:hover': { backgroundColor: 'rgba(0,212,255,0.08)' },
+                                }}
+                            >
+                                {drawerOpen
+                                    ? <CloseIcon sx={{ fontSize: 18 }} />
+                                    : <MenuIcon sx={{ fontSize: 18 }} />
+                                }
+                            </IconButton>
+                        </Box>
+                    </Box>
+                </motion.div>
+            </Box>
+
+            {/* ── MOBILE DRAWER ────────────────────────────────────────────── */}
+            <Drawer
+                anchor="right"
+                open={drawerOpen}
+                onClose={() => setDrawerOpen(false)}
+                PaperProps={{
+                    sx: {
+                        width: 280,
+                        background: 'rgba(8, 14, 28, 0.95)',
+                        backdropFilter: 'blur(24px) saturate(180%)',
+                        WebkitBackdropFilter: 'blur(24px) saturate(180%)',
+                        border: 'none',
+                        borderLeft: '1px solid rgba(0,212,255,0.12)',
+                        backgroundImage: 'none',
+                    },
+                }}
+            >
+                {/* Drawer header */}
+                <Box
+                    sx={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'space-between',
+                        px: 2.5,
+                        py: 2,
+                        borderBottom: '1px solid rgba(0,212,255,0.08)',
+                    }}
+                >
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                        <ShieldSVG />
+                        <Box sx={{ display: 'flex', alignItems: 'baseline', gap: '4px' }}>
+                            <Typography
+                                sx={{
+                                    fontFamily: BRAND_FONT,
+                                    fontWeight: 700,
+                                    fontSize: '13px',
+                                    color: '#ffffff',
+                                    letterSpacing: '0.06em',
+                                }}
+                            >
+                                CHAMELEON
+                            </Typography>
+                            <Typography
+                                sx={{
+                                    fontFamily: BRAND_FONT,
+                                    fontSize: '13px',
+                                    color: CYAN,
+                                    letterSpacing: '0.06em',
+                                }}
+                            >
+                                FORENSICS
+                            </Typography>
+                        </Box>
+                    </Box>
+                    <IconButton
+                        onClick={() => setDrawerOpen(false)}
+                        size="small"
+                        sx={{ color: MUTED, '&:hover': { color: '#fff' } }}
+                    >
+                        <CloseIcon sx={{ fontSize: 18 }} />
+                    </IconButton>
                 </Box>
 
-                {/* Right Side Actions */}
-                <Box sx={{ display: { xs: 'none', md: 'flex' }, alignItems: 'center', gap: 2 }}>
-                    {lastUpdated && (
-                        <Typography variant="caption" color="text.secondary">
-                            Last updated: {lastUpdated.toLocaleTimeString()}
-                        </Typography>
-                    )}
+                {/* Drawer nav items */}
+                <List sx={{ pt: 1 }}>
+                    {NAV_ITEMS.map(({ path, label, Icon }) => {
+                        const active = isActive(path);
+                        return (
+                            <ListItem key={path} disablePadding>
+                                <ListItemButton
+                                    onClick={() => { navigate(path); setDrawerOpen(false); }}
+                                    sx={{
+                                        mx: 1,
+                                        my: 0.25,
+                                        borderRadius: '12px',
+                                        backgroundColor: active ? 'rgba(0,212,255,0.08)' : 'transparent',
+                                        borderLeft: active ? `3px solid ${CYAN}` : '3px solid transparent',
+                                        '&:hover': { backgroundColor: 'rgba(0,212,255,0.05)' },
+                                    }}
+                                >
+                                    <ListItemIcon sx={{ color: active ? CYAN : MUTED, minWidth: 36 }}>
+                                        <Icon sx={{ fontSize: 18 }} />
+                                    </ListItemIcon>
+                                    <ListItemText
+                                        primary={label}
+                                        primaryTypographyProps={{
+                                            sx: {
+                                                fontFamily: NAV_FONT,
+                                                fontSize: '11px',
+                                                letterSpacing: '0.05em',
+                                                textTransform: 'uppercase',
+                                                color: active ? CYAN : MUTED,
+                                                fontWeight: active ? 600 : 400,
+                                            },
+                                        }}
+                                    />
+                                </ListItemButton>
+                            </ListItem>
+                        );
+                    })}
+                </List>
 
+                <Divider sx={{ borderColor: 'rgba(0,212,255,0.08)', mx: 2, my: 1 }} />
+
+                {/* Drawer controls */}
+                <Box sx={{ px: 2.5, display: 'flex', flexDirection: 'column', gap: 1 }}>
                     {setAutoRefresh && (
                         <FormControlLabel
                             control={
                                 <Switch
                                     checked={autoRefresh}
                                     onChange={(e) => setAutoRefresh(e.target.checked)}
-                                    color="primary"
                                     size="small"
+                                    sx={{
+                                        '& .MuiSwitch-switchBase.Mui-checked': { color: CYAN },
+                                        '& .MuiSwitch-switchBase.Mui-checked + .MuiSwitch-track': { backgroundColor: CYAN },
+                                    }}
                                 />
                             }
-                            label={<Typography variant="body2">Live</Typography>}
+                            label={
+                                <Typography sx={{ fontFamily: NAV_FONT, fontSize: '11px', color: MUTED, letterSpacing: '0.05em', textTransform: 'uppercase' }}>
+                                    Live Updates
+                                </Typography>
+                            }
                         />
                     )}
-
                     {setUseMockGeo && (
                         <FormControlLabel
                             control={
                                 <Switch
                                     checked={useMockGeo}
                                     onChange={(e) => setUseMockGeo(e.target.checked)}
-                                    color="secondary"
                                     size="small"
+                                    sx={{
+                                        '& .MuiSwitch-switchBase.Mui-checked': { color: AMBER },
+                                        '& .MuiSwitch-switchBase.Mui-checked + .MuiSwitch-track': { backgroundColor: AMBER },
+                                    }}
                                 />
                             }
-                            label={<Typography variant="body2">Mock Geo</Typography>}
+                            label={
+                                <Typography sx={{ fontFamily: NAV_FONT, fontSize: '11px', color: MUTED, letterSpacing: '0.05em', textTransform: 'uppercase' }}>
+                                    Mock Geo
+                                </Typography>
+                            }
                         />
                     )}
-
-                    <CommandBarTrigger />
-
-                    {onRefresh && (
-                        <IconButton
-                            onClick={onRefresh}
-                            size="small"
-                            sx={{ color: 'primary.main' }}
-                        >
-                            <RefreshIcon />
-                        </IconButton>
-                    )}
-
-                    <Button
-                        variant="outlined"
-                        color="error"
-                        startIcon={<LogoutIcon />}
-                        onClick={handleLogout}
-                        size="small"
-                    >
-                        Logout
-                    </Button>
                 </Box>
 
-                {/* Mobile Menu Button */}
-                <Box sx={{ display: { xs: 'flex', md: 'none' } }}>
-                    <IconButton
-                        size="large"
-                        onClick={handleMobileMenuOpen}
-                        color="inherit"
-                    >
-                        <MenuIcon />
-                    </IconButton>
-                </Box>
+                <Divider sx={{ borderColor: 'rgba(0,212,255,0.08)', mx: 2, my: 1 }} />
 
-                {/* Mobile Menu */}
-                <Menu
-                    anchorEl={mobileMenuAnchor}
-                    open={Boolean(mobileMenuAnchor)}
-                    onClose={handleMobileMenuClose}
-                    sx={{ display: { xs: 'block', md: 'none' } }}
-                >
-                    {navItems.map((item) => (
-                        <MenuItem
-                            key={item.path}
-                            onClick={() => {
-                                navigate(item.path);
-                                handleMobileMenuClose();
+                {/* Logout */}
+                <List>
+                    <ListItem disablePadding>
+                        <ListItemButton
+                            onClick={handleLogout}
+                            sx={{
+                                mx: 1,
+                                borderRadius: '12px',
+                                '&:hover': { backgroundColor: 'rgba(255,61,113,0.06)' },
                             }}
-                            selected={isActive(item.path)}
                         >
-                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                                {item.icon}
-                                {item.label}
-                            </Box>
-                        </MenuItem>
-                    ))}
-                    <MenuItem onClick={handleLogout}>
-                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, color: 'error.main' }}>
-                            <LogoutIcon />
-                            Logout
-                        </Box>
-                    </MenuItem>
-                </Menu>
-            </Toolbar>
-        </AppBar>
+                            <ListItemIcon sx={{ color: '#ff3d71', minWidth: 36 }}>
+                                <LogoutIcon sx={{ fontSize: 18 }} />
+                            </ListItemIcon>
+                            <ListItemText
+                                primary="Logout"
+                                primaryTypographyProps={{
+                                    sx: {
+                                        fontFamily: NAV_FONT,
+                                        fontSize: '11px',
+                                        letterSpacing: '0.05em',
+                                        textTransform: 'uppercase',
+                                        color: '#ff3d71',
+                                    },
+                                }}
+                            />
+                        </ListItemButton>
+                    </ListItem>
+                </List>
+            </Drawer>
+        </>
     );
 };
 

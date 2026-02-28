@@ -1,0 +1,781 @@
+/* ── BASE ─────────────────────────────── */
+.trap-page {
+    min-height: 100vh;
+    background: #f0f2f5;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    font-size: 14px;
+    color: #1a1a2e;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+/* ── HEADER ───────────────────────────── */
+.trap-header {
+    width: 100%;
+    background: #ffffff;
+    border-bottom: 1px solid #d0d5dd;
+    padding: 12px 24px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+}
+
+.trap-logo {
+    font-weight: 600;
+    font-size: 16px;
+    color: #0066cc;
+}
+
+.trap-logo span {
+    color: #003d99;
+}
+
+.trap-header-right {
+    font-size: 12px;
+    color: #666;
+}
+
+/* ── CARD ─────────────────────────────── */
+.trap-card {
+    background: #ffffff;
+    border: 1px solid #d0d5dd;
+    border-radius: 4px;
+    padding: 32px;
+    width: 100%;
+    max-width: 440px;
+    margin: 40px auto;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+}
+
+.trap-card-center {
+    text-align: center;
+}
+
+.trap-card h2 {
+    margin: 0 0 4px;
+    font-size: 20px;
+}
+
+.trap-card h3 {
+    margin: 16px 0 8px;
+    font-size: 17px;
+}
+
+.trap-card-header p {
+    color: #666;
+    margin: 0 0 20px;
+}
+
+/* ── NOTICE ───────────────────────────── */
+.trap-notice {
+    background: #fff8e1;
+    border: 1px solid #ffe082;
+    border-radius: 4px;
+    padding: 10px 14px;
+    font-size: 12px;
+    color: #5d4037;
+    margin-bottom: 20px;
+}
+
+/* ── FORM ─────────────────────────────── */
+.trap-form {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.trap-form label {
+    font-size: 13px;
+    font-weight: 500;
+    color: #333;
+}
+
+.trap-form input[type="text"],
+.trap-form input[type="password"] {
+    width: 100%;
+    padding: 9px 12px;
+    border: 1px solid #c0c7d0;
+    border-radius: 3px;
+    font-size: 14px;
+    box-sizing: border-box;
+    outline: none;
+    transition: border-color 0.15s;
+}
+
+.trap-form input:focus {
+    border-color: #0066cc;
+    box-shadow: 0 0 0 3px rgba(0, 102, 204, 0.15);
+}
+
+.trap-form-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.trap-checkbox {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 13px;
+    cursor: pointer;
+}
+
+.trap-link {
+    font-size: 13px;
+    color: #0066cc;
+    text-decoration: none;
+}
+
+.trap-link:hover {
+    text-decoration: underline;
+}
+
+/* ── BUTTONS ──────────────────────────── */
+.trap-btn-primary {
+    background: #0066cc;
+    color: white;
+    border: none;
+    padding: 10px 20px;
+    border-radius: 3px;
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    width: 100%;
+    transition: background 0.15s;
+}
+
+.trap-btn-primary:hover {
+    background: #0052a3;
+}
+
+.trap-btn-secondary {
+    background: transparent;
+    color: #0066cc;
+    border: 1px solid #0066cc;
+    padding: 10px 20px;
+    border-radius: 3px;
+    font-size: 14px;
+    cursor: pointer;
+}
+
+.trap-btn-row {
+    display: flex;
+    gap: 12px;
+    margin: 20px 0 0;
+}
+
+/* ── PROGRESS BAR ─────────────────────── */
+.trap-progress-track {
+    width: 100%;
+    height: 8px;
+    background: #e0e5eb;
+    border-radius: 4px;
+    overflow: hidden;
+    margin: 16px 0 6px;
+}
+
+.trap-progress-fill {
+    height: 100%;
+    background: linear-gradient(90deg, #0066cc, #0099ff);
+    border-radius: 4px;
+    transition: width 0.15s linear;
+}
+
+.trap-progress-green {
+    background: linear-gradient(90deg, #27ae60, #2ecc71);
+}
+
+.trap-progress-pct {
+    font-size: 13px;
+    color: #666;
+}
+
+.trap-progress-wide {
+    max-width: 360px;
+    margin: 16px auto;
+}
+
+/* ── SPINNER ──────────────────────────── */
+.trap-spinner {
+    width: 40px;
+    height: 40px;
+    border: 3px solid #e0e5eb;
+    border-top-color: #0066cc;
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+    margin: 0 auto 16px;
+}
+
+.trap-spinner-sm {
+    display: inline-block;
+    width: 14px;
+    height: 14px;
+    border: 2px solid #e0e5eb;
+    border-top-color: #0066cc;
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+    vertical-align: middle;
+    margin-left: 6px;
+}
+
+@keyframes spin {
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+/* ── TERMINAL LOG ─────────────────────── */
+.trap-log-terminal {
+    background: #1a1a2e;
+    color: #a8d8a8;
+    font-family: 'Courier New', monospace;
+    font-size: 11px;
+    padding: 12px;
+    border-radius: 4px;
+    text-align: left;
+    margin-top: 16px;
+    max-height: 100px;
+    overflow: hidden;
+    line-height: 1.8;
+}
+
+.trap-log-warn {
+    color: #ffd700;
+}
+
+/* ── ERROR ────────────────────────────── */
+.trap-error-icon {
+    width: 48px;
+    height: 48px;
+    background: #fde8e8;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 22px;
+    color: #c0392b;
+    margin: 0 auto 12px;
+}
+
+.trap-error-box {
+    background: #fafafa;
+    border: 1px solid #e0e0e0;
+    border-radius: 4px;
+    padding: 14px;
+    font-size: 12px;
+    font-family: 'Courier New', monospace;
+    text-align: left;
+    line-height: 2;
+    color: #444;
+    margin: 16px 0;
+}
+
+.trap-incident {
+    font-size: 12px;
+    color: #888;
+    margin-top: 20px;
+}
+
+/* ── MFA ──────────────────────────────── */
+.trap-mfa-icon {
+    font-size: 40px;
+    margin-bottom: 8px;
+}
+
+.trap-mfa-input {
+    width: 180px;
+    text-align: center;
+    font-size: 28px;
+    letter-spacing: 12px;
+    padding: 12px;
+    border: 2px solid #c0c7d0;
+    border-radius: 4px;
+    font-family: 'Courier New', monospace;
+    outline: none;
+}
+
+.trap-mfa-input:focus {
+    border-color: #0066cc;
+}
+
+.trap-input-error {
+    border-color: #e74c3c !important;
+}
+
+.trap-field-error {
+    color: #e74c3c;
+    font-size: 12px;
+    display: block;
+    margin-top: 6px;
+}
+
+.trap-mfa-input-group {
+    margin: 20px 0;
+}
+
+.trap-mfa-hints {
+    font-size: 13px;
+    color: #555;
+}
+
+.trap-countdown {
+    color: #e74c3c;
+}
+
+/* ── LOADING SCREEN ───────────────────── */
+.trap-page-dark {
+    background: #1a1a2e;
+}
+
+.trap-loading-screen {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    min-height: 100vh;
+    padding: 40px;
+    color: white;
+    text-align: center;
+}
+
+.trap-success-banner {
+    background: #27ae60;
+    color: white;
+    padding: 10px 24px;
+    border-radius: 4px;
+    font-size: 14px;
+    margin-bottom: 40px;
+}
+
+.trap-loading-logo {
+    font-size: 24px;
+    font-weight: 600;
+    color: #a0c4ff;
+    margin-bottom: 24px;
+}
+
+.trap-loading-msg {
+    color: #a0aec0;
+    margin-bottom: 8px;
+}
+
+.trap-module-list {
+    margin-top: 32px;
+    text-align: left;
+}
+
+.trap-module-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 6px 0;
+    color: #a0aec0;
+    font-size: 13px;
+}
+
+.trap-check {
+    color: #27ae60;
+    font-weight: bold;
+}
+
+/* ── FAKE DASHBOARD ───────────────────── */
+.trap-fake-dashboard {
+    min-height: 100vh;
+    background: #f5f7fa;
+    font-family: 'Segoe UI', sans-serif;
+}
+
+.trap-dash-topbar {
+    background: #fff;
+    border-bottom: 1px solid #e0e5eb;
+    padding: 12px 24px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+}
+
+.trap-dash-logo {
+    font-weight: 600;
+    color: #0066cc;
+}
+
+.trap-dash-user {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    font-size: 13px;
+    color: #555;
+}
+
+.trap-dash-user button {
+    background: none;
+    border: 1px solid #d0d5dd;
+    padding: 4px 12px;
+    border-radius: 3px;
+    cursor: pointer;
+    font-size: 12px;
+}
+
+.trap-dash-body {
+    display: flex;
+}
+
+.trap-dash-nav {
+    width: 200px;
+    min-height: calc(100vh - 49px);
+    background: #ffffff;
+    border-right: 1px solid #e0e5eb;
+    padding: 16px 0;
+    display: flex;
+    flex-direction: column;
+}
+
+.trap-nav-item {
+    padding: 10px 20px;
+    border: none;
+    background: none;
+    text-align: left;
+    cursor: pointer;
+    font-size: 13px;
+    color: #444;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.trap-nav-item:hover {
+    background: #f0f4ff;
+    color: #0066cc;
+}
+
+.trap-dash-main {
+    flex: 1;
+    padding: 24px;
+    position: relative;
+}
+
+.trap-stats-row {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 16px;
+    margin-bottom: 24px;
+}
+
+.trap-stat-card {
+    background: #fff;
+    border: 1px solid #e0e5eb;
+    border-radius: 4px;
+    padding: 20px;
+    cursor: pointer;
+    position: relative;
+    overflow: hidden;
+}
+
+.trap-stat-card:hover {
+    border-color: #0066cc;
+}
+
+.trap-stat-value {
+    font-size: 28px;
+    font-weight: 700;
+    color: #1a1a2e;
+}
+
+.trap-stat-label {
+    font-size: 12px;
+    color: #888;
+    margin-top: 4px;
+}
+
+.trap-stat-change {
+    font-size: 12px;
+    color: #27ae60;
+    margin-top: 2px;
+}
+
+.trap-card-loading {
+    position: absolute;
+    inset: 0;
+    background: rgba(255, 255, 255, 0.9);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    font-size: 13px;
+    color: #666;
+}
+
+.trap-section {
+    background: #fff;
+    border: 1px solid #e0e5eb;
+    border-radius: 4px;
+    padding: 20px;
+}
+
+.trap-section h4 {
+    margin: 0 0 16px;
+    font-size: 14px;
+}
+
+.trap-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 13px;
+}
+
+.trap-table th {
+    text-align: left;
+    padding: 8px 12px;
+    border-bottom: 2px solid #e0e5eb;
+    color: #666;
+    font-weight: 500;
+}
+
+.trap-table td {
+    padding: 10px 12px;
+    border-bottom: 1px solid #f0f0f0;
+}
+
+.trap-table tr:hover td {
+    background: #f8f9ff;
+    cursor: pointer;
+}
+
+.trap-badge {
+    padding: 2px 8px;
+    border-radius: 10px;
+    font-size: 11px;
+    font-weight: 500;
+    text-transform: uppercase;
+}
+
+.trap-badge-info {
+    background: #e3f2fd;
+    color: #1976d2;
+}
+
+.trap-badge-warn {
+    background: #fff8e1;
+    color: #f57f17;
+}
+
+.trap-action-btn {
+    background: none;
+    border: 1px solid #d0d5dd;
+    padding: 3px 10px;
+    border-radius: 3px;
+    cursor: pointer;
+    font-size: 12px;
+}
+
+.trap-loading-overlay {
+    position: absolute;
+    inset: 0;
+    background: rgba(245, 247, 250, 0.85);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+}
+
+.trap-inline-spinner {
+    display: inline-block;
+    width: 12px;
+    height: 12px;
+    border: 2px solid #e0e5eb;
+    border-top-color: #0066cc;
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+}
+
+/* ── TERMINATED ───────────────────────── */
+.trap-terminated-page {
+    min-height: 100vh;
+    background: #0a0008;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+    overflow: hidden;
+    font-family: 'Segoe UI', sans-serif;
+}
+
+.trap-terminated-border {
+    position: absolute;
+    inset: 0;
+    box-shadow: inset 0 0 60px rgba(231, 76, 60, 0.4);
+    animation: borderPulse 1.5s ease-in-out infinite alternate;
+    pointer-events: none;
+}
+
+@keyframes borderPulse {
+    from {
+        box-shadow: inset 0 0 40px rgba(231, 76, 60, 0.3);
+    }
+
+    to {
+        box-shadow: inset 0 0 80px rgba(231, 76, 60, 0.6);
+    }
+}
+
+.trap-terminated-card {
+    background: #12000f;
+    border: 1px solid rgba(231, 76, 60, 0.4);
+    border-radius: 6px;
+    padding: 48px;
+    max-width: 560px;
+    width: 90%;
+    text-align: center;
+    color: #eee;
+}
+
+.trap-terminated-icon {
+    font-size: 52px;
+    color: #e74c3c;
+    animation: iconPulse 1s ease-in-out infinite alternate;
+    margin-bottom: 16px;
+}
+
+@keyframes iconPulse {
+    from {
+        opacity: 0.7;
+        transform: scale(0.95);
+    }
+
+    to {
+        opacity: 1.0;
+        transform: scale(1.05);
+    }
+}
+
+.trap-terminated-title {
+    font-size: 28px;
+    font-weight: 700;
+    color: #e74c3c;
+    letter-spacing: 4px;
+    margin: 0 0 16px;
+    font-family: 'Courier New', monospace;
+}
+
+.trap-terminated-divider {
+    height: 1px;
+    background: rgba(231, 76, 60, 0.3);
+    margin: 16px 0;
+}
+
+.trap-terminated-reason {
+    color: #ccc;
+    margin: 0 0 24px;
+    line-height: 1.6;
+}
+
+.trap-terminated-details {
+    background: rgba(0, 0, 0, 0.4);
+    border: 1px solid rgba(231, 76, 60, 0.2);
+    border-radius: 4px;
+    padding: 16px;
+    text-align: left;
+    margin-bottom: 24px;
+}
+
+.trap-detail-row {
+    display: flex;
+    justify-content: space-between;
+    padding: 6px 0;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+    font-size: 13px;
+    gap: 16px;
+}
+
+.trap-detail-row span {
+    color: #888;
+}
+
+.trap-detail-row strong {
+    color: #eee;
+    text-align: right;
+}
+
+.trap-trace-animation {
+    text-align: left;
+    margin-bottom: 24px;
+}
+
+.trap-trace-line {
+    font-family: 'Courier New', monospace;
+    font-size: 12px;
+    color: #666;
+    padding: 4px 0;
+    animation: traceReveal 0.5s ease forwards;
+    opacity: 0;
+}
+
+.trap-trace-line:nth-child(1) {
+    animation-delay: 0.5s;
+}
+
+.trap-trace-line:nth-child(2) {
+    animation-delay: 1.5s;
+}
+
+.trap-trace-line:nth-child(3) {
+    animation-delay: 2.5s;
+}
+
+.trap-trace-line:nth-child(4) {
+    animation-delay: 3.5s;
+}
+
+.trap-trace-done {
+    color: #e74c3c;
+}
+
+@keyframes traceReveal {
+    to {
+        opacity: 1;
+    }
+}
+
+.trap-terminated-footer {
+    font-size: 12px;
+    color: #666;
+    line-height: 1.6;
+}
+
+/* ── FOOTER ───────────────────────────── */
+.trap-footer {
+    font-size: 11px;
+    color: #999;
+    text-align: center;
+    padding: 24px;
+}
+
+.trap-footer-links {
+    display: flex;
+    justify-content: center;
+    gap: 12px;
+    margin-top: 20px;
+}
+
+.trap-footer-links a {
+    font-size: 12px;
+    color: #0066cc;
+    text-decoration: none;
+}
+
+.trap-hint {
+    font-size: 12px;
+    color: #888;
+    margin-top: 16px;
+}
+
+.trap-status-text {
+    color: #0066cc;
+    font-size: 13px;
+    margin: 8px 0;
+}
