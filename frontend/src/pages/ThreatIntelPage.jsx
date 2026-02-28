@@ -1,5 +1,5 @@
-import { useState, useEffect, useCallback } from 'react';
-import { Box, CircularProgress, Typography } from '@mui/material';
+import { useState } from 'react';
+import { Box, Typography } from '@mui/material';
 import { toast } from 'react-toastify';
 import Navbar from '../components/Navbar';
 import ThreatIntelFeed from '../components/ThreatIntelFeed';
@@ -16,12 +16,8 @@ const ThreatIntelPage = () => {
     };
 
     return (
-        <Box sx={{ 
-            flexGrow: 1, 
-            backgroundColor: 'background.default', 
-            minHeight: '100vh',
-        }}>
-            <Navbar 
+        <Box sx={{ flexGrow: 1, minHeight: '100vh', position: 'relative', zIndex: 2 }}>
+            <Navbar
                 lastUpdated={lastUpdated}
                 autoRefresh={autoRefresh}
                 setAutoRefresh={setAutoRefresh}
@@ -29,7 +25,12 @@ const ThreatIntelPage = () => {
             />
 
             <Box sx={{ px: 2, py: 3 }}>
-                <Typography variant="h4" sx={{ fontWeight: 700, mb: 3 }}>
+                <Typography variant="h4" sx={{
+                    fontWeight: 700, mb: 3,
+                    fontFamily: '"Rajdhani", sans-serif',
+                    color: '#e8f4fd',
+                    fontSize: 'clamp(1.5rem, 3vw, 2rem)',
+                }}>
                     Threat Intelligence Feed
                 </Typography>
 

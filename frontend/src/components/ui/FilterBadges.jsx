@@ -2,20 +2,17 @@ import { Box, Chip, Tooltip, Typography } from '@mui/material';
 import CloseIcon from '@mui/icons-material/Close';
 import FilterListIcon from '@mui/icons-material/FilterList';
 import useAttackStore from '../../stores/useAttackStore';
-import { formatFilters } from '../../lib/commandParser';
 
 /**
  * Filter Badges Component
- * Displays active filters as removable badges
+ * @see Section 5 — FilterBadges Rules
+ * Displays active filters as removable badges with design token colors
  */
 function FilterBadges() {
   const { filters, setFilters, resetFilters, getActiveFilterCount } = useAttackStore();
   const activeFilterCount = getActiveFilterCount();
 
-  // Don't render if no filters are active
-  if (activeFilterCount === 0) {
-    return null;
-  }
+  if (activeFilterCount === 0) return null;
 
   const handleRemoveFilter = (filterKey) => {
     const newFilters = { ...filters };
@@ -23,48 +20,27 @@ function FilterBadges() {
     setFilters(newFilters);
   };
 
-  const getFilterLabel = (key, value) => {
-    const labels = {
-      ip: 'IP',
-      type: 'Type',
-      country: 'Country',
-      afterDate: 'Time',
-    };
+  const getFilterLabel = (key) => {
+    const labels = { ip: 'IP', type: 'Type', country: 'Country', afterDate: 'Time' };
     return labels[key] || key;
   };
 
   const getFilterValue = (key, value) => {
     if (key === 'type') {
-      const typeNames = {
-        SQLI: 'SQL Injection',
-        XSS: 'XSS',
-        BRUTE_FORCE: 'Brute Force',
-        SSI: 'SSI',
-        BENIGN: 'Benign',
-      };
+      const typeNames = { SQLI: 'SQL Injection', XSS: 'XSS', BRUTE_FORCE: 'Brute Force', SSI: 'SSI', BENIGN: 'Benign' };
       return typeNames[value] || value;
     }
-
     if (key === 'afterDate') {
       const now = new Date();
       const diff = now - new Date(value);
       const hours = Math.floor(diff / (1000 * 60 * 60));
       const days = Math.floor(hours / 24);
-
-      if (days > 0) {
-        return `Last ${days}d`;
-      } else if (hours > 0) {
-        return `Last ${hours}h`;
-      } else {
-        const minutes = Math.floor(diff / (1000 * 60));
-        return `Last ${minutes}m`;
-      }
+      if (days > 0) return `Last ${days}d`;
+      if (hours > 0) return `Last ${hours}h`;
+      return `Last ${Math.floor(diff / (1000 * 60))}m`;
     }
-
     return value;
   };
-
-  const filterEntries = Object.entries(filters);
 
   return (
     <Box
@@ -72,60 +48,57 @@ function FilterBadges() {
         display: 'flex',
         alignItems: 'center',
         gap: 1,
-        padding: '8px 16px',
-        background: 'rgba(25, 118, 210, 0.08)',
+        padding: '6px 12px',
+        background: 'rgba(0, 212, 255, 0.04)',
         borderRadius: '8px',
-        border: '1px solid rgba(25, 118, 210, 0.2)',
+        border: '1px solid rgba(0, 212, 255, 0.12)',
         flexWrap: 'wrap',
+        mb: 2,
       }}
     >
       <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
-        <FilterListIcon sx={{ fontSize: 18, color: '#1976d2' }} />
+        <FilterListIcon sx={{ fontSize: 16, color: '#00d4ff' }} />
         <Typography
           variant="caption"
           sx={{
             fontWeight: 600,
-            color: '#1976d2',
+            color: '#00d4ff',
             textTransform: 'uppercase',
             letterSpacing: '0.5px',
+            fontSize: '0.65rem',
+            fontFamily: '"DM Sans", sans-serif',
           }}
         >
           Active Filters:
         </Typography>
       </Box>
 
-      {filterEntries.map(([key, value]) => (
-        <Tooltip
-          key={key}
-          title={`${getFilterLabel(key)}: ${getFilterValue(key, value)}`}
-          arrow
-        >
+      {Object.entries(filters).map(([key, value]) => (
+        <Tooltip key={key} title={`${getFilterLabel(key)}: ${getFilterValue(key, value)}`} arrow>
           <Chip
             label={
               <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
-                <Typography variant="caption" sx={{ fontWeight: 600, fontSize: '11px' }}>
+                <Typography variant="caption" sx={{ fontWeight: 700, fontSize: '0.7rem', color: '#e8f4fd' }}>
                   {getFilterLabel(key)}:
                 </Typography>
-                <Typography variant="caption" sx={{ fontSize: '11px' }}>
+                <Typography variant="caption" sx={{ fontSize: '0.7rem', color: '#7a9bbf' }}>
                   {getFilterValue(key, value)}
                 </Typography>
               </Box>
             }
             onDelete={() => handleRemoveFilter(key)}
-            deleteIcon={<CloseIcon sx={{ fontSize: 16 }} />}
+            deleteIcon={<CloseIcon sx={{ fontSize: 14 }} />}
             size="small"
             sx={{
-              background: 'rgba(25, 118, 210, 0.15)',
-              color: '#fff',
-              border: '1px solid rgba(25, 118, 210, 0.3)',
+              background: 'rgba(0, 212, 255, 0.1)',
+              color: '#e8f4fd',
+              border: '1px solid rgba(0, 212, 255, 0.2)',
               '& .MuiChip-deleteIcon': {
-                color: 'rgba(255, 255, 255, 0.7)',
-                '&:hover': {
-                  color: '#fff',
-                },
+                color: 'rgba(0, 212, 255, 0.5)',
+                '&:hover': { color: '#00d4ff' },
               },
               '&:hover': {
-                background: 'rgba(25, 118, 210, 0.25)',
+                background: 'rgba(0, 212, 255, 0.18)',
               },
             }}
           />
@@ -138,14 +111,14 @@ function FilterBadges() {
           onClick={resetFilters}
           size="small"
           sx={{
-            background: 'rgba(244, 67, 54, 0.15)',
-            color: '#f44336',
-            border: '1px solid rgba(244, 67, 54, 0.3)',
+            background: 'rgba(255, 61, 113, 0.1)',
+            color: '#ff3d71',
+            border: '1px solid rgba(255, 61, 113, 0.25)',
             fontWeight: 600,
-            fontSize: '11px',
+            fontSize: '0.7rem',
             cursor: 'pointer',
             '&:hover': {
-              background: 'rgba(244, 67, 54, 0.25)',
+              background: 'rgba(255, 61, 113, 0.2)',
             },
           }}
         />
