@@ -29,6 +29,7 @@ import logging
 from pydantic import BaseModel, Field
 
 from config import settings
+from alert_manager import alert_manager
 
 # ── ORM & Pydantic models ───────────────────────────────────────────────
 from models import (
@@ -82,6 +83,9 @@ from threat_intel_service import threat_intel_service
 from chatbot_service import get_chatbot
 from utils import get_current_time
 
+# ── SIEM Export ────────────────────────────────────────────────────────
+from api.export.stix import stix_router
+
 logger = logging.getLogger(__name__)
 
 # ========================================================================
@@ -130,8 +134,9 @@ predictor = ChameleonPredictor()
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     """Start both database connections on startup; tear down on shutdown."""
-    await connect_to_mongo()          # Legacy endpoints
+    await connect_to_mongo()          # Legacy endpoints (no-op now)
     await db.connect()                # Async PostgreSQL for /trap/execute
+    await db.create_tables()          # Ensure all tables exist
     logger.info("✅ All databases connected")
     yield
     await close_mongo_connection()
@@ -164,6 +169,9 @@ app.add_middleware(
     allow_headers=["*"],
     expose_headers=["*"],
 )
+
+# Register routers
+app.include_router(stix_router, prefix="/api/export", tags=["SIEM Export"])
 
 
 # ========================================================================
@@ -251,6 +259,7 @@ def _static_fallback(command: str) -> str:
 async def trap_execute(
     payload: TrapExecuteRequest,
     request: Request,
+    background_tasks: BackgroundTasks,
     session: AsyncSession = Depends(get_db),
 ):
     """
@@ -326,6 +335,16 @@ async def trap_execute(
     )
     # get_db dependency auto-commits on successful return
 
+    # ── Step 4.5: Trigger Webhook Alert for Critical Attacks ────────────
+    if prediction_score > DECEPTION_THRESHOLD:
+        background_tasks.add_task(
+            alert_manager.trigger_critical_attack_alert,
+            ip_address=ip_address,
+            command=command,
+            score=prediction_score,
+            session_id=honeytoken_session_id
+        )
+
     # ── Step 5: Return Response ─────────────────────────────────────────
     return TrapExecuteResponse(
         response=response_text,
@@ -352,6 +371,7 @@ TRANSPARENT_PIXEL = (
 async def beacon_tripwire(
     session_id: str,
     request: Request,
+    background_tasks: BackgroundTasks,
     session: AsyncSession = Depends(get_db),
 ):
     """
@@ -418,6 +438,14 @@ async def beacon_tripwire(
         await session.execute(update_stmt)
 
     # get_db auto-commits on return
+
+    # Trigger async webhook alert for exfiltration
+    background_tasks.add_task(
+        alert_manager.trigger_beacon_exfiltration_alert,
+        session_id=session_id,
+        ip_address=source_ip,
+        user_agent=user_agent
+    )
 
     # ── Return 1x1 transparent pixel (appear as dead link) ──────────────
     return Response(
@@ -537,6 +565,50 @@ async def login(
     ip = get_client_ip(request)
     user_agent = request.headers.get("User-Agent")
 
+    # ── 1. Check if the username or password itself is a malicious payload ──
+    combined_input = f"{login_data.username} {login_data.password}"
+    classification = classifier.classify(combined_input)
+    
+    if classification.is_malicious:
+        # Generate a deceptive response instead of a plain 401
+        deception_message = "Invalid input format detected. Request logged."
+        http_status = 403
+        
+        # Log this as a direct attack, not a failed benign login
+        log_entry = AttackLog(
+            timestamp=get_current_time(),
+            raw_input=f"Malicious Login Payload - Username: {login_data.username} | Password: {login_data.password}",
+            ip_address=ip, 
+            user_agent=user_agent, 
+            geo_location=None,
+            classification=classification,
+            deception_response=DeceptionResponse(
+                message=deception_message,
+                delay_applied=0, 
+                http_status=http_status,
+            ),
+        )
+        
+        # Update threat score
+        threat_score_system.calculate_threat_score(
+            ip, classification.attack_type, classification.is_malicious,
+        )
+        
+        # Fire alerting webhook if confidence is high (destructives usually are)
+        if classification.confidence > 0.85:
+            background_tasks.add_task(
+                alert_manager.trigger_critical_attack_alert,
+                ip_address=ip,
+                command=combined_input,
+                score=classification.confidence,
+                session_id=None
+            )
+            
+        background_tasks.add_task(log_attack, log_entry.model_dump())
+        return JSONResponse(status_code=http_status, content={"detail": deception_message}, background=background_tasks)
+
+
+    # ── 2. Check for Brute Force (Rate Limiting) ──
     if login_limiter.is_rate_limited(ip):
         log_entry = AttackLog(
             timestamp=get_current_time(),
@@ -551,7 +623,7 @@ async def login(
             ),
         )
         background_tasks.add_task(log_attack, log_entry.model_dump())
-        raise HTTPException(status_code=429, detail="Too many login attempts. Please try again later.")
+        return JSONResponse(status_code=429, content={"detail": "Too many login attempts. Please try again later."}, background=background_tasks)
 
     is_brute_force = login_limiter.record_attempt(ip)
     if is_brute_force:
@@ -568,8 +640,9 @@ async def login(
             ),
         )
         background_tasks.add_task(log_attack, log_entry.model_dump())
-        raise HTTPException(status_code=429, detail="Brute force attack detected. Account temporarily locked.")
+        return JSONResponse(status_code=429, content={"detail": "Brute force attack detected. Account temporarily locked."}, background=background_tasks)
 
+    # ── 3. Normal Authentication Check ──
     if not verify_credentials(login_data.username, login_data.password):
         log_entry = AttackLog(
             timestamp=get_current_time(),
@@ -584,7 +657,7 @@ async def login(
             ),
         )
         background_tasks.add_task(log_attack, log_entry.model_dump())
-        raise HTTPException(status_code=401, detail="Incorrect username or password")
+        return JSONResponse(status_code=401, content={"detail": "Incorrect username or password"}, background=background_tasks)
 
     login_limiter.reset_attempts(ip)
     access_token = create_access_token(data={"sub": login_data.username})
@@ -653,7 +726,7 @@ async def generate_report(ip_address: str, username: str = Depends(verify_token)
 # ========================================================================
 
 @app.post("/api/honeypot/log")
-async def honeypot_log(request: Request):
+async def honeypot_log(request: Request, background_tasks: BackgroundTasks):
     """
     Receives attacker fingerprints from the TrapInterface decoy page.
 
@@ -678,20 +751,50 @@ async def honeypot_log(request: Request):
         event_type, attacker_ip, str(event_data)[:200],
     )
 
+    # Optional: run ML classifier on the trapped username if it's a login attempt
+    classification_dict = None
+    if event_type == "LOGIN_ATTEMPT":
+        username = event_data.get("username", "")
+        if username:
+            classification = classifier.classify(username)
+            if classification.is_malicious:
+                classification_dict = {
+                    "attack_type": classification.attack_type.value,
+                    "confidence": classification.confidence,
+                    "is_malicious": classification.is_malicious,
+                }
+                threat_score_system.calculate_threat_score(
+                    attacker_ip, classification.attack_type, classification.is_malicious,
+                )
+                if classification.confidence > 0.85:
+                    background_tasks.add_task(
+                        alert_manager.trigger_critical_attack_alert,
+                        ip_address=attacker_ip,
+                        command=username,
+                        score=classification.confidence,
+                        session_id=None
+                    )
+
     # Persist to PostgreSQL
     try:
-        async with db.get_session() as session:
+        async with db.session_factory() as session:
+            tenant = await get_default_tenant(session)
+            tenant_id = str(tenant.id) if tenant else "00000000-0000-0000-0000-000000000000"
+            log_meta = {
+                "honeypot_event": event_type,
+                "fingerprint_data": event_data,
+                "user_agent": request.headers.get("user-agent", ""),
+                "referer": request.headers.get("referer", ""),
+            }
+            if classification_dict:
+                log_meta["classification"] = classification_dict
+                
             log = HoneypotLog(
-                tenant_id=DEFAULT_TENANT_ID,
+                tenant_id=tenant_id,
                 attacker_ip=attacker_ip,
                 command_entered=f"[HONEYPOT] {event_type}",
                 response_sent="Decoy interaction logged",
-                log_metadata={
-                    "honeypot_event": event_type,
-                    "fingerprint_data": event_data,
-                    "user_agent": request.headers.get("user-agent", ""),
-                    "referer": request.headers.get("referer", ""),
-                },
+                log_metadata=log_meta,
             )
             session.add(log)
             await session.commit()

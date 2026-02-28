@@ -86,6 +86,20 @@ class Settings(BaseSettings):
     USE_MERKLE_INTEGRITY: bool = os.getenv("USE_MERKLE_INTEGRITY", "true").lower() == "true"
     FALLBACK_TO_STATIC_DECEPTION: bool = True
 
+    # ============================================================
+    # Blockchain (Sepolia) & Honeytoken Configuration
+    # ============================================================
+    SEPOLIA_RPC_URL: str = os.getenv("SEPOLIA_RPC_URL", "")
+    PRIVATE_KEY: str = os.getenv("PRIVATE_KEY", "")
+    CONTRACT_ADDRESS: str = os.getenv("CONTRACT_ADDRESS", "")
+    HONEYPOT_DOMAIN: str = os.getenv("HONEYPOT_DOMAIN", "localhost:8000")
+
+    # ============================================================
+    # Webhooks for Alerting
+    # ============================================================
+    DISCORD_WEBHOOK_URL: Optional[str] = None
+    SLACK_WEBHOOK_URL: Optional[str] = None
+
     class Config:
         env_file = ".env"
         env_file_encoding = "utf-8"

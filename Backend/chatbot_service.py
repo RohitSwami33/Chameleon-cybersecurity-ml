@@ -3,27 +3,19 @@ AI Chatbot Service with Gemini API and DuckDuckGo Search
 Provides cybersecurity-focused conversational AI with internet search capabilities
 """
 
-import google.generativeai as genai
+import httpx
 from duckduckgo_search import DDGS
 from typing import List, Dict, Optional
 import json
 from datetime import datetime
 
+from llm_controller import LLMController
+from config import settings
+
 class CybersecurityChatbot:
-    def __init__(self, api_key: str):
-        """Initialize the chatbot with Gemini API"""
-        genai.configure(api_key=api_key)
-        
-        # Configure the model - use gemini-2.5-pro
-        self.model = genai.GenerativeModel(
-            model_name='gemini-2.5-pro',
-            generation_config={
-                'temperature': 0.7,
-                'top_p': 0.8,
-                'top_k': 40,
-                'max_output_tokens': 2048,
-            }
-        )
+    def __init__(self, api_key: str = None):
+        """Initialize the chatbot with our uniform DeepSeek LLMController"""
+        self.llm = LLMController(provider="deepseek")
         
         # System context for cybersecurity focus
         self.system_context = """You are a cybersecurity expert AI assistant integrated into the Chameleon Adaptive Deception System. 
@@ -108,10 +100,9 @@ Always be concise, accurate, and security-focused. If you're unsure, say so and 
             
             # Generate response
             full_prompt = "\n".join(prompt_parts)
-            response = self.model.generate_content(full_prompt)
             
-            # Extract response text
-            response_text = response.text if hasattr(response, 'text') else str(response)
+            # Since LLMController expects standard API schemas, we wrap it in a pseudo-session prompt
+            response_text = await self.llm.call_llm_api(full_prompt, system_prompt=self.system_context)
             
             # Store in history
             chat_entry = {
@@ -165,8 +156,8 @@ Provide:
 4. Whether this appears to be automated or manual attack"""
 
         try:
-            response = self.model.generate_content(prompt)
-            return response.text if hasattr(response, 'text') else str(response)
+            response_text = await self.llm.call_llm_api(prompt, system_prompt=self.system_context)
+            return response_text
         except Exception as e:
             return f"Error analyzing attack: {str(e)}"
     
@@ -185,8 +176,8 @@ Provide:
 Keep it concise and actionable."""
 
         try:
-            response = self.model.generate_content(prompt)
-            return response.text if hasattr(response, 'text') else str(response)
+            response_text = await self.llm.call_llm_api(prompt, system_prompt=self.system_context)
+            return response_text
         except Exception as e:
             return f"Error generating suggestions: {str(e)}"
 
@@ -194,7 +185,7 @@ Keep it concise and actionable."""
 # Global chatbot instance
 _chatbot_instance: Optional[CybersecurityChatbot] = None
 
-def get_chatbot(api_key: str) -> CybersecurityChatbot:
+def get_chatbot(api_key: str = None) -> CybersecurityChatbot:
     """Get or create chatbot instance"""
     global _chatbot_instance
     if _chatbot_instance is None:
