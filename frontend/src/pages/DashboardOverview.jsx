@@ -14,14 +14,9 @@ import { downloadPDF } from '../utils/helpers';
 
 const DashboardOverview = () => {
     const [stats, setStats] = useState({
-        total_attempts: 0,
-        malicious_attempts: 0,
-        benign_attempts: 0,
-        merkle_root: null,
-        attack_distribution: {},
-        geo_locations: [],
-        flagged_ips_count: 0,
-        top_threats: []
+        total_attempts: 0, malicious_attempts: 0, benign_attempts: 0,
+        merkle_root: null, attack_distribution: {}, geo_locations: [],
+        flagged_ips_count: 0, top_threats: []
     });
     const [logs, setLogs] = useState([]);
     const [loading, setLoading] = useState(true);
@@ -31,7 +26,6 @@ const DashboardOverview = () => {
 
     const { setAttacks, getFilteredAttacks, filters } = useAttackStore();
 
-    // Mock geo locations for testing
     const mockGeoLocations = [
         { country: 'United States', city: 'New York', latitude: 40.7128, longitude: -74.0060 },
         { country: 'China', city: 'Beijing', latitude: 39.9042, longitude: 116.4074 },
@@ -45,62 +39,41 @@ const DashboardOverview = () => {
         { country: 'Australia', city: 'Sydney', latitude: -33.8688, longitude: 151.2093 },
     ];
 
-    const filteredLogs = useMemo(() => {
-        return getFilteredAttacks();
-    }, [logs, filters, getFilteredAttacks]);
+    const filteredLogs = useMemo(() => getFilteredAttacks(), [logs, filters, getFilteredAttacks]);
 
-    // Add mock geo data if enabled
     const logsWithGeo = useMemo(() => {
         if (!useMockGeo) return filteredLogs;
-        
         return filteredLogs.map((log, index) => {
             if (!log.geo_location || !log.geo_location.latitude) {
-                const mockGeo = mockGeoLocations[index % mockGeoLocations.length];
-                return {
-                    ...log,
-                    geo_location: mockGeo
-                };
+                return { ...log, geo_location: mockGeoLocations[index % mockGeoLocations.length] };
             }
             return log;
         });
-    }, [filteredLogs, useMockGeo, mockGeoLocations]);
+    }, [filteredLogs, useMockGeo]);
 
     const filteredStats = useMemo(() => {
-        const malicious = logsWithGeo.filter(
-            log => log.classification?.attack_type !== 'BENIGN'
-        ).length;
-        const benign = logsWithGeo.filter(
-            log => log.classification?.attack_type === 'BENIGN'
-        ).length;
-
+        const malicious = logsWithGeo.filter(log => log.classification?.attack_type !== 'BENIGN').length;
+        const benign = logsWithGeo.filter(log => log.classification?.attack_type === 'BENIGN').length;
         const distribution = {};
         logsWithGeo.forEach(log => {
             const type = log.classification?.attack_type || 'UNKNOWN';
             distribution[type] = (distribution[type] || 0) + 1;
         });
-
         const geoMap = {};
         logsWithGeo.forEach(log => {
             if (log.geo_location?.country) {
                 const key = `${log.geo_location.country}-${log.geo_location.city}`;
-                if (!geoMap[key]) {
-                    geoMap[key] = {
-                        ...log.geo_location,
-                        count: 0
-                    };
-                }
+                if (!geoMap[key]) geoMap[key] = { ...log.geo_location, count: 0 };
                 geoMap[key].count++;
             }
         });
-        const geoLocations = Object.values(geoMap).sort((a, b) => b.count - a.count);
-
         return {
             ...stats,
             total_attempts: logsWithGeo.length,
             malicious_attempts: malicious,
             benign_attempts: benign,
             attack_distribution: distribution,
-            geo_locations: geoLocations
+            geo_locations: Object.values(geoMap).sort((a, b) => b.count - a.count)
         };
     }, [logsWithGeo, stats]);
 
@@ -110,7 +83,6 @@ const DashboardOverview = () => {
                 getDashboardStats(),
                 getAttackLogs(0, 100)
             ]);
-
             setStats(statsData);
             setLogs(logsData);
             setAttacks(logsData);
@@ -124,9 +96,7 @@ const DashboardOverview = () => {
         }
     }, [setAttacks]);
 
-    useEffect(() => {
-        fetchData();
-    }, [fetchData]);
+    useEffect(() => { fetchData(); }, [fetchData]);
 
     useEffect(() => {
         if (autoRefresh) {
@@ -135,10 +105,7 @@ const DashboardOverview = () => {
         }
     }, [autoRefresh, fetchData]);
 
-    const handleRefresh = () => {
-        setLoading(true);
-        fetchData();
-    };
+    const handleRefresh = () => { setLoading(true); fetchData(); };
 
     const handleGenerateReport = async (ipAddress) => {
         try {
@@ -152,25 +119,17 @@ const DashboardOverview = () => {
         }
     };
 
-    const handleViewDetails = (logId) => {
-        console.log('View details for log:', logId);
-    };
-
     if (loading && !stats.total_attempts) {
         return (
             <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '100vh' }}>
-                <CircularProgress />
+                <CircularProgress sx={{ color: '#00d4ff' }} />
             </Box>
         );
     }
 
     return (
-        <Box sx={{ 
-            flexGrow: 1, 
-            backgroundColor: 'background.default', 
-            minHeight: '100vh',
-        }}>
-            <Navbar 
+        <Box sx={{ flexGrow: 1, minHeight: '100vh', position: 'relative', zIndex: 2 }}>
+            <Navbar
                 lastUpdated={lastUpdated}
                 autoRefresh={autoRefresh}
                 setAutoRefresh={setAutoRefresh}
@@ -181,26 +140,23 @@ const DashboardOverview = () => {
 
             <Box sx={{ px: 2, py: 3 }}>
                 <FilterBadges />
-                
                 <StatsCards stats={filteredStats} />
 
-                <Box sx={{ 
-                    display: 'flex', 
-                    gap: 2, 
+                <Box sx={{
+                    display: 'grid',
+                    gridTemplateColumns: { xs: '1fr', md: 'repeat(3, 1fr)' },
+                    gap: '16px',
                     mb: 2,
-                    flexWrap: 'wrap'
                 }}>
-                    <Box sx={{ flex: 1, minWidth: 300, height: 350 }}>
+                    <Box sx={{ minHeight: 350 }}>
                         <AttackChart attackDistribution={filteredStats.attack_distribution} />
                     </Box>
-                    
-                    <Box sx={{ flex: 1, minWidth: 300, height: 350 }}>
+                    <Box sx={{ minHeight: 350 }}>
                         <GeoMap geoLocations={filteredStats.geo_locations || []} />
                     </Box>
-                    
-                    <Box sx={{ flex: 1, minWidth: 300, height: 350 }}>
-                        <ThreatScorePanel 
-                            topThreats={stats.top_threats || []} 
+                    <Box sx={{ minHeight: 350 }}>
+                        <ThreatScorePanel
+                            topThreats={stats.top_threats || []}
                             flaggedCount={stats.flagged_ips_count || 0}
                         />
                     </Box>
@@ -208,7 +164,6 @@ const DashboardOverview = () => {
 
                 <AttackLogs
                     logs={filteredLogs}
-                    onViewDetails={handleViewDetails}
                     onGenerateReport={handleGenerateReport}
                 />
             </Box>

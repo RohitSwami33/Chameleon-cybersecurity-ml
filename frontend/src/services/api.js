@@ -53,15 +53,10 @@ export const submitInput = async (inputData) => {
 
 export const getDashboardStats = async () => {
   try {
-    const token = localStorage.getItem('authToken');
-    console.log('Token exists:', !!token);
-    console.log('Making request to /api/dashboard/stats');
     const response = await api.get('/api/dashboard/stats');
-    console.log('Dashboard stats received:', response.data);
     return response.data;
   } catch (error) {
-    console.error('Dashboard stats error:', error);
-    console.error('Error response:', error.response);
+    console.error('Dashboard stats error:', error.message);
     throw error.response ? error.response.data : error;
   }
 };

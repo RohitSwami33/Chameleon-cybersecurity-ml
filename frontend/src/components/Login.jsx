@@ -1,170 +1,247 @@
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import {
-    Box,
-    Container,
-    Typography,
-    TextField,
-    Button,
-    Paper,
-    Alert,
-    CircularProgress
-} from '@mui/material';
+import { Box, TextField, Button, Typography, Paper, CircularProgress, InputAdornment, IconButton } from '@mui/material';
+import { motion } from 'framer-motion';
 import LockOutlinedIcon from '@mui/icons-material/LockOutlined';
+import PersonOutlinedIcon from '@mui/icons-material/PersonOutlined';
+import VisibilityIcon from '@mui/icons-material/Visibility';
+import VisibilityOffIcon from '@mui/icons-material/VisibilityOff';
+import ShieldIcon from '@mui/icons-material/Shield';
+import { login as apiLogin } from '../services/api';
 import { toast } from 'react-toastify';
-import { login } from '../services/api';
+import LoginBackground3D from './LoginBackground3D';
+import LoginShield3D from './LoginShield3D';
+
+/**
+ * Login — Auth page with animated particle canvas background
+ * @see Section 3 — Login Rules
+ * 3D canvas background, shimmer submit button, field shake on error
+ */
+
+const sleep = (ms) => new Promise(r => setTimeout(r, ms));
 
 const Login = () => {
-    const [formData, setFormData] = useState({
-        username: '',
-        password: ''
-    });
+    const [username, setUsername] = useState('');
+    const [password, setPassword] = useState('');
     const [loading, setLoading] = useState(false);
-    const [error, setError] = useState('');
+    const [showPassword, setShowPassword] = useState(false);
+    const [glitchTransform, setGlitchTransform] = useState('translateX(0)');
     const navigate = useNavigate();
 
-    const handleChange = (e) => {
-        setFormData({
-            ...formData,
-            [e.target.name]: e.target.value
-        });
-        setError('');
+    const glitch = async () => {
+        for (let i = 0; i < 5; i++) {
+            setGlitchTransform(`translateX(${(Math.random() - 0.5) * 8}px)`);
+            await sleep(50);
+        }
+        setGlitchTransform('translateX(0)');
     };
 
     const handleSubmit = async (e) => {
         e.preventDefault();
         setLoading(true);
-        setError('');
 
         try {
-            console.log('Attempting login with:', formData.username);
-            const response = await login(formData.username, formData.password);
-
-            // Store token
-            console.log('Login successful, storing token');
-            localStorage.setItem('authToken', response.access_token);
-            console.log('Token stored:', localStorage.getItem('authToken'));
-
-            toast.success('Login successful!');
-            navigate('/dashboard');
+            const data = await apiLogin(username, password);
+            if (data.access_token) {
+                localStorage.setItem('authToken', data.access_token);
+                toast.success('Access granted. Welcome, Operator.');
+                navigate('/dashboard');
+            } else {
+                throw new Error('No token received');
+            }
         } catch (error) {
-            console.error('Login error:', error);
-            setError(error.detail || 'Invalid username or password');
-            toast.error('Login failed');
+            console.error('Login failed:', error);
+            glitch();
+            toast.error(error.response?.data?.detail || 'Authentication failed');
         } finally {
             setLoading(false);
         }
     };
 
     return (
-        <Box
-            sx={{
-                minHeight: '100vh',
-                display: 'flex',
-                flexDirection: 'column',
-                justifyContent: 'center',
-                alignItems: 'center',
-                background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-                padding: 2,
-            }}
-        >
-            <Container maxWidth="xs">
-                <Paper
-                    elevation={10}
-                    sx={{
-                        padding: 4,
-                        display: 'flex',
-                        flexDirection: 'column',
-                        alignItems: 'center',
-                        borderRadius: 4,
-                        backgroundColor: '#1e1e1e',
-                        border: '1px solid #333',
-                    }}
-                >
-                    <Box
-                        sx={{
-                            backgroundColor: 'primary.main',
-                            borderRadius: '50%',
-                            p: 1.5,
-                            mb: 2,
-                            boxShadow: '0 0 20px rgba(25, 118, 210, 0.6)',
-                        }}
-                    >
-                        <LockOutlinedIcon sx={{ color: 'white', fontSize: 40 }} />
+        <Box sx={{
+            minHeight: '100vh',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            backgroundColor: '#050810',
+            position: 'relative',
+            overflow: 'hidden',
+        }}>
+            <LoginBackground3D />
+
+            <motion.div
+                initial={{ opacity: 0, y: 30, scale: 0.95 }}
+                animate={{ opacity: 1, y: 0, scale: 1 }}
+                transition={{ duration: 0.6, ease: 'easeOut' }}
+                style={{ width: '100%', maxWidth: 420, zIndex: 1, padding: '0 16px', transform: glitchTransform }}
+            >
+                <Paper sx={{
+                    p: 4,
+                    backgroundColor: 'rgba(8, 14, 28, 0.85)',
+                    backdropFilter: 'blur(20px)',
+                    border: '1px solid rgba(0, 212, 255, 0.15)',
+                    borderRadius: '20px',
+                }}>
+                    {/* Hero Element */}
+                    <Box sx={{ textAlign: 'center', mb: 1 }}>
+                        <LoginShield3D />
+                        <Typography variant="h5" sx={{
+                            fontFamily: '"Rajdhani", sans-serif',
+                            fontWeight: 700,
+                            color: '#e8f4fd',
+                            mb: 0.5,
+                        }}>
+                            CHAMELEON <span style={{ color: '#00d4ff' }}>FORENSICS</span>
+                        </Typography>
+                        <Typography variant="body2" sx={{ color: '#3d5a7a', fontFamily: '"DM Sans", sans-serif', fontSize: '0.8rem' }}>
+                            Operator Authentication Required
+                        </Typography>
                     </Box>
 
-                    <Typography component="h1" variant="h5" sx={{ mb: 1, fontWeight: 600 }}>
-                        DASHBOARD ACCESS
-                    </Typography>
-                    <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
-                        Chameleon Forensic System
-                    </Typography>
-
-                    {error && (
-                        <Alert severity="error" sx={{ width: '100%', mb: 2 }}>
-                            {error}
-                        </Alert>
-                    )}
-
-                    <Box component="form" onSubmit={handleSubmit} sx={{ width: '100%' }}>
+                    <form onSubmit={handleSubmit}>
                         <TextField
-                            margin="normal"
-                            required
                             fullWidth
-                            id="username"
                             label="Username"
-                            name="username"
-                            autoComplete="username"
-                            autoFocus
-                            value={formData.username}
-                            onChange={handleChange}
-                            variant="outlined"
-                            sx={{ mb: 2 }}
-                        />
-                        <TextField
+                            value={username}
+                            onChange={(e) => setUsername(e.target.value)}
                             margin="normal"
                             required
-                            fullWidth
-                            name="password"
-                            label="Password"
-                            type="password"
-                            id="password"
-                            autoComplete="current-password"
-                            value={formData.password}
-                            onChange={handleChange}
-                            variant="outlined"
-                            sx={{ mb: 3 }}
+                            autoFocus
+                            InputProps={{
+                                startAdornment: (
+                                    <InputAdornment position="start">
+                                        <PersonOutlinedIcon sx={{ color: '#3d5a7a', fontSize: 20 }} />
+                                    </InputAdornment>
+                                ),
+                            }}
+                            sx={{
+                                '& .MuiInputLabel-root': { color: '#3d5a7a', fontFamily: '"DM Sans", sans-serif' },
+                                '& .MuiInputBase-input': { color: '#e8f4fd', fontFamily: '"IBM Plex Mono", monospace' },
+                                '& .MuiOutlinedInput-root': {
+                                    borderRadius: '10px',
+                                    backgroundColor: 'rgba(0, 212, 255, 0.03)',
+                                },
+                            }}
                         />
-
+                        <TextField
+                            fullWidth
+                            label="Password"
+                            type={showPassword ? 'text' : 'password'}
+                            value={password}
+                            onChange={(e) => setPassword(e.target.value)}
+                            margin="normal"
+                            required
+                            InputProps={{
+                                startAdornment: (
+                                    <InputAdornment position="start">
+                                        <LockOutlinedIcon sx={{ color: '#3d5a7a', fontSize: 20 }} />
+                                    </InputAdornment>
+                                ),
+                                endAdornment: (
+                                    <InputAdornment position="end">
+                                        <IconButton
+                                            onClick={() => setShowPassword(!showPassword)}
+                                            edge="end"
+                                            size="small"
+                                            sx={{ color: '#3d5a7a' }}
+                                        >
+                                            {showPassword ? <VisibilityOffIcon fontSize="small" /> : <VisibilityIcon fontSize="small" />}
+                                        </IconButton>
+                                    </InputAdornment>
+                                ),
+                            }}
+                            sx={{
+                                '& .MuiInputLabel-root': { color: '#3d5a7a', fontFamily: '"DM Sans", sans-serif' },
+                                '& .MuiInputBase-input': { color: '#e8f4fd', fontFamily: '"IBM Plex Mono", monospace' },
+                                '& .MuiOutlinedInput-root': {
+                                    borderRadius: '10px',
+                                    backgroundColor: 'rgba(0, 212, 255, 0.03)',
+                                },
+                            }}
+                        />
                         <Button
                             type="submit"
                             fullWidth
                             variant="contained"
-                            size="large"
-                            disabled={loading}
+                            disabled={loading || !username || !password}
                             sx={{
-                                mt: 1,
-                                py: 1.5,
-                                fontSize: '1rem',
-                                fontWeight: 600,
-                                position: 'relative',
+                                mt: 3,
+                                mb: 2,
+                                py: 1.4,
+                                borderRadius: '10px',
+                                fontWeight: 700,
+                                fontSize: '0.9rem',
+                                fontFamily: '"DM Sans", sans-serif',
+                                background: 'linear-gradient(135deg, #00d4ff 0%, #0088cc 100%)',
+                                color: '#050810',
+                                textTransform: 'none',
+                                boxShadow: '0 4px 24px rgba(0, 212, 255, 0.3)',
+                                '&:hover': {
+                                    background: 'linear-gradient(135deg, #33ddff 0%, #00aaee 100%)',
+                                    boxShadow: '0 6px 32px rgba(0, 212, 255, 0.4)',
+                                },
+                                '&:disabled': {
+                                    background: 'rgba(0, 212, 255, 0.15)',
+                                    color: '#3d5a7a',
+                                },
                             }}
                         >
                             {loading ? (
-                                <CircularProgress size={24} color="inherit" />
+                                <CircularProgress size={24} sx={{ color: '#050810' }} />
                             ) : (
-                                'ACCESS DASHBOARD'
+                                'Authenticate'
                             )}
                         </Button>
-                    </Box>
-                </Paper>
+                    </form>
 
-                <Box sx={{ mt: 3, textAlign: 'center' }}>
-                    <Typography variant="body2" color="text.secondary">
-                        Default credentials: admin / chameleon2024
+                    {/* Demo bypass — auto-login with admin credentials */}
+                    <Button
+                        fullWidth
+                        variant="outlined"
+                        onClick={async () => {
+                            try {
+                                const data = await apiLogin('admin', 'chameleon2024');
+                                if (data.access_token) {
+                                    localStorage.setItem('authToken', data.access_token);
+                                    toast.success('Demo access granted. Welcome, Operator.');
+                                    navigate('/dashboard');
+                                }
+                            } catch (err) {
+                                toast.error('Backend not reachable. Is uvicorn running on port 8000?');
+                            }
+                        }}
+                        sx={{
+                            mb: 2,
+                            py: 1.2,
+                            borderRadius: '10px',
+                            fontWeight: 600,
+                            fontSize: '0.85rem',
+                            fontFamily: '"DM Sans", sans-serif',
+                            borderColor: 'rgba(124, 77, 255, 0.4)',
+                            color: '#9670ff',
+                            textTransform: 'none',
+                            '&:hover': {
+                                borderColor: '#7c4dff',
+                                backgroundColor: 'rgba(124, 77, 255, 0.08)',
+                            },
+                        }}
+                    >
+                        ⚡ Demo Access (No Backend)
+                    </Button>
+
+                    <Typography variant="caption" sx={{
+                        display: 'block',
+                        textAlign: 'center',
+                        color: '#3d5a7a',
+                        fontFamily: '"IBM Plex Mono", monospace',
+                        fontSize: '0.65rem',
+                        mt: 1,
+                    }}>
+                        🔐 Protected by Chameleon Security Framework
                     </Typography>
-                </Box>
-            </Container>
+                </Paper>
+            </motion.div>
         </Box>
     );
 };

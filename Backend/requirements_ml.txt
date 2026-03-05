@@ -1,0 +1,22 @@
+# Chameleon LSTM Training Dependencies
+# Install with: pip install -r requirements_ml.txt
+
+# PyTorch (for M4 GPU support on macOS)
+torch>=2.0.0
+
+# Data Processing
+pandas>=2.0.0
+numpy>=1.24.0
+
+# Machine Learning
+scikit-learn>=1.3.0
+
+# Deep Learning Preprocessing
+tensorflow>=2.15.0
+
+# Progress Bars
+tqdm>=4.65.0
+
+# Visualization
+matplotlib>=3.7.0
+seaborn>=0.12.0
