@@ -1,4 +1,8 @@
-# Python
+# ===========================================================================
+# Chameleon Adaptive Deception System — .gitignore
+# ===========================================================================
+
+# ── Python ──────────────────────────────────────────────────────────────────
 __pycache__/
 *.py[cod]
 *$py.class
@@ -10,7 +14,6 @@ dist/
 downloads/
 eggs/
 .eggs/
-
 lib64/
 parts/
 sdist/
@@ -21,66 +24,64 @@ wheels/
 *.egg
 MANIFEST
 
-# Virtual Environment
-.venv/
+# ── Virtual Environment ──────────────────────────────────────────────────────
 venv/
+.venv/
 ENV/
 env/
 
-# MongoDB
-Backend/data/db/
-Backend/data/*.log*
+# ── Test / CI Cache ──────────────────────────────────────────────────────────
+.pytest_cache/
+.mypy_cache/
+.coverage
+htmlcov/
 
-# IDE
-.vscode/
-.idea/
-*.swp
-*.swo
-*~
-
-# OS
-.DS_Store
-Thumbs.db
-
-# Node
-node_modules/
-npm-debug.log*
-yarn-debug.log*
-yarn-error.log*
-
-# ── Environment / Secrets (CRITICAL — never commit) ────────
+# ── Environment / Secrets  (CRITICAL — never commit) ────────────────────────
 .env
 .env.local
 .env.development.local
 .env.test.local
 .env.production.local
 
-# ── ML Model Weights & Artifacts ────────────────────────────
-*.pth
-*.pt
-*.keras
-*.h5
-*.onnx
-*.pkl
-*.pickle
-*.joblib
+# ── IDE ──────────────────────────────────────────────────────────────────────
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
 
-# ── Training Logs & Metrics ─────────────────────────────────
-*.log
-training_history*.json
-training_output*.log
-training_metrics*.png
-confusion_matrix*.png
-dataset_generation.log
+# ── macOS ────────────────────────────────────────────────────────────────────
+.DS_Store
+Thumbs.db
 
-# ── Large Datasets ──────────────────────────────────────────
-*.csv
-!Backend/requirements.txt
-
-# ── Solidity / Blockchain ───────────────────────────────────
-Backend/contracts/*.json
-
-# ── Build outputs ───────────────────────────────────────────
+# ── Node / Frontend build ────────────────────────────────────────────────────
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
 frontend/dist/
 frontend/build/
 
+# ── MongoDB runtime data ─────────────────────────────────────────────────────
+Backend/data/db/
+Backend/data/*.log*
+
+# ── Solidity / Blockchain compiled artifacts ─────────────────────────────────
+Backend/contracts/*.json
+
+# ── Training logs & transient metrics (not source-controlled) ───────────────
+training_output*.log
+
+# ===========================================================================
+# NOTE: The following file types are NOT ignored here — they are tracked via
+# Git LFS (see .gitattributes).  Do NOT add them back to this list.
+#
+#   *.safetensors  — MLX / Hugging Face model shards
+#   *.bin          — PyTorch / binary model blobs
+#   *.npz          — NumPy compressed arrays (MLX weights)
+#   *.jsonl        — training datasets
+#   *.csv          — labelled command datasets
+#   *.pth / *.pt   — PyTorch checkpoint files  (pushed via LFS)
+#   *.pkl          — tokenizer / scaler pickles (pushed via LFS)
+#   *.keras / *.h5 — Keras model files          (pushed via LFS)
+# ===========================================================================
