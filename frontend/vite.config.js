@@ -6,12 +6,21 @@ export default defineConfig({
   plugins: [react()],
   server: {
     port: 5174,
+    strictPort: false,   // fallback to 5175 if 5174 is taken
     host: true,
     proxy: {
+      // All backend API calls
       '/api': {
         target: 'http://localhost:8000',
-        changeOrigin: true
-      }
+        changeOrigin: true,
+        secure: false,
+      },
+      // /trap/execute and other /trap/* endpoints (no /api prefix in backend)
+      '/trap': {
+        target: 'http://localhost:8000',
+        changeOrigin: true,
+        secure: false,
+      },
     }
   },
   preview: {
@@ -24,3 +33,4 @@ export default defineConfig({
     emptyOutDir: true
   }
 })
+

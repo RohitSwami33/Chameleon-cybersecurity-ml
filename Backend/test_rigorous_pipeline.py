@@ -176,6 +176,16 @@ def fresh_rate_limiter():
     login_limiter.login_attempts.clear()
 
 
+@pytest.fixture(autouse=True)
+def mock_async_sleep():
+    """
+    Bypass the algorithmic tarpitting delays (2.5 -> 8.0s) in main.py 
+    so the test suite runs instantly instead of hanging for minutes.
+    """
+    with patch("main.asyncio.sleep", new_callable=AsyncMock) as m:
+        yield m
+
+
 # ===========================================================================
 # 1. CONCURRENCY & THREAD-SAFETY (STRESS TEST)
 # ===========================================================================

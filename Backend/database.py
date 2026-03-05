@@ -24,26 +24,26 @@ def _row_to_dashboard_dict(row: HoneypotLog) -> dict:
     """
     Convert a HoneypotLog ORM row → dict matching the AttackLog
     Pydantic model the frontend expects.
-
-    The frontend needs:
-        id, timestamp, raw_input, ip_address, user_agent,
-        geo_location, classification, deception_response
     """
     meta = row.log_metadata or {}
 
-    classification = meta.get("classification", {
-        "attack_type": "BENIGN",
-        "confidence": 0.0,
-        "is_malicious": False,
-    })
+    classification = meta.get("classification")
+    if not classification:
+        classification = {
+            "attack_type": "BENIGN",
+            "confidence": 0.0,
+            "is_malicious": False,
+        }
 
-    deception_response = meta.get("deception_response", {
-        "message": row.response_sent or "",
-        "delay_applied": 0.0,
-        "http_status": 200,
-    })
+    deception_response = meta.get("deception_response")
+    if not deception_response:
+        deception_response = {
+            "message": row.response_sent or "",
+            "delay_applied": 0.0,
+            "http_status": 200,
+        }
 
-    geo_location = meta.get("geo_location", None)
+    geo_location = meta.get("geo_location")
 
     return {
         "id": str(row.id),
@@ -67,6 +67,15 @@ async def save_attack_log(log_data: dict) -> str:
 
     try:
         from database_postgres import get_default_tenant
+        from threat_score import threat_score_system
+
+        # Update the blockchain/threat score before saving to DB
+        ip_addr = log_data.get("ip_address", "0.0.0.0")
+        classification_data = log_data.get("classification", {})
+        attack_type = classification_data.get("attack_type", "UNKNOWN")
+        is_malicious = classification_data.get("is_malicious", False)
+        threat_score_system.calculate_threat_score(ip_addr, attack_type, is_malicious)
+
         async with db.session_factory() as session:
             tenant_id = log_data.get("tenant_id")
             if not tenant_id:
@@ -76,12 +85,12 @@ async def save_attack_log(log_data: dict) -> str:
             row = HoneypotLog(
                 id=uuid4(),
                 tenant_id=tenant_id,
-                attacker_ip=log_data.get("ip_address", "0.0.0.0"),
+                attacker_ip=ip_addr,
                 command_entered=log_data.get("raw_input", ""),
                 response_sent=log_data.get("deception_response", {}).get("message", ""),
                 timestamp=log_data.get("timestamp", datetime.utcnow()),
                 log_metadata={
-                    "classification": log_data.get("classification"),
+                    "classification": classification_data,
                     "deception_response": log_data.get("deception_response"),
                     "geo_location": log_data.get("geo_location"),
                     "user_agent": log_data.get("user_agent", ""),

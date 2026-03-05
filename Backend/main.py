@@ -24,6 +24,7 @@ from datetime import datetime
 from typing import List, Optional, Dict, Any
 from io import BytesIO
 import asyncio
+import random
 import logging
 
 from pydantic import BaseModel, Field
@@ -152,17 +153,49 @@ async def handle_deception_layer(payload: str, request_data: dict, request: Requ
     except Exception as e:
         logger.error(f"Failed to flag attacker in DB: {e}")
 
+    # Add Algorithmic Tarpitting delay (between 2.5 and 8.0 seconds)
+    tarpit_delay = round(random.uniform(2.5, 8.0), 2)
+    logger.info(f"🕸 Tarpitting attacker connection for {tarpit_delay} seconds...")
+    await asyncio.sleep(tarpit_delay)
+
     # The deception response is tailored conceptually based on the action
     action = request_data.get("action", "generic")
     
     if action == "login":
-        return JSONResponse(content={"status": "success", "session_id": "fake_token_123_abc", "message": "Login successful"}, status_code=200)
+        return JSONResponse(
+            content={
+                "status": "success", 
+                "session_id": "fake_token_123_abc", 
+                "message": "Login successful",
+                "execution_time_ms": int(tarpit_delay * 1000)
+            }, 
+            status_code=200
+        )
     elif action == "execute":
-        # Simulate an empty terminal prompt or generic success for a command
+        # Fake Shell Output Dictionary
+        fake_shell_db = {
+            "whoami": "root\n",
+            "ls": "data/  var/  tmp/  sys/  app.py\n",
+            "ls -la": "total 42\ndrwxr-xr-x 1 root root 4096 Mar  6 03:14 .\ndrwxr-xr-x 1 root root 4096 Mar  6 03:14 ..\n-rw-r--r-- 1 root root 1243 Jan 12 11:20 app.py\ndrwxr-xr-x 2 root root 4096 Feb  1 09:00 data\n",
+            "cat /etc/passwd": "root:x:0:0:root:/root:/bin/bash\ndaemon:x:1:1:daemon:/usr/sbin:/usr/sbin/nologin\nbin:x:2:2:bin:/bin:/usr/sbin/nologin\nsys:x:3:3:sys:/dev:/usr/sbin/nologin\nwww-data:x:33:33:www-data:/var/www:/usr/sbin/nologin\n",
+            "pwd": "/var/www/html/backend\n",
+            "id": "uid=0(root) gid=0(root) groups=0(root)\n",
+            "uname -a": "Linux web-prod-04 5.4.0-163-generic #180-Ubuntu SMP Tue Sep 5 13:10:04 UTC 2023 x86_64 x86_64 x86_64 GNU/Linux\n"
+        }
+        
+        # Clean up the command for matching
+        cmd = payload.strip()
+        
+        if cmd in fake_shell_db:
+            fake_output = fake_shell_db[cmd]
+        else:
+            # Fallback for unrecognized commands
+            fake_output = f"bash: {cmd[:20]}: command not found\n"
+
         return JSONResponse(content={
             "status": "success",
-            "output": f"bash: {payload[:20]} command not found\nroot@target:/# ",
-            "execution_time_ms": 12
+            "output": f"{fake_output}root@web-prod-04:/var/www/html/backend# ",
+            "execution_time_ms": int(tarpit_delay * 1000)
         }, status_code=200)
     else:
         return JSONResponse(content={"status": "success", "data": "Request accepted for processing."}, status_code=200)
@@ -678,6 +711,15 @@ async def login(
     ip = get_client_ip(request)
     user_agent = request.headers.get("User-Agent")
 
+    # ── 0. Admin fast-path: verify credentials FIRST to avoid ML mis-flagging ──
+    # The admin credentials must be checked before the ML pipeline runs,
+    # otherwise 'admin chameleon2024' could be flagged as malicious and
+    # routed to the deception layer instead of returning the JWT.
+    if verify_credentials(login_data.username, login_data.password):
+        login_limiter.reset_attempts(ip)
+        access_token = create_access_token(data={"sub": login_data.username})
+        return LoginResponse(access_token=access_token)
+
     # ── 1. Check if the username or password itself is a malicious payload ──
     combined_input = f"{login_data.username} {login_data.password}"
     verdict = await evaluate_payload(combined_input)
@@ -694,6 +736,7 @@ async def login(
         # Route to Deception Layer instead of HTTP 401
         request_context = {"ip_address": ip, "action": "login"}
         return await handle_deception_layer(combined_input, request_context, request)
+
 
 
     # ── 2. Check for Brute Force (Rate Limiting) ──
@@ -740,12 +783,19 @@ async def login(
                 attack_type="BENIGN", confidence=0.5, is_malicious=False,
             ),
             deception_response=DeceptionResponse(
-                message="Incorrect username or password",
+                message="User safe but incorrect credentials",
                 delay_applied=0, http_status=401,
             ),
         )
         background_tasks.add_task(log_attack, log_entry.model_dump())
-        return JSONResponse(status_code=401, content={"detail": "Incorrect username or password"}, background=background_tasks)
+        return JSONResponse(
+            status_code=401, 
+            content={
+                "detail": "User is verified as SAFE. Incorrect login credentials.", 
+                "is_safe": True
+            }, 
+            background=background_tasks
+        )
 
     login_limiter.reset_attempts(ip)
     access_token = create_access_token(data={"sub": login_data.username})
