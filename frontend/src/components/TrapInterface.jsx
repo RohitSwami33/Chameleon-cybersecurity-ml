@@ -145,7 +145,7 @@ function StageLogin({ onSubmit, credentials, setCredentials }) {
                 </div>
             </div>
             <footer className="trap-footer">
-                © 2024 SecureNet Enterprise Systems v4.2.1 | IT Support: ext. 4400
+                © 2026 SecureNet Enterprise Systems v4.2.1 | IT Support: ext. 4400
                 <br />
                 <small>For technical issues contact helpdesk@securenet.internal</small>
             </footer>
