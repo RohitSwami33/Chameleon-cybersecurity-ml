@@ -126,4 +126,21 @@ export const login = async (username, password) => {
   }
 };
 
+export const executeCommand = async (command) => {
+  try {
+    const response = await api.post('/trap/execute', {
+      command,
+      ip_address: null,  // backend will use the real client IP from the request
+    });
+    return response.data;
+  } catch (error) {
+    // For /trap/execute, even HTTP error responses contain deceptive shell output.
+    // Expose the body rather than throwing so the terminal renders the fake shell.
+    if (error.response && error.response.data) {
+      return error.response.data;
+    }
+    throw error;
+  }
+};
+
 export default api;

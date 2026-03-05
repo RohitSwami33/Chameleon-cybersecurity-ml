@@ -1,48 +1,9 @@
-import React, { useRef, useEffect, useState, useCallback, useMemo, lazy, Suspense } from 'react';
-import { Box, Typography, Chip, Paper, Fade } from '@mui/material';
-import { motion } from 'framer-motion';
+// AttackGlobeSimple.jsx — 3D Spline scene QUARANTINED (performance).
+// Renders a lightweight SVG world-map with live attack arcs instead.
+import React, { useRef, useEffect, useState, useMemo } from 'react';
+import { Box, Typography, Chip, Paper } from '@mui/material';
 import FiberManualRecordIcon from '@mui/icons-material/FiberManualRecord';
-import LanguageIcon from '@mui/icons-material/Language';
 
-// Lazy load Spline for performance
-const Spline = lazy(() => import('@splinetool/react-spline'));
-
-const GlobeLoadingSkeleton = () => (
-    <Box sx={{
-        width: '100%',
-        height: '100%',
-        display: 'flex',
-        flexDirection: 'column',
-        justifyContent: 'center',
-        alignItems: 'center',
-        background: 'radial-gradient(circle at center, #0a1128 0%, #050810 100%)',
-        position: 'absolute',
-        top: 0,
-        left: 0,
-        zIndex: 5
-    }}>
-        
-        <motion.div
-            animate={{ rotate: 360 }}
-            transition={{ duration: 4, repeat: Infinity, ease: "linear" }}
-        >
-            <LanguageIcon sx={{ fontSize: 64, color: '#00d4ff', opacity: 0.5 }} />
-        </motion.div>
-        <Typography variant="body2" sx={{ mt: 2, color: '#7a9bbf', fontFamily: '"IBM Plex Mono", monospace' }}>
-            INITIALIZING 3D ENVIRONMENT...
-        </Typography>
-    </Box>
-);
-
-// Map attack types to Spline object nodes if needed
-const getSplineNodeForAttack = (attackType) => {
-    switch (attackType?.toUpperCase()) {
-        case 'SQLI': return 'RedNode';
-        case 'XSS': return 'AmberNode';
-        case 'BENIGN': return 'GreenNode';
-        default: return 'RedNode'; // Default shockwave
-    }
-};
 
 const AttackOverlayHUD = ({ attacks = [] }) => {
     const activeThreats = attacks.filter(a => a.classification?.attack_type !== 'BENIGN').length;
@@ -261,68 +222,7 @@ const SVGWorldMapFallback = ({ attacks = [], serverLocation = { lat: 37.7749, lo
 };
 
 
+// Default export: renders the SVG world map directly (Spline 3D scene quarantined).
 export default function AttackGlobeSimple({ attacks = [], serverLocation = { lat: 37.7749, lon: -122.4194 } }) {
-    const splineRef = useRef(null);
-    const [isWebGLSupported, setIsWebGLSupported] = useState(true);
-    const [isSplineLoaded, setIsSplineLoaded] = useState(false);
-    const previousAttacksLength = useRef(attacks.length);
-
-    useEffect(() => {
-        try {
-            const canvas = document.createElement('canvas');
-            const gl = canvas.getContext('webgl') || canvas.getContext('experimental-webgl');
-            if (!gl) setIsWebGLSupported(false);
-        } catch (e) {
-            setIsWebGLSupported(false);
-        }
-    }, []);
-
-    const onLoad = useCallback((splineApp) => {
-        splineRef.current = splineApp;
-        setIsSplineLoaded(true);
-    }, []);
-
-    useEffect(() => {
-        if (isSplineLoaded && splineRef.current && attacks.length > previousAttacksLength.current) {
-            const newAttacks = attacks.slice(previousAttacksLength.current);
-            newAttacks.forEach(attack => {
-                const nodeName = getSplineNodeForAttack(attack.classification?.attack_type);
-                try {
-                    splineRef.current.emitEvent('mouseDown', nodeName);
-                } catch (e) {
-                    console.warn('Spline emitEvent failed:', e);
-                }
-            });
-            previousAttacksLength.current = attacks.length;
-        } else if (attacks.length < previousAttacksLength.current) {
-            previousAttacksLength.current = attacks.length;
-        }
-    }, [attacks, isSplineLoaded]);
-
-    if (!isWebGLSupported) {
-        return <SVGWorldMapFallback attacks={attacks} serverLocation={serverLocation} />;
-    }
-
-    return (
-        <motion.div
-            initial={{ opacity: 0, scale: 0.95 }}
-            animate={{ opacity: 1, scale: 1 }}
-            transition={{ duration: 0.8, ease: "easeOut" }}
-            style={{ width: '100%', height: '100%', position: 'relative', overflow: 'hidden', background: '#050810' }}
-        >
-            <Suspense fallback={<GlobeLoadingSkeleton />}>
-                <Spline
-                    scene="https://prod.spline.design/4gyZLgu1E43CPGDX/scene.splinecode"
-                    onLoad={onLoad}
-                    style={{ width: '100%', height: '100%', border: 'none' }}
-                />
-            </Suspense>
-
-            <Fade in={isSplineLoaded}>
-                <Box>
-                    <AttackOverlayHUD attacks={attacks} />
-                </Box>
-            </Fade>
-        </motion.div>
-    );
+    return <SVGWorldMapFallback attacks={attacks} serverLocation={serverLocation} />;
 }

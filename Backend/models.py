@@ -9,6 +9,8 @@ class AttackType(str, Enum):
     XSS = "XSS"
     SSI = "SSI"
     BRUTE_FORCE = "BRUTE_FORCE"
+    ATTACKER_IN_DECEPTION = "ATTACKER_IN_DECEPTION"
+    UNKNOWN = "UNKNOWN"
 
 class UserInput(BaseModel):
     input_text: str
