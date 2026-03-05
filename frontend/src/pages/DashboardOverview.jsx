@@ -5,7 +5,7 @@ import StatsCards from '../components/StatsCards';
 import AttackChart from '../components/AttackChart';
 import GeoMap from '../components/GeoMap';
 import ThreatScorePanel from '../components/ThreatScorePanel';
-import AttackLogs from '../components/AttackLogs';
+import TelemetryTable from '../components/TelemetryTable';
 import Navbar from '../components/Navbar';
 import FilterBadges from '../components/ui/FilterBadges';
 import useAttackStore from '../stores/useAttackStore';
@@ -162,9 +162,10 @@ const DashboardOverview = () => {
                     </Box>
                 </Box>
 
-                <AttackLogs
+                <TelemetryTable
                     logs={filteredLogs}
-                    onGenerateReport={handleGenerateReport}
+                    onRefresh={handleRefresh}
+                    loading={loading}
                 />
             </Box>
         </Box>
