@@ -57,8 +57,9 @@ from database import (
     get_logs_by_ip,
 )
 
-# ── ML Inference (50k BiLSTM) ──────────────────────────────────────────
-from ml_inference import ChameleonPredictor
+# ── ML Inference (Local MLX Model) ──────────────────────────────────────────
+from local_inference import mlx_model
+from pipeline import evaluate_payload
 
 # ── LLM Deception Engine (DeepSeek API) ─────────────────────────────────
 from llm_controller import generate_deceptive_response
@@ -87,6 +88,84 @@ from utils import get_current_time
 from api.export.stix import stix_router
 
 logger = logging.getLogger(__name__)
+
+# ========================================================================
+# Deception Handler
+# ========================================================================
+async def handle_deception_layer(payload: str, request_data: dict, request: Request = None, additional_data: dict = None):
+    """
+    Called when a payload is flagged as BLOCK by the security pipeline.
+    Routes the attacker into the 'Deception Layer', storing telemetry
+    and returning a superficially valid 200 OK success response.
+    """
+    logger.warning(f"🚨 [DECEPTION LAYER TRIGGERED] Payload: {payload[:100]}")
+    
+    # Store telemetry data locally or to DB to track their behavior
+    ip = request_data.get("ip_address", "Unknown")
+    # Using the existing log_attack function for MongoDB logging
+    await log_attack(
+        {
+            "timestamp": datetime.now().isoformat(),
+            "ip_address": ip,
+            "raw_input": payload,
+            "classification": {
+                "attack_type": AttackType.SSI.value, # Abstract generic type
+                "confidence": 0.99,
+                "is_malicious": True
+            },
+            "deception_response": {
+                "message": "Routed to deception layer",
+                "delay_applied": 0,
+                "http_status": 200
+            }
+        }
+    )
+
+    try:
+        # Flag in DB as deeply anomalous / trapped
+        # This part assumes a `store_attack_log` function which is not defined.
+        # Using save_honeypot_log for PostgreSQL logging.
+        async with db.session_factory() as session:
+            tenant = await get_default_tenant(session)
+            tenant_id = str(tenant.id) if tenant else "00000000-0000-0000-0000-000000000000"
+            log_meta = {
+                "honeypot_event": "DECEPTION_LAYER_TRIGGERED",
+                "fingerprint_data": request_data,
+                "user_agent": request.headers.get("user-agent", "") if request else "",
+                "referer": request.headers.get("referer", "") if request else "",
+                "classification": {
+                    "attack_type": "ATTACKER_IN_DECEPTION",
+                    "confidence": 0.99,
+                    "is_malicious": True,
+                },
+                "session_id": "DECEPTION_SESSION",
+            }
+            log = HoneypotLog(
+                tenant_id=tenant_id,
+                attacker_ip=ip,
+                command_entered=f"[DECEPTION] {payload}",
+                response_sent="Routed to deception layer",
+                log_metadata=log_meta,
+            )
+            session.add(log)
+            await session.commit()
+    except Exception as e:
+        logger.error(f"Failed to flag attacker in DB: {e}")
+
+    # The deception response is tailored conceptually based on the action
+    action = request_data.get("action", "generic")
+    
+    if action == "login":
+        return JSONResponse(content={"status": "success", "session_id": "fake_token_123_abc", "message": "Login successful"}, status_code=200)
+    elif action == "execute":
+        # Simulate an empty terminal prompt or generic success for a command
+        return JSONResponse(content={
+            "status": "success",
+            "output": f"bash: {payload[:20]} command not found\nroot@target:/# ",
+            "execution_time_ms": 12
+        }, status_code=200)
+    else:
+        return JSONResponse(content={"status": "success", "data": "Request accepted for processing."}, status_code=200)
 
 # ========================================================================
 # Pydantic Request / Response Models
@@ -122,9 +201,8 @@ class ChatResponse(BaseModel):
 
 
 # ========================================================================
-# ML Predictor — singleton loaded once at import time
+# ML Predictor — local MLX model is loaded inside its own module
 # ========================================================================
-predictor = ChameleonPredictor()
 
 
 # ========================================================================
@@ -277,9 +355,10 @@ async def trap_execute(
     ip_address = payload.ip_address or get_client_ip(request)
     command = payload.command
 
-    # ── Step 1: ML Prediction (async, non-blocking) ─────────────────────
-    prediction_score: float = await predictor.predict(command)
-    is_malicious: bool = prediction_score > 0.5
+    # ── Step 1: ML Prediction via Two-Stage Pipeline ─────────────────────
+    verdict = await evaluate_payload(command)
+    is_malicious: bool = (verdict == "BLOCK")
+    prediction_score: float = 0.99 if is_malicious else 0.01
 
     # ── Step 2: Deceptive Response (threshold gate) ─────────────────────
     DECEPTION_THRESHOLD = 0.85
@@ -479,9 +558,43 @@ async def submit_trap(
     if is_tarpit and delay > 0:
         await asyncio.sleep(delay)
 
-    # Classification (old ML classifier)
+    # Classification (Local MLX model + old ML classifier for attack type mapping)
+    verdict = await evaluate_payload(user_input.input_text)
     classification = classifier.classify(user_input.input_text)
+    
+    is_malicious = (verdict == "BLOCK")
+    classification.is_malicious = is_malicious
+    classification.confidence = 0.99 if is_malicious else 0.01
+    
+    if is_malicious and classification.attack_type == AttackType.BENIGN:
+        classification.attack_type = AttackType.SSI  # Default fallback attack type
+        
     geo_location = await fetch_geo_location(ip)
+
+    # Record the submission in local JSON logs
+    await log_attack(
+        {
+            "timestamp": datetime.now().isoformat(),
+            "ip_address": ip,
+            "raw_input": user_input.input_text,
+            "classification": {
+                "attack_type": classification.attack_type.value,
+                "confidence": classification.confidence,
+                "is_malicious": classification.is_malicious
+            },
+            "deception_response": None  # will be handled by UI or later
+        }
+    )
+    
+    # Send the log asynchronously to the DB (MongoDB)
+    # The original `save_attack_log` is already async and adds to blockchain.
+    # The snippet provided `store_attack_log` is not defined.
+    # The instruction implies using `handle_deception_layer` for malicious inputs.
+    # So, if malicious, we route to deception layer and return a fake 200.
+    if is_malicious:
+        # Route to Deception Layer to feign success
+        request_context = {"ip_address": ip, "action": "generic", "geo_location": geo_location.model_dump() if geo_location else {}}
+        return await handle_deception_layer(user_input.input_text, request_context, request)
 
     # Progressive deception engine v2
     atk_session = await get_or_create_session(
@@ -567,45 +680,20 @@ async def login(
 
     # ── 1. Check if the username or password itself is a malicious payload ──
     combined_input = f"{login_data.username} {login_data.password}"
+    verdict = await evaluate_payload(combined_input)
     classification = classifier.classify(combined_input)
     
-    if classification.is_malicious:
-        # Generate a deceptive response instead of a plain 401
-        deception_message = "Invalid input format detected. Request logged."
-        http_status = 403
+    is_malicious = (verdict == "BLOCK")
+    classification.is_malicious = is_malicious
+    classification.confidence = 0.99 if is_malicious else 0.01
+    
+    if is_malicious and classification.attack_type == AttackType.BENIGN:
+        classification.attack_type = AttackType.BRUTE_FORCE
         
-        # Log this as a direct attack, not a failed benign login
-        log_entry = AttackLog(
-            timestamp=get_current_time(),
-            raw_input=f"Malicious Login Payload - Username: {login_data.username} | Password: {login_data.password}",
-            ip_address=ip, 
-            user_agent=user_agent, 
-            geo_location=None,
-            classification=classification,
-            deception_response=DeceptionResponse(
-                message=deception_message,
-                delay_applied=0, 
-                http_status=http_status,
-            ),
-        )
-        
-        # Update threat score
-        threat_score_system.calculate_threat_score(
-            ip, classification.attack_type, classification.is_malicious,
-        )
-        
-        # Fire alerting webhook if confidence is high (destructives usually are)
-        if classification.confidence > 0.85:
-            background_tasks.add_task(
-                alert_manager.trigger_critical_attack_alert,
-                ip_address=ip,
-                command=combined_input,
-                score=classification.confidence,
-                session_id=None
-            )
-            
-        background_tasks.add_task(log_attack, log_entry.model_dump())
-        return JSONResponse(status_code=http_status, content={"detail": deception_message}, background=background_tasks)
+    if is_malicious:
+        # Route to Deception Layer instead of HTTP 401
+        request_context = {"ip_address": ip, "action": "login"}
+        return await handle_deception_layer(combined_input, request_context, request)
 
 
     # ── 2. Check for Brute Force (Rate Limiting) ──
@@ -756,7 +844,16 @@ async def honeypot_log(request: Request, background_tasks: BackgroundTasks):
     if event_type == "LOGIN_ATTEMPT":
         username = event_data.get("username", "")
         if username:
+            verdict = await evaluate_payload(username)
             classification = classifier.classify(username)
+            is_malicious = (verdict == "BLOCK")
+            
+            classification.is_malicious = is_malicious
+            classification.confidence = 0.99 if is_malicious else 0.01
+            
+            if is_malicious and classification.attack_type == AttackType.BENIGN:
+                classification.attack_type = AttackType.BRUTE_FORCE
+                
             if classification.is_malicious:
                 classification_dict = {
                     "attack_type": classification.attack_type.value,
