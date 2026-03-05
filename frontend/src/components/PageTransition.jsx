@@ -1,10 +1,14 @@
 import { motion } from 'framer-motion';
 import { Box } from '@mui/material';
 
+/**
+ * PageTransition — wraps every page
+ * @see Section 7 — Animation Rules
+ */
 const pageVariants = {
     initial: {
         opacity: 0,
-        y: 20,
+        y: 10,
     },
     in: {
         opacity: 1,
@@ -12,14 +16,14 @@ const pageVariants = {
     },
     out: {
         opacity: 0,
-        y: -20,
+        y: -10,
     }
 };
 
 const pageTransition = {
     type: 'tween',
-    ease: 'anticipate',
-    duration: 0.4
+    ease: 'easeInOut',
+    duration: 0.25
 };
 
 const PageTransition = ({ children }) => {

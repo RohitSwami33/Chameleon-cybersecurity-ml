@@ -1,151 +1,189 @@
-import React from 'react';
-import { Paper, Typography, Box, Chip, LinearProgress, Tooltip } from '@mui/material';
-import WarningIcon from '@mui/icons-material/Warning';
-import ShieldIcon from '@mui/icons-material/Shield';
-import FlagIcon from '@mui/icons-material/Flag';
+import React, { useState, useEffect } from 'react';
+import { Paper, Typography, Box, Chip, LinearProgress, Button, CircularProgress } from '@mui/material';
+import { motion } from 'framer-motion';
+import WarningAmberIcon from '@mui/icons-material/WarningAmber';
+import RefreshIcon from '@mui/icons-material/Refresh';
+import api from '../services/api';
+import TiltCard from './TiltCard';
+
+/**
+ * ThreatScorePanel — scored IP list with gradient bars
+ * @see Section 3 — ThreatScorePanel Rules
+ * Amber triangle icon, gradient progress bar, reputation levels
+ */
+const getReputationLevel = (score) => {
+    if (score >= 80) return { label: 'CRITICAL', color: '#ff3d71' };
+    if (score >= 60) return { label: 'MALICIOUS', color: '#ff6584' };
+    if (score >= 40) return { label: 'SUSPICIOUS', color: '#ffab00' };
+    if (score >= 20) return { label: 'LOW RISK', color: '#00d4ff' };
+    return { label: 'CLEAN', color: '#00e676' };
+};
+
+const getBarGradient = (score) => {
+    if (score >= 80) return 'linear-gradient(90deg, #ff3d71, #ff6584)';
+    if (score >= 60) return 'linear-gradient(90deg, #ff6584, #ffab00)';
+    if (score >= 40) return 'linear-gradient(90deg, #ffab00, #00d4ff)';
+    return 'linear-gradient(90deg, #00e676, #00d4ff)';
+};
 
 const ThreatScorePanel = ({ topThreats, flaggedCount }) => {
-    const getScoreColor = (score) => {
-        if (score >= 90) return '#4CAF50';  // Green - Trusted
-        if (score >= 70) return '#FFC107';  // Yellow - Neutral
-        if (score >= 40) return '#FF9800';  // Orange - Suspicious
-        if (score >= 20) return '#F44336';  // Red - Malicious
-        return '#B71C1C';  // Dark Red - Critical
+    const [scores, setScores] = useState([]);
+    const [loading, setLoading] = useState(false);
+
+    const fetchScores = async () => {
+        try {
+            setLoading(true);
+            const response = await api.get('/api/threat-scores/');
+            if (response.data && Array.isArray(response.data)) {
+                setScores(response.data.slice(0, 6));
+            }
+        } catch (err) {
+            console.error('Failed to fetch threat scores:', err);
+        } finally {
+            setLoading(false);
+        }
     };
 
-    const getReputationIcon = (level) => {
-        if (level === 'TRUSTED') return <ShieldIcon sx={{ color: '#4CAF50' }} />;
-        if (level === 'CRITICAL' || level === 'MALICIOUS') return <WarningIcon sx={{ color: '#F44336' }} />;
-        return <FlagIcon sx={{ color: '#FF9800' }} />;
-    };
+    useEffect(() => {
+        fetchScores();
+    }, []);
+
+    const displayData = scores.length > 0 ? scores : topThreats.slice(0, 6);
 
     return (
-        <Paper
+        <TiltCard
+            glowColor="#ffab00"
             sx={{
-                p: 3,
+                p: '20px',
                 height: '100%',
-                backgroundColor: '#1e1e1e',
-                backgroundImage: 'none',
                 display: 'flex',
                 flexDirection: 'column',
+                backgroundColor: 'rgba(10, 15, 30, 0.85)',
+                backdropFilter: 'blur(12px)',
+                border: '1px solid rgba(0, 212, 255, 0.08)',
+                borderRadius: '12px',
             }}
         >
-            <Box sx={{ display: 'flex', alignItems: 'center', mb: 2, justifyContent: 'space-between' }}>
-                <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                    <WarningIcon sx={{ mr: 1, color: '#F44336' }} />
-                    <Typography variant="h6" component="h2" sx={{ fontWeight: 600 }}>
+            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                    <WarningAmberIcon sx={{ color: '#ffab00', fontSize: 22 }} />
+                    <Typography variant="h6" component="h2" sx={{ fontWeight: 600, fontSize: '0.95rem', color: '#e8f4fd' }}>
                         Threat Scores
                     </Typography>
                 </Box>
-                {flaggedCount > 0 && (
-                    <Chip
-                        label={`${flaggedCount} Flagged`}
-                        size="small"
-                        sx={{
-                            backgroundColor: 'rgba(244, 67, 54, 0.2)',
-                            color: '#F44336',
-                            fontWeight: 600,
-                            border: '1px solid rgba(244, 67, 54, 0.3)',
-                        }}
-                    />
-                )}
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                    {flaggedCount > 0 && (
+                        <Chip
+                            label={`${flaggedCount} flagged`}
+                            size="small"
+                            sx={{
+                                backgroundColor: 'rgba(255, 61, 113, 0.12)',
+                                color: '#ff3d71',
+                                fontWeight: 600,
+                                fontSize: '0.7rem',
+                                border: '1px solid rgba(255, 61, 113, 0.2)',
+                                height: 22,
+                            }}
+                        />
+                    )}
+                    <Button size="small" onClick={fetchScores} sx={{ minWidth: 'auto', color: '#7a9bbf', p: 0.5 }}>
+                        <RefreshIcon sx={{ fontSize: 18 }} />
+                    </Button>
+                </Box>
             </Box>
 
-            {!topThreats || topThreats.length === 0 ? (
+            {loading ? (
                 <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', flexGrow: 1 }}>
-                    <Typography variant="body2" color="text.secondary">
-                        No threats detected
+                    <CircularProgress size={24} sx={{ color: '#00d4ff' }} />
+                </Box>
+            ) : displayData.length === 0 ? (
+                <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', flexGrow: 1 }}>
+                    <Typography variant="body2" sx={{ color: '#3d5a7a' }}>
+                        No threat data available
                     </Typography>
                 </Box>
             ) : (
                 <Box sx={{ flexGrow: 1, overflowY: 'auto' }}>
-                    {topThreats.map((threat, index) => (
-                        <Box
-                            key={index}
-                            sx={{
-                                py: 2,
-                                px: 2,
-                                mb: 2,
-                                borderRadius: 1,
-                                backgroundColor: 'rgba(255, 255, 255, 0.03)',
-                                border: `1px solid ${getScoreColor(threat.score)}33`,
-                                transition: 'all 0.2s',
-                                '&:hover': {
-                                    backgroundColor: 'rgba(255, 255, 255, 0.05)',
-                                    border: `1px solid ${getScoreColor(threat.score)}66`,
-                                },
-                            }}
-                        >
-                            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1 }}>
-                                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                                    {getReputationIcon(threat.level)}
-                                    <Typography variant="body2" sx={{ fontWeight: 600, fontFamily: 'monospace' }}>
-                                        {threat.ip_address}
-                                    </Typography>
+                    {displayData.map((item, index) => {
+                        const ip = item.ip_address || item.ip;
+                        const score = item.score || item.threat_score || 0;
+                        const { label, color } = getReputationLevel(score);
+
+                        return (
+                            <motion.div
+                                key={ip || index}
+                                initial={{ opacity: 0, y: 6 }}
+                                animate={{ opacity: 1, y: 0 }}
+                                transition={{ delay: index * 0.06 }}
+                            >
+                                <Box
+                                    sx={{
+                                        mb: 1.5,
+                                        p: 1.2,
+                                        borderRadius: '8px',
+                                        backgroundColor: 'rgba(10, 15, 30, 0.5)',
+                                        border: '1px solid rgba(0, 212, 255, 0.04)',
+                                    }}
+                                >
+                                    <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 0.8 }}>
+                                        <Typography
+                                            variant="body2"
+                                            sx={{
+                                                fontFamily: '"IBM Plex Mono", monospace',
+                                                fontWeight: 600,
+                                                fontSize: '0.8rem',
+                                                color: '#e8f4fd',
+                                            }}
+                                        >
+                                            {ip || 'Unknown'}
+                                        </Typography>
+                                        <Chip
+                                            label={label}
+                                            size="small"
+                                            sx={{
+                                                backgroundColor: `${color}15`,
+                                                color: color,
+                                                fontWeight: 700,
+                                                fontSize: '0.6rem',
+                                                border: `1px solid ${color}30`,
+                                                height: 20,
+                                            }}
+                                        />
+                                    </Box>
+                                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                                        <Box sx={{ flexGrow: 1, position: 'relative', height: 4, borderRadius: 2, overflow: 'hidden', backgroundColor: 'rgba(0, 212, 255, 0.06)' }}>
+                                            <Box sx={{
+                                                position: 'absolute',
+                                                top: 0,
+                                                left: 0,
+                                                height: '100%',
+                                                width: `${Math.min(score, 100)}%`,
+                                                background: getBarGradient(score),
+                                                borderRadius: 2,
+                                                transition: 'width 0.5s ease',
+                                            }} />
+                                        </Box>
+                                        <Typography
+                                            variant="caption"
+                                            sx={{
+                                                fontFamily: '"Rajdhani", sans-serif',
+                                                fontWeight: 700,
+                                                fontSize: '0.85rem',
+                                                color: color,
+                                                minWidth: 24,
+                                                textAlign: 'right',
+                                            }}
+                                        >
+                                            {Math.round(score)}
+                                        </Typography>
+                                    </Box>
                                 </Box>
-                                <Tooltip title={`Reputation: ${threat.level}`}>
-                                    <Chip
-                                        label={threat.score}
-                                        size="small"
-                                        sx={{
-                                            backgroundColor: `${getScoreColor(threat.score)}22`,
-                                            color: getScoreColor(threat.score),
-                                            fontWeight: 700,
-                                            border: `1px solid ${getScoreColor(threat.score)}`,
-                                            minWidth: 45,
-                                        }}
-                                    />
-                                </Tooltip>
-                            </Box>
-
-                            <Box sx={{ mb: 1 }}>
-                                <LinearProgress
-                                    variant="determinate"
-                                    value={threat.score}
-                                    sx={{
-                                        height: 6,
-                                        borderRadius: 3,
-                                        backgroundColor: 'rgba(255, 255, 255, 0.1)',
-                                        '& .MuiLinearProgress-bar': {
-                                            backgroundColor: getScoreColor(threat.score),
-                                        },
-                                    }}
-                                />
-                            </Box>
-
-                            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                                <Typography variant="caption" color="text.secondary">
-                                    {threat.total_attacks} attacks
-                                </Typography>
-                                <Chip
-                                    label={threat.level}
-                                    size="small"
-                                    sx={{
-                                        fontSize: '0.65rem',
-                                        height: 20,
-                                        backgroundColor: `${getScoreColor(threat.score)}22`,
-                                        color: getScoreColor(threat.score),
-                                        fontWeight: 600,
-                                    }}
-                                />
-                            </Box>
-
-                            {threat.recent_attacks > 0 && (
-                                <Typography variant="caption" sx={{ color: '#F44336', display: 'block', mt: 0.5 }}>
-                                    ⚠️ {threat.recent_attacks} attacks in last 24h
-                                </Typography>
-                            )}
-                        </Box>
-                    ))}
+                            </motion.div>
+                        );
+                    })}
                 </Box>
             )}
-
-            <Box sx={{ mt: 2, pt: 2, borderTop: '1px solid rgba(255, 255, 255, 0.1)' }}>
-                <Typography variant="caption" color="text.secondary">
-                    Score: 100 (Trusted) → 0 (Critical)
-                </Typography>
-            </Box>
-        </Paper>
+        </TiltCard>
     );
 };
 

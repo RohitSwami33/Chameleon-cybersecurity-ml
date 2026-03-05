@@ -1,13 +1,24 @@
 # Chameleon Adaptive Deception System - Backend Requirements
 # Python Version: 3.12.7
-# Last Updated: 2025-11-23
+# Last Updated: 2026-02-16
 
 # Web Framework & Server
 fastapi==0.104.1              # Modern web framework for building APIs
 uvicorn==0.24.0               # ASGI server for FastAPI
 python-multipart==0.0.6       # Form data parsing support
 
-# Database
+# ============================================================
+# PostgreSQL Database (NEW - Replacing MongoDB)
+# ============================================================
+sqlalchemy[asyncio]>=2.0.0    # ORM with async support
+asyncpg>=0.29.0               # Async PostgreSQL driver
+alembic>=1.13.0               # Database migrations
+greenlet>=3.0.0               # Required for SQLAlchemy async
+psycopg2-binary>=2.9.0        # Sync PostgreSQL driver (for Alembic migrations)
+
+# ============================================================
+# Legacy MongoDB (kept for migration reference)
+# ============================================================
 pymongo[srv]==4.6.0           # MongoDB driver with SRV support
 motor==3.3.2                  # Async MongoDB driver for FastAPI
 dnspython==2.4.2              # Required for mongodb+srv connections

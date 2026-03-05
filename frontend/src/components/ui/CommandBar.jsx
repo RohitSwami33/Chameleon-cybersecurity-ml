@@ -323,46 +323,50 @@ export function CommandBarTrigger() {
         display: 'flex',
         alignItems: 'center',
         gap: 1,
-        padding: '6px 12px',
-        background: 'rgba(255, 255, 255, 0.05)',
-        border: '1px solid rgba(255, 255, 255, 0.1)',
+        padding: '4px 10px',
+        background: 'rgba(0, 212, 255, 0.04)',
+        border: '1px solid rgba(0, 212, 255, 0.12)',
         borderRadius: '6px',
         cursor: 'pointer',
         transition: 'all 0.2s',
         '&:hover': {
-          background: 'rgba(255, 255, 255, 0.08)',
-          border: '1px solid rgba(255, 255, 255, 0.2)',
+          background: 'rgba(0, 212, 255, 0.08)',
+          border: '1px solid rgba(0, 212, 255, 0.25)',
         },
       }}
     >
-      <Typography variant="body2" sx={{ fontSize: '13px' }}>
+      <Typography variant="body2" sx={{ fontSize: '0.75rem', color: '#7a9bbf', fontFamily: '"DM Sans", sans-serif' }}>
         Search
       </Typography>
       <Box
         sx={{
           display: 'flex',
-          gap: 0.5,
+          gap: 0.3,
           alignItems: 'center',
         }}
       >
         <Box
           sx={{
-            padding: '2px 6px',
-            background: 'rgba(255, 255, 255, 0.1)',
-            borderRadius: '4px',
-            fontSize: '11px',
-            fontFamily: 'monospace',
+            padding: '1px 5px',
+            background: 'rgba(0, 212, 255, 0.06)',
+            borderRadius: '3px',
+            fontSize: '0.65rem',
+            fontFamily: '"IBM Plex Mono", monospace',
+            color: '#3d5a7a',
+            border: '1px solid rgba(0, 212, 255, 0.1)',
           }}
         >
           {navigator.platform.includes('Mac') ? '⌘' : 'Ctrl'}
         </Box>
         <Box
           sx={{
-            padding: '2px 6px',
-            background: 'rgba(255, 255, 255, 0.1)',
-            borderRadius: '4px',
-            fontSize: '11px',
-            fontFamily: 'monospace',
+            padding: '1px 5px',
+            background: 'rgba(0, 212, 255, 0.06)',
+            borderRadius: '3px',
+            fontSize: '0.65rem',
+            fontFamily: '"IBM Plex Mono", monospace',
+            color: '#3d5a7a',
+            border: '1px solid rgba(0, 212, 255, 0.1)',
           }}
         >
           K

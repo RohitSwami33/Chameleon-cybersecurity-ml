@@ -1,0 +1,12 @@
+{
+  "timestamp": "2026-02-21T20:14:15.417843",
+  "dataset_hash": "7718caa811191c6700c3a3cc9c61549ef84c66067047afea5d48cc106ebaca01",
+  "total_rows": 41511,
+  "benign_count": 22813,
+  "malicious_count": 18698,
+  "columns": [
+    "command_sequence",
+    "label",
+    "source"
+  ]
+}

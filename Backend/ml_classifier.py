@@ -1,4 +1,7 @@
-import tensorflow as tf
+try:
+    import tensorflow as tf
+except ImportError:
+    tf = None  # TensorFlow not available (e.g. Python 3.14) — heuristic mode only
 import numpy as np
 import re
 from config import settings, MODEL_PATH
@@ -17,7 +20,7 @@ class MLClassifier:
         }
         
         try:
-            if os.path.exists(MODEL_PATH):
+            if tf is not None and os.path.exists(MODEL_PATH):
                 # Register custom objects before loading
                 custom_objects = {
                     'custom_standardization': lambda x: x,  # Placeholder
@@ -83,6 +86,16 @@ class MLClassifier:
         for pattern in sqli_patterns:
             if re.search(pattern, text_lower):
                 return AttackType.SQLI, 0.85
+
+        # OS Command Injection / Destructive Commands
+        os_patterns = [
+            r"rm\s+-rf", r"wget\s+http", r"curl\s+http", r"cat\s+/etc/passwd",
+            r"nc\s+-e", r"bash\s+-i", r"chmod\s+\+x"
+        ]
+        for pattern in os_patterns:
+            if re.search(pattern, text_lower):
+                # We categorize RCE under a high-severity bucket. We can map it to SQLI or SSI for now.
+                return AttackType.SSI, 0.95
 
         # Brute Force (heuristic: short text with common keywords)
         bf_keywords = ["admin", "password", "login", "root", "123456"]
