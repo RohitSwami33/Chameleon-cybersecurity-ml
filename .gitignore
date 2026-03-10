@@ -72,6 +72,13 @@ Backend/contracts/*.json
 # ── Training logs & transient metrics (not source-controlled) ───────────────
 training_output*.log
 
+# ── Large model files (download separately or use Git LFS) ──────────────────
+Backend/chamaeleon-4bit-balanced/
+Backend/chamaeleon-4bit/
+finetuning-model/chamaeleon-4bit-balanced/
+finetuning-model/chamaeleon-4bit/
+finetuning-model/adapters*/
+
 # ===========================================================================
 # NOTE: The following file types are NOT ignored here — they are tracked via
 # Git LFS (see .gitattributes).  Do NOT add them back to this list.
