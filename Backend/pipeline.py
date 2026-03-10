@@ -2,29 +2,31 @@ import asyncio
 import logging
 from bilstm_inference import bilstm_model
 from local_inference import mlx_model
+from ml_classifier import classifier
 
 logger = logging.getLogger(__name__)
 
 async def evaluate_payload(payload: str) -> str:
     """
     Two-Stage Evaluation Pipeline:
-    Stage 1 (Fast Filter): BiLSTM model provides an anomaly score.
-    Stage 2 (Deep Analysis): Local MLX LLM model provides final BLOCK/ALLOW verdict.
+    Stage 1 (Fast Filter): Heuristic classifier provides attack type detection.
+    Stage 2 (Deep Analysis): Balanced MLX LLM model provides final BLOCK/ALLOW verdict.
+
+    For reliable benign user detection, we use the heuristic classifier as primary.
+    The balanced model (retrained on 2930 samples with 50/50 distribution) reduces false positives.
     """
-    # Stage 1: Fast Filter (BiLSTM)
-    bilstm_score = await asyncio.to_thread(bilstm_model.predict, payload)
-    logger.info(f"Pipeline Stage 1 [BiLSTM]: Anomaly score for payload is {bilstm_score:.4f}")
+    # Stage 1: Heuristic Classification (reliable for benign detection)
+    classification = classifier.classify(payload)
+    logger.info(f"Pipeline Stage 1 [Heuristic]: Type={classification.attack_type.value}, Malicious={classification.is_malicious}")
 
-    # Note: Future optimization threshold logic
-    # If the BiLSTM score is e.g. < 0.05 (95% confident it's safe), 
-    # we could immediately return "ALLOW" to save MLX compute.
-    # if bilstm_score < 0.05:
-    #     logger.info("Pipeline Stage 1 [BiLSTM]: Highly confident benign. Bypassing MLX.")
-    #     return "ALLOW"
-    
-    # Stage 2: Deep Analysis (Local MLX LLM)
+    # If heuristic says benign, trust it (avoids any ML false positives)
+    if not classification.is_malicious:
+        logger.info("Pipeline Stage 1 [Heuristic]: Benign input detected. Returning ALLOW.")
+        return "ALLOW"
+
+    # Stage 2: Deep Analysis (Balanced MLX LLM) for potentially malicious inputs
     mlx_verdict = await mlx_model.infer(payload)
-    logger.info(f"Pipeline Stage 2 [MLX]: Verdict is {mlx_verdict}")
+    logger.info(f"Pipeline Stage 2 [MLX-Balanced]: Verdict is {mlx_verdict}")
 
-    # The final authoritative verdict comes from the MLX model
+    # The final authoritative verdict comes from the MLX model for malicious inputs
     return mlx_verdict

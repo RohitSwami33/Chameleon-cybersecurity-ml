@@ -97,10 +97,14 @@ class MLClassifier:
                 # We categorize RCE under a high-severity bucket. We can map it to SQLI or SSI for now.
                 return AttackType.SSI, 0.95
 
-        # Brute Force (heuristic: short text with common keywords)
-        bf_keywords = ["admin", "password", "login", "root", "123456"]
-        if len(text) < 20 and any(keyword in text_lower for keyword in bf_keywords):
-            return AttackType.BRUTE_FORCE, 0.75
+        # Brute Force (heuristic: short text with common keywords that look like password attempts)
+        # Exclude patterns that are just usernames or normal login identifiers
+        bf_keywords = ["password", "123456", "admin", "root"]
+        # Only classify as brute force if it looks like a password attempt (contains numbers or is very short with password keyword)
+        if len(text) < 15 and any(keyword in text_lower for keyword in bf_keywords):
+            # Additional check: should look like a password attempt, not just a username
+            if any(c.isdigit() for c in text) or "password" in text_lower:
+                return AttackType.BRUTE_FORCE, 0.75
 
         return AttackType.BENIGN, 0.0
 

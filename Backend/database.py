@@ -82,13 +82,28 @@ async def save_attack_log(log_data: dict) -> str:
                 tenant = await get_default_tenant(session)
                 tenant_id = str(tenant.id) if tenant else str(uuid4())
                 
+        # Parse timestamp if it's a string
+        ts = log_data.get("timestamp", datetime.utcnow())
+        if isinstance(ts, str):
+            try:
+                # Handle possible 'Z' suffix or other iso formats
+                ts = datetime.fromisoformat(ts.replace('Z', '+00:00'))
+            except:
+                ts = datetime.utcnow()
+                
+        async with db.session_factory() as session:
+            tenant_id = log_data.get("tenant_id")
+            if not tenant_id:
+                tenant = await get_default_tenant(session)
+                tenant_id = str(tenant.id) if tenant else str(uuid4())
+                
             row = HoneypotLog(
                 id=uuid4(),
                 tenant_id=tenant_id,
                 attacker_ip=ip_addr,
                 command_entered=log_data.get("raw_input", ""),
                 response_sent=log_data.get("deception_response", {}).get("message", ""),
-                timestamp=log_data.get("timestamp", datetime.utcnow()),
+                timestamp=ts,
                 log_metadata={
                     "classification": classification_data,
                     "deception_response": log_data.get("deception_response"),

@@ -12,7 +12,8 @@ except ImportError:
 logger = logging.getLogger(__name__)
 
 # Absolute path to the model relative to Backend
-MODEL_DIR = Path(__file__).parent.parent.parent / "finetuning-model" / "chamaeleon-4bit"
+# Using the newly trained balanced model (retrained on 2930 balanced samples)
+MODEL_DIR = Path(__file__).parent / "chamaeleon-4bit-balanced"
 
 class LocalMLXModel:
     _instance = None
