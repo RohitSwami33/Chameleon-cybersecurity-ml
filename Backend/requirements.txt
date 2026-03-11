@@ -1,0 +1,57 @@
+# Chameleon Adaptive Deception System - Backend Requirements
+# Python Version: 3.12.7
+# Last Updated: 2026-02-16
+
+# Web Framework & Server
+fastapi==0.104.1              # Modern web framework for building APIs
+uvicorn==0.24.0               # ASGI server for FastAPI
+python-multipart==0.0.6       # Form data parsing support
+
+# ============================================================
+# PostgreSQL Database (NEW - Replacing MongoDB)
+# ============================================================
+sqlalchemy[asyncio]>=2.0.0    # ORM with async support
+asyncpg>=0.29.0               # Async PostgreSQL driver
+alembic>=1.13.0               # Database migrations
+greenlet>=3.0.0               # Required for SQLAlchemy async
+psycopg2-binary>=2.9.0        # Sync PostgreSQL driver (for Alembic migrations)
+
+# ============================================================
+# Legacy MongoDB (kept for migration reference)
+# ============================================================
+pymongo[srv]==4.6.0           # MongoDB driver with SRV support
+motor==3.3.2                  # Async MongoDB driver for FastAPI
+dnspython==2.4.2              # Required for mongodb+srv connections
+
+# Machine Learning & Data Processing
+tensorflow==2.16.1            # ML framework for attack classification
+numpy==1.26.4                 # Numerical computing library (compatible with TF 2.16)
+
+# Data Validation & Settings
+pydantic==2.5.0               # Data validation using Python type hints
+pydantic-settings==2.1.0      # Settings management for Pydantic
+
+# HTTP Client & Networking
+httpx==0.25.2                 # Async HTTP client for geo-location API
+requests==2.31.0              # HTTP library for blockchain operations
+
+# Security & Authentication
+python-jose[cryptography]==3.3.0  # JWT token handling
+passlib[bcrypt]==1.7.4            # Password hashing
+
+# Blockchain & Web3
+web3==6.11.3                  # Ethereum blockchain integration for immutable logging
+
+# PDF Generation
+reportlab==4.0.7              # PDF generation for incident reports
+
+# Configuration
+python-dotenv==1.0.0          # Environment variable management
+
+# Privacy-Preserving Threat Intelligence
+pybloom-live==4.0.0           # Bloom filters for pattern matching
+eth-account==0.10.0           # Ethereum account management
+
+# AI Chatbot
+google-generativeai==0.8.3    # Google Gemini API (compatible with protobuf>=5.0)
+duckduckgo-search==4.1.1      # DuckDuckGo search for cybersecurity info
