@@ -8,6 +8,10 @@ const STAGES = {
     LOADING: 'LOADING',
     DASHBOARD: 'DASHBOARD',
     TERMINATED: 'TERMINATED',
+<<<<<<< HEAD
+=======
+    BENIGN: 'BENIGN',  // New stage for benign users
+>>>>>>> 5035a73d50efbedccaead6fb1e12408899a269ef
 };
 
 const VERIFY_MESSAGES = [
@@ -145,7 +149,11 @@ function StageLogin({ onSubmit, credentials, setCredentials }) {
                 </div>
             </div>
             <footer className="trap-footer">
+<<<<<<< HEAD
                 © 2024 SecureNet Enterprise Systems v4.2.1 | IT Support: ext. 4400
+=======
+                © 2026 SecureNet Enterprise Systems v4.2.1 | IT Support: ext. 4400
+>>>>>>> 5035a73d50efbedccaead6fb1e12408899a269ef
                 <br />
                 <small>For technical issues contact helpdesk@securenet.internal</small>
             </footer>
@@ -506,6 +514,53 @@ function StageTerminated({ credentials }) {
     );
 }
 
+<<<<<<< HEAD
+=======
+// Component for benign users - shows "User is Normal" message
+function StageBenign({ credentials }) {
+    return (
+        <div className="trap-page">
+            <header className="trap-header">
+                <div className="trap-logo">🔒 <span>SecureNet</span> Enterprise Portal</div>
+            </header>
+            <div className="trap-card trap-card-center">
+                <div className="trap-success-icon" style={{ fontSize: '64px', marginBottom: '20px' }}>✓</div>
+                <h3 style={{ color: '#00e676' }}>Authentication Successful</h3>
+                <div className="trap-success-box" style={{
+                    backgroundColor: 'rgba(0, 230, 118, 0.1)',
+                    border: '1px solid rgba(0, 230, 118, 0.3)',
+                    borderRadius: '8px',
+                    padding: '20px',
+                    marginTop: '20px',
+                    marginBottom: '20px'
+                }}>
+                    <strong style={{ color: '#00e676' }}>User Verified Successfully</strong><br />
+                    <span style={{ color: '#7a9bbf' }}>Welcome, {credentials.username || 'User'}</span><br />
+                    <span style={{ color: '#7a9bbf', fontSize: '12px' }}>Your credentials have been validated.</span>
+                </div>
+                <p className="trap-hint">
+                    You will be redirected to the dashboard shortly.
+                </p>
+                <div className="trap-btn-row">
+                    <a
+                        href="/dashboard"
+                        className="trap-btn-primary"
+                        style={{ textDecoration: 'none', display: 'inline-block' }}
+                    >
+                        Continue to Dashboard →
+                    </a>
+                </div>
+            </div>
+            <footer className="trap-footer">
+                © 2026 SecureNet Enterprise Systems v4.2.1 | IT Support: ext. 4400
+                <br />
+                <small>For technical issues contact helpdesk@securenet.internal</small>
+            </footer>
+        </div>
+    );
+}
+
+>>>>>>> 5035a73d50efbedccaead6fb1e12408899a269ef
 
 // Main Component
 export default function TrapInterface() {
@@ -545,6 +600,7 @@ export default function TrapInterface() {
 
     useEffect(() => {
         if (stage !== STAGES.VERIFYING) return;
+<<<<<<< HEAD
         let current = 0;
         const interval = setInterval(() => {
             current += (100 / 45) * 0.1;
@@ -559,6 +615,63 @@ export default function TrapInterface() {
         }, 100);
         return () => clearInterval(interval);
     }, [stage]);
+=======
+
+        // Call the backend API to check if user is benign or malicious
+        const checkUserType = async () => {
+            try {
+                const response = await fetch('/api/trap/submit', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        input_text: `LOGIN:${credentials.username}`,
+                        ip_address: null,
+                        user_agent: navigator.userAgent,
+                    }),
+                });
+
+                const data = await response.json();
+
+                // Check if user is benign
+                if (data.status === 'benign' || data.is_malicious === false) {
+                    // User is benign - show success page
+                    setTimeout(() => setStage(STAGES.BENIGN), 1500);
+                } else {
+                    // User is malicious - continue with deception flow
+                    let current = 0;
+                    const interval = setInterval(() => {
+                        current += (100 / 45) * 0.1;
+                        if (current >= 99) {
+                            current = 99;
+                            clearInterval(interval);
+                            setTimeout(() => setStage(STAGES.ERROR), 3000);
+                        }
+                        setProgress(current);
+                        const msg = VERIFY_MESSAGES.filter(m => current >= m.at).pop();
+                        setCurrentMessage(msg?.text ?? VERIFY_MESSAGES[0].text);
+                    }, 100);
+                }
+            } catch (error) {
+                console.error('Error checking user type:', error);
+                // On error, continue with deception flow for safety
+                let current = 0;
+                const interval = setInterval(() => {
+                    current += (100 / 45) * 0.1;
+                    if (current >= 99) {
+                        current = 99;
+                        clearInterval(interval);
+                        setTimeout(() => setStage(STAGES.ERROR), 3000);
+                    }
+                    setProgress(current);
+                    const msg = VERIFY_MESSAGES.filter(m => current >= m.at).pop();
+                    setCurrentMessage(msg?.text ?? VERIFY_MESSAGES[0].text);
+                }, 100);
+            }
+        };
+
+        checkUserType();
+    }, [stage, credentials.username]);
+>>>>>>> 5035a73d50efbedccaead6fb1e12408899a269ef
 
     useEffect(() => {
         if (stage !== STAGES.LOADING) return;
@@ -665,6 +778,11 @@ export default function TrapInterface() {
             return <StageDashboard data={DECOY_DATA} onItemClick={handleItemClick} clickedItem={clickedItem} />;
         case STAGES.TERMINATED:
             return <StageTerminated credentials={credentials} />;
+<<<<<<< HEAD
+=======
+        case STAGES.BENIGN:
+            return <StageBenign credentials={credentials} />;
+>>>>>>> 5035a73d50efbedccaead6fb1e12408899a269ef
         default:
             return null;
     }

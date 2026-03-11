@@ -51,8 +51,21 @@ const Login = () => {
             }
         } catch (error) {
             console.error('Login failed:', error);
+<<<<<<< HEAD
             glitch();
             toast.error(error.response?.data?.detail || 'Authentication failed');
+=======
+
+            const errorData = error.response?.data;
+            if (errorData?.is_safe) {
+                // User is benign, but typed wrong password
+                toast.info(errorData?.detail || 'User verified as SAFE. Incorrect credentials.');
+            } else {
+                // Malicious or unhandled error
+                glitch();
+                toast.error(errorData?.detail || 'Authentication failed');
+            }
+>>>>>>> 5035a73d50efbedccaead6fb1e12408899a269ef
         } finally {
             setLoading(false);
         }
@@ -97,6 +110,20 @@ const Login = () => {
                         <Typography variant="body2" sx={{ color: '#3d5a7a', fontFamily: '"DM Sans", sans-serif', fontSize: '0.8rem' }}>
                             Operator Authentication Required
                         </Typography>
+<<<<<<< HEAD
+=======
+                        {/* Credentials reminder */}
+                        <Box sx={{
+                            mt: 1.5, mb: 0.5, py: 0.8, px: 1.5,
+                            borderRadius: '8px',
+                            backgroundColor: 'rgba(0,212,255,0.06)',
+                            border: '1px solid rgba(0,212,255,0.12)',
+                        }}>
+                            <Typography sx={{ fontFamily: '"IBM Plex Mono", monospace', fontSize: '0.68rem', color: '#00d4ff', opacity: 0.85 }}>
+                                👤 admin &nbsp;|&nbsp; 🔑 chameleon2024
+                            </Typography>
+                        </Box>
+>>>>>>> 5035a73d50efbedccaead6fb1e12408899a269ef
                     </Box>
 
                     <form onSubmit={handleSubmit}>
@@ -200,15 +227,34 @@ const Login = () => {
                         fullWidth
                         variant="outlined"
                         onClick={async () => {
+<<<<<<< HEAD
+=======
+                            setLoading(true);
+>>>>>>> 5035a73d50efbedccaead6fb1e12408899a269ef
                             try {
                                 const data = await apiLogin('admin', 'chameleon2024');
                                 if (data.access_token) {
                                     localStorage.setItem('authToken', data.access_token);
+<<<<<<< HEAD
                                     toast.success('Demo access granted. Welcome, Operator.');
                                     navigate('/dashboard');
                                 }
                             } catch (err) {
                                 toast.error('Backend not reachable. Is uvicorn running on port 8000?');
+=======
+                                    toast.success('Admin access granted. Welcome, Operator.');
+                                    navigate('/dashboard');
+                                } else {
+                                    throw new Error('No token');
+                                }
+                            } catch (err) {
+                                // If backend is unreachable, store a local stub token for demo UI only
+                                localStorage.setItem('authToken', 'demo-local-token');
+                                toast.warning('Backend offline — limited demo mode active');
+                                navigate('/dashboard');
+                            } finally {
+                                setLoading(false);
+>>>>>>> 5035a73d50efbedccaead6fb1e12408899a269ef
                             }
                         }}
                         sx={{
@@ -227,7 +273,11 @@ const Login = () => {
                             },
                         }}
                     >
+<<<<<<< HEAD
                         ⚡ Demo Access (No Backend)
+=======
+                        ⚡ Quick Access (auto-fill admin)
+>>>>>>> 5035a73d50efbedccaead6fb1e12408899a269ef
                     </Button>
 
                     <Typography variant="caption" sx={{

@@ -23,8 +23,11 @@
   "license": "MIT",
   "devDependencies": {
     "concurrently": "^8.2.2"
+<<<<<<< HEAD
   },
   "dependencies": {
     "@splinetool/react-spline": "^4.1.0"
+=======
+>>>>>>> 5035a73d50efbedccaead6fb1e12408899a269ef
   }
 }

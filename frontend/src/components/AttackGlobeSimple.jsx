@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 import React, { useRef, useEffect, useState, useCallback, useMemo, lazy, Suspense } from 'react';
 import { Box, Typography, Chip, Paper, Fade } from '@mui/material';
 import { motion } from 'framer-motion';
@@ -43,6 +44,14 @@ const getSplineNodeForAttack = (attackType) => {
         default: return 'RedNode'; // Default shockwave
     }
 };
+=======
+// AttackGlobeSimple.jsx — 3D Spline scene QUARANTINED (performance).
+// Renders a lightweight SVG world-map with live attack arcs instead.
+import React, { useRef, useEffect, useState, useMemo } from 'react';
+import { Box, Typography, Chip, Paper } from '@mui/material';
+import FiberManualRecordIcon from '@mui/icons-material/FiberManualRecord';
+
+>>>>>>> 5035a73d50efbedccaead6fb1e12408899a269ef
 
 const AttackOverlayHUD = ({ attacks = [] }) => {
     const activeThreats = attacks.filter(a => a.classification?.attack_type !== 'BENIGN').length;
@@ -261,6 +270,7 @@ const SVGWorldMapFallback = ({ attacks = [], serverLocation = { lat: 37.7749, lo
 };
 
 
+<<<<<<< HEAD
 export default function AttackGlobeSimple({ attacks = [], serverLocation = { lat: 37.7749, lon: -122.4194 } }) {
     const splineRef = useRef(null);
     const [isWebGLSupported, setIsWebGLSupported] = useState(true);
@@ -325,4 +335,9 @@ export default function AttackGlobeSimple({ attacks = [], serverLocation = { lat
             </Fade>
         </motion.div>
     );
+=======
+// Default export: renders the SVG world map directly (Spline 3D scene quarantined).
+export default function AttackGlobeSimple({ attacks = [], serverLocation = { lat: 37.7749, lon: -122.4194 } }) {
+    return <SVGWorldMapFallback attacks={attacks} serverLocation={serverLocation} />;
+>>>>>>> 5035a73d50efbedccaead6fb1e12408899a269ef
 }
