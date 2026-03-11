@@ -88,44 +88,87 @@ from utils import get_current_time
 # ── SIEM Export ────────────────────────────────────────────────────────
 from api.export.stix import stix_router
 
+# ── Meta-Heuristic Optimization ───────────────────────────────────────
+from meta_heuristics import (
+    pso_optimizer,      # Particle Swarm Optimization for adaptive tarpitting
+    ga_optimizer,       # Genetic Algorithm for deception schema evolution
+    session_tracker,    # Session tracking for fitness evaluation
+)
+
 logger = logging.getLogger(__name__)
 
 # ========================================================================
-# Deception Handler
+# Deception Handler with Meta-Heuristic Optimization
 # ========================================================================
 async def handle_deception_layer(payload: str, request_data: dict, request: Request = None, additional_data: dict = None):
     """
     Called when a payload is flagged as BLOCK by the security pipeline.
     Routes the attacker into the 'Deception Layer', storing telemetry
     and returning a superficially valid 200 OK success response.
+
+    Meta-Heuristic Integration:
+    ────────────────────────────
+    1. PSO (Particle Swarm Optimization): Dynamically adjusts tarpit delay
+       to maximize attacker dwell time without triggering timeouts.
+
+    2. GA (Genetic Algorithm): Evolves fake file systems and mock responses
+       based on attacker interaction patterns.
+
+    Fitness Functions:
+    ──────────────────
+    PSO: F(t) = (w₁ · C_exec) - (w₂ · P_drop)
+         Where C_exec = commands executed, P_drop = disconnection penalty
+
+    GA:  F(s) = Σ(interaction_bonus) + complexity_bonus - staleness_penalty
     """
     logger.warning(f"🚨 [DECEPTION LAYER TRIGGERED] Payload: {payload[:100]}")
 
-    # Store telemetry data locally or to DB to track their behavior
+    # Extract attacker information
     ip = request_data.get("ip_address", "Unknown")
-    # Using the existing log_attack function for MongoDB logging
+    attack_category = request_data.get("attack_category", "GENERIC")
+    action = request_data.get("action", "generic")
+
+    # Generate unique session ID for tracking
+    import uuid
+    session_id = str(uuid.uuid4())[:8]
+
+    # ── PSO: Get optimal tarpit delay ──────────────────────────────────
+    optimal_delay = await pso_optimizer.get_optimal_delay(attack_category)
+    logger.info(f"🐜 PSO Optimal Delay | Category: {attack_category} | Delay: {optimal_delay:.2f}s")
+
+    # Create session tracker for this attacker
+    session_tracker.create_session(session_id, attack_category, optimal_delay)
+
+    # Apply PSO-optimized tarpit delay
+    logger.info(f"🕸 Tarpitting attacker connection for {optimal_delay:.2f} seconds...")
+    await asyncio.sleep(optimal_delay)
+
+    # ── GA: Get tempting deception schema ──────────────────────────────
+    schema_id, fake_schema = await ga_optimizer.get_tempting_schema()
+    logger.info(f"🧬 GA Selected Schema | ID: {schema_id} | Paths: {len(fake_schema)}")
+
+    # Store telemetry data locally or to DB to track their behavior
     await log_attack(
         {
             "timestamp": datetime.now(),
             "ip_address": ip,
             "raw_input": payload,
             "classification": {
-                "attack_type": AttackType.SSI.value, # Abstract generic type
+                "attack_type": AttackType.SSI.value,
                 "confidence": 0.99,
                 "is_malicious": True
             },
             "deception_response": {
                 "message": "Routed to deception layer",
-                "delay_applied": 0,
-                "http_status": 200
+                "delay_applied": optimal_delay,
+                "http_status": 200,
+                "schema_id": schema_id,
             }
         }
     )
 
     try:
         # Flag in DB as deeply anomalous / trapped
-        # This part assumes a `store_attack_log` function which is not defined.
-        # Using save_honeypot_log for PostgreSQL logging.
         async with db.session_factory() as session:
             tenant = await get_default_tenant(session)
             tenant_id = str(tenant.id) if tenant else "00000000-0000-0000-0000-000000000000"
@@ -139,13 +182,15 @@ async def handle_deception_layer(payload: str, request_data: dict, request: Requ
                     "confidence": 0.99,
                     "is_malicious": True,
                 },
-                "session_id": "DECEPTION_SESSION",
+                "session_id": session_id,
+                "schema_id": schema_id,
+                "pso_delay": optimal_delay,
             }
             log = HoneypotLog(
                 tenant_id=tenant_id,
                 attacker_ip=ip,
                 command_entered=f"[DECEPTION] {payload}",
-                response_sent="Routed to deception layer",
+                response_sent="Routed to deception layer with GA schema",
                 log_metadata=log_meta,
             )
             session.add(log)
@@ -153,52 +198,78 @@ async def handle_deception_layer(payload: str, request_data: dict, request: Requ
     except Exception as e:
         logger.error(f"Failed to flag attacker in DB: {e}")
 
-    # Add Algorithmic Tarpitting delay (between 2.5 and 8.0 seconds)
-    tarpit_delay = round(random.uniform(2.5, 8.0), 2)
-    logger.info(f"🕸 Tarpitting attacker connection for {tarpit_delay} seconds...")
-    await asyncio.sleep(tarpit_delay)
-
-    # The deception response is tailored conceptually based on the action
-    action = request_data.get("action", "generic")
-    
+    # The deception response is tailored based on action and GA schema
     if action == "login":
+        # Record interaction for GA fitness
+        session_tracker.record_path_interaction(session_id, "/api/auth/login")
+
         return JSONResponse(
             content={
-                "status": "success", 
-                "session_id": "fake_token_123_abc", 
+                "status": "success",
+                "session_id": "fake_token_123_abc",
                 "message": "Login successful",
-                "execution_time_ms": int(tarpit_delay * 1000)
-            }, 
+                "execution_time_ms": int(optimal_delay * 1000),
+                "schema_id": schema_id,
+            },
             status_code=200
         )
     elif action == "execute":
-        # Fake Shell Output Dictionary
-        fake_shell_db = {
-            "whoami": "root\n",
-            "ls": "data/  var/  tmp/  sys/  app.py\n",
-            "ls -la": "total 42\ndrwxr-xr-x 1 root root 4096 Mar  6 03:14 .\ndrwxr-xr-x 1 root root 4096 Mar  6 03:14 ..\n-rw-r--r-- 1 root root 1243 Jan 12 11:20 app.py\ndrwxr-xr-x 2 root root 4096 Feb  1 09:00 data\n",
-            "cat /etc/passwd": "root:x:0:0:root:/root:/bin/bash\ndaemon:x:1:1:daemon:/usr/sbin:/usr/sbin/nologin\nbin:x:2:2:bin:/bin:/usr/sbin/nologin\nsys:x:3:3:sys:/dev:/usr/sbin/nologin\nwww-data:x:33:33:www-data:/var/www:/usr/sbin/nologin\n",
-            "pwd": "/var/www/html/backend\n",
-            "id": "uid=0(root) gid=0(root) groups=0(root)\n",
-            "uname -a": "Linux web-prod-04 5.4.0-163-generic #180-Ubuntu SMP Tue Sep 5 13:10:04 UTC 2023 x86_64 x86_64 x86_64 GNU/Linux\n"
-        }
-        
+        # Build fake shell database from GA schema
+        fake_shell_db = {}
+
+        # Add standard commands
+        fake_shell_db["whoami"] = "root\n"
+        fake_shell_db["pwd"] = "/var/www/html/backend\n"
+        fake_shell_db["id"] = "uid=0(root) gid=0(root) groups=0(root)\n"
+        fake_shell_db["uname -a"] = "Linux web-prod-04 5.4.0-163-generic #180-Ubuntu SMP x86_64 GNU/Linux\n"
+
+        # Add GA-generated fake files
+        for path, content in fake_schema.items():
+            cmd = f"cat {path}"
+            fake_shell_db[cmd] = content
+
+        # Add common commands
+        fake_shell_db["ls"] = "data/  var/  tmp/  sys/  app.py\n"
+        fake_shell_db["ls -la"] = (
+            "total 42\n"
+            "drwxr-xr-x 1 root root 4096 Mar  6 03:14 .\n"
+            "drwxr-xr-x 1 root root 4096 Mar  6 03:14 ..\n"
+            "-rw-r--r-- 1 root root 1243 Jan 12 11:20 app.py\n"
+            "drwxr-xr-x 2 root root 4096 Feb  1 09:00 data\n"
+        )
+
         # Clean up the command for matching
         cmd = payload.strip()
-        
+
         if cmd in fake_shell_db:
             fake_output = fake_shell_db[cmd]
+            # Record path interaction for GA fitness
+            session_tracker.record_path_interaction(session_id, cmd)
         else:
             # Fallback for unrecognized commands
             fake_output = f"bash: {cmd[:20]}: command not found\n"
 
+        # Record command execution for PSO fitness
+        session_tracker.record_command(session_id)
+
         return JSONResponse(content={
             "status": "success",
             "output": f"{fake_output}root@web-prod-04:/var/www/html/backend# ",
-            "execution_time_ms": int(tarpit_delay * 1000)
+            "execution_time_ms": int(optimal_delay * 1000),
+            "schema_id": schema_id,
         }, status_code=200)
     else:
-        return JSONResponse(content={"status": "success", "data": "Request accepted for processing."}, status_code=200)
+        # Generic deception response
+        session_tracker.record_command(session_id)
+
+        return JSONResponse(
+            content={
+                "status": "success",
+                "data": "Request accepted for processing.",
+                "schema_id": schema_id,
+            },
+            status_code=200
+        )
 
 # ========================================================================
 # Pydantic Request / Response Models
@@ -1190,6 +1261,56 @@ async def search_cybersecurity_info(
         "query": query, "results": results,
         "count": len(results), "timestamp": datetime.utcnow().isoformat(),
     }
+
+
+# ========================================================================
+# Meta-Heuristic Optimization Monitoring Endpoints
+# ========================================================================
+
+@app.get("/api/meta-heuristics/stats")
+async def get_meta_heuristic_stats():
+    """
+    Get statistics from PSO and GA optimizers for research monitoring.
+
+    Returns real-time metrics on:
+    - PSO: Global best delays per attack category, swarm statistics
+    - GA: Current generation, best fitness, population diversity
+    """
+    pso_stats = {}
+    for category in ["SQLI", "XSS", "SSI", "BRUTE_FORCE", "RCE", "PATH_TRAVERSAL", "GENERIC"]:
+        pso_stats[category] = pso_optimizer.get_swarm_statistics(category)
+
+    ga_stats = ga_optimizer.get_population_statistics()
+
+    return {
+        "pso": pso_stats,
+        "ga": ga_stats,
+        "timestamp": datetime.utcnow().isoformat(),
+    }
+
+
+@app.post("/api/meta-heuristics/ga/evolve")
+async def trigger_ga_evolution():
+    """Manually trigger GA evolution (for testing/research)."""
+    await ga_optimizer.evolve_population()
+    return {"status": "success", "generation": ga_optimizer.generation}
+
+
+@app.get("/api/meta-heuristics/session/{session_id}")
+async def get_session_info(session_id: str):
+    """Get information about a specific attacker session."""
+    if session_id in session_tracker.sessions:
+        session = session_tracker.sessions[session_id]
+        return {
+            "session_id": session.session_id,
+            "attack_category": session.attack_category,
+            "delay_used": session.delay_used,
+            "commands_executed": session.commands_executed,
+            "interacted_paths": session.interacted_paths,
+            "start_time": session.start_time.isoformat(),
+            "ended": session.ended,
+        }
+    raise HTTPException(status_code=404, detail="Session not found")
 
 
 # ========================================================================

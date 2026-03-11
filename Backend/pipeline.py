@@ -1,3 +1,13 @@
+"""
+Chameleon Two-Stage Evaluation Pipeline with Meta-Heuristic Optimization
+=========================================================================
+Integrates:
+  - Heuristic classifier for benign detection
+  - Balanced MLX LLM for malicious classification
+  - PSO for adaptive tarpitting
+  - GA for dynamic deception schema evolution
+"""
+
 import asyncio
 import logging
 from bilstm_inference import bilstm_model
