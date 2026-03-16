@@ -1,12 +1,7 @@
-from datetime import datetime, timezone, timedelta
-
-# Indian Standard Time (IST) is UTC+5:30
-IST = timezone(timedelta(hours=5, minutes=30))
-
-def get_current_time():
-    """Get current time in IST timezone"""
-    return datetime.now(IST)
-
-def get_utc_time():
-    """Get current time in UTC (for backward compatibility)"""
-    return datetime.utcnow()
+# Compatibility shim — real source in src.utils.utils
+# This file preserves backward compatibility for all existing imports
+from src.utils.utils import *  # noqa: F401,F403
+try:
+    from src.utils.utils import __all__
+except ImportError:
+    pass

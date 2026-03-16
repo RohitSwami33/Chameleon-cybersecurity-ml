@@ -1,8 +1,4 @@
-# ===========================================================================
-# Chameleon Adaptive Deception System — .gitignore
-# ===========================================================================
-
-# ── Python ──────────────────────────────────────────────────────────────────
+# ── Python ───────────────────────────────────────────────────────────────────
 __pycache__/
 *.py[cod]
 *$py.class
@@ -14,85 +10,70 @@ dist/
 downloads/
 eggs/
 .eggs/
+lib/
 lib64/
 parts/
 sdist/
 var/
 wheels/
+share/python-wheels/
 *.egg-info/
 .installed.cfg
 *.egg
 MANIFEST
+*.pyc
 
-# ── Virtual Environment ──────────────────────────────────────────────────────
-venv/
-.venv/
-ENV/
-env/
-
-# ── Test / CI Cache ──────────────────────────────────────────────────────────
+# ── Testing ──────────────────────────────────────────────────────────────────
 .pytest_cache/
-.mypy_cache/
+.tox/
+.nox/
 .coverage
+.coverage.*
 htmlcov/
+.hypothesis/
+nosetests.xml
+coverage.xml
+*.cover
+*.py,cover
 
-# ── Environment / Secrets  (CRITICAL — never commit) ────────────────────────
+# ── Virtual environments ──────────────────────────────────────────────────────
+.venv
+env/
+venv/
+ENV/
+env.bak/
+venv.bak/
+
+# ── Environment & secrets ─────────────────────────────────────────────────────
 .env
-.env.local
-.env.development.local
-.env.test.local
-.env.production.local
+.env.*
+!.env.example
+*.env
 
-# ── IDE ──────────────────────────────────────────────────────────────────────
-.vscode/
-.idea/
-*.swp
-*.swo
-*~
+# ── Logs ─────────────────────────────────────────────────────────────────────
+*.log
+backend.log
 
-# ── macOS ────────────────────────────────────────────────────────────────────
+# ── macOS ─────────────────────────────────────────────────────────────────────
 .DS_Store
+.AppleDouble
+.LSOverride
 Thumbs.db
 
-# ── Node / Frontend build ────────────────────────────────────────────────────
+# ── Node.js ──────────────────────────────────────────────────────────────────
 node_modules/
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
-frontend/dist/
-frontend/build/
+.pnpm-debug.log*
+dist/
 
-# ── Log files ────────────────────────────────────────────────────────────────
-*.log
-backend.log
+# ── IDEs ─────────────────────────────────────────────────────────────────────
+.idea/
+.vscode/
+*.swp
+*.swo
 
-# ── MongoDB runtime data ─────────────────────────────────────────────────────
-Backend/data/db/
-Backend/data/*.log*
-
-# ── Solidity / Blockchain compiled artifacts ─────────────────────────────────
-Backend/contracts/*.json
-
-# ── Training logs & transient metrics (not source-controlled) ───────────────
-training_output*.log
-
-# ── Large model files (download separately or use Git LFS) ──────────────────
-Backend/chamaeleon-4bit-balanced/
-Backend/chamaeleon-4bit/
-finetuning-model/chamaeleon-4bit-balanced/
-finetuning-model/chamaeleon-4bit/
-finetuning-model/adapters*/
-
-# ===========================================================================
-# NOTE: The following file types are NOT ignored here — they are tracked via
-# Git LFS (see .gitattributes).  Do NOT add them back to this list.
-#
-#   *.safetensors  — MLX / Hugging Face model shards
-#   *.bin          — PyTorch / binary model blobs
-#   *.npz          — NumPy compressed arrays (MLX weights)
-#   *.jsonl        — training datasets
-#   *.csv          — labelled command datasets
-#   *.pth / *.pt   — PyTorch checkpoint files  (pushed via LFS)
-#   *.pkl          — tokenizer / scaler pickles (pushed via LFS)
-#   *.keras / *.h5 — Keras model files          (pushed via LFS)
-# ===========================================================================
+# ── MLX / model caches ───────────────────────────────────────────────────────
+*.mlpackage/
+mlx_model_cache/
