@@ -62,6 +62,10 @@ yarn-error.log*
 frontend/dist/
 frontend/build/
 
+# ── Log files ────────────────────────────────────────────────────────────────
+*.log
+backend.log
+
 # ── MongoDB runtime data ─────────────────────────────────────────────────────
 Backend/data/db/
 Backend/data/*.log*

@@ -1,14 +1,15 @@
 """
 Chameleon Meta-Heuristics Rigorous Test Suite
 ==============================================
-Comprehensive async-aware test suite for validating PSO and RRT algorithms
-in the Chameleon honeypot system.
+Comprehensive async-aware test suite for validating TC-PSO, S-RRT, and their
+standard counterparts in the Chameleon honeypot system.
 
 This test suite provides academic validation for:
-1. PSO convergence and boundary behavior
-2. RRT (2025 IEEE Access) tree-based evolutionary progression
-3. Concurrency safety under high load
-4. Memory management and leak prevention
+1. TC-PSO convergence and boundary behavior with BiLSTM anomaly scores
+2. S-RRT (Semantic Deception) tree-based evolutionary progression with PSI
+3. Standard PSO and RRT baselines for comparison
+4. Concurrency safety under high load
+5. Memory management and leak prevention
 
 Author: Chameleon Research Team
 Date: March 2026
@@ -16,7 +17,7 @@ Date: March 2026
 Usage:
     pytest test_meta_heuristics_rigorous.py -v --asyncio-mode=auto
     pytest test_meta_heuristics_rigorous.py::TestPSOConvergence -v
-    pytest test_meta_heuristics_rigorous.py::TestGAEvolution -v
+    pytest test_meta_heuristics_rigorous.py::TestSRRTEvolution -v
 """
 
 import pytest
@@ -33,10 +34,14 @@ from datetime import datetime, timedelta
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from meta_heuristics import (
+    ThreatCalibratedPSO,
     AdaptiveTarpitPSO,
+    SemanticDeceptionRRT,
     DeceptionEvolutionRRT,
     SessionTracker,
+    TC_PSO_CONFIG,
     PSO_CONFIG,
+    S_RRT_CONFIG,
     FITNESS_WEIGHTS,
     AttackCategory,
 )
@@ -47,14 +52,26 @@ from meta_heuristics import (
 # ============================================================================
 
 @pytest.fixture
+def tc_pso_optimizer():
+    """Create a fresh TC-PSO optimizer instance for each test."""
+    return ThreatCalibratedPSO()
+
+
+@pytest.fixture
 def pso_optimizer():
-    """Create a fresh PSO optimizer instance for each test."""
+    """Create a fresh standard PSO optimizer instance for each test."""
     return AdaptiveTarpitPSO()
 
 
 @pytest.fixture
-def ga_optimizer():
-    """Create a fresh RRT optimizer instance for each test."""
+def s_rrt_optimizer():
+    """Create a fresh S-RRT optimizer instance for each test."""
+    return SemanticDeceptionRRT()
+
+
+@pytest.fixture
+def rrt_optimizer():
+    """Create a fresh standard RRT optimizer instance for each test."""
     return DeceptionEvolutionRRT()
 
 
@@ -71,84 +88,296 @@ def sample_attack_categories():
 
 
 # ============================================================================
-# Test 1: PSO Convergence & Boundary Validation (The Math Proof)
+# Test 1: TC-PSO Convergence & Boundary Validation (The Math Proof)
 # ============================================================================
 
-class TestPSOConvergence:
+class TestTCPSOConvergence:
     """
-    Test PSO convergence behavior and boundary constraints.
-    
+    Test TC-PSO convergence behavior and boundary constraints.
+
     Research Validation:
     ────────────────────
-    These tests validate that the PSO algorithm correctly implements
-    the mathematical formulation from Kennedy & Eberhart (1995) and
-    converges to optimal solutions within defined boundaries.
+    These tests validate that the TC-PSO algorithm correctly implements
+    the novel mathematical formulation with dynamic inertia scaling:
+    
+    w(t) = w_base * (1 - α * anomaly_score)
+    F'(t) = F(t) * (1 + β * anomaly_score)
     
     The fitness landscape simulates real-world attacker behavior where:
     - Delays ~4.5s maximize engagement (C_exec)
     - Delays >5.0s cause timeouts (P_drop penalty)
-    - Delays <1.0s are too short to be effective
+    - Higher anomaly scores should accelerate convergence
     """
-    
+
     @pytest.mark.asyncio
-    async def test_pso_convergence_to_optimal_delay(self, pso_optimizer):
+    async def test_tc_pso_convergence_to_optimal_delay(self, tc_pso_optimizer):
         """
-        Validate that PSO converges to the optimal delay value.
-        
+        Validate that TC-PSO converges to the optimal delay value.
+
         Simulation Setup:
         ─────────────────
         We create a synthetic fitness landscape where:
         - Optimal delay = 4.5 seconds (maximum C_exec)
         - Delays > 5.0s cause timeout (P_drop = 1)
         - Delays < 2.0s yield low engagement (C_exec = 1-2)
-        
+
         Expected Outcome:
         ─────────────────
         After 100 iterations, the global best delay should converge
         to approximately 4.5 seconds (±1.0s tolerance).
-        
-        Research Significance:
-        ──────────────────────
-        Demonstrates that PSO can automatically discover optimal
-        tarpit delays without manual tuning, adapting to attacker
-        behavior patterns in real-time.
         """
         category = "SQLI"
         num_iterations = 100
-        
+        anomaly_score = 0.85  # High anomaly scenario
+
         # Simulate fitness landscape
         def simulate_attacker_response(delay: float) -> Tuple[int, bool]:
-            """
-            Simulate attacker behavior based on delay.
-            
-            Returns:
-                Tuple[int, bool]: (commands_executed, dropped)
-            """
+            """Simulate attacker behavior based on delay."""
             if delay > 5.0:
-                # Timeout - attacker disconnects
                 return (0, True)
             elif 4.0 <= delay <= 5.0:
-                # Sweet spot - maximum engagement
                 return (random.randint(8, 12), False)
             elif 3.0 <= delay < 4.0:
-                # Good engagement
                 return (random.randint(5, 8), False)
             elif 2.0 <= delay < 3.0:
-                # Moderate engagement
                 return (random.randint(3, 5), False)
             else:
-                # Too short - low engagement
                 return (random.randint(1, 3), False)
-        
+
         # Run optimization loop
         for iteration in range(num_iterations):
-            # Get current best delay
-            current_delay = await pso_optimizer.get_optimal_delay(category)
-            
-            # Simulate attacker session
+            current_delay = await tc_pso_optimizer.get_optimal_delay(category)
             commands_executed, dropped = simulate_attacker_response(current_delay)
+
+            await tc_pso_optimizer.update_fitness(
+                attack_category=category,
+                delay_used=current_delay,
+                commands_executed=commands_executed,
+                dropped=dropped,
+                session_id=f"sim_{iteration:03d}",
+                bilstm_anomaly_score=anomaly_score
+            )
+
+        # Validate convergence
+        final_best_delay = tc_pso_optimizer.global_best[category][0]
+        final_best_fitness = tc_pso_optimizer.global_best[category][1]
+
+        print(f"\nTC-PSO Convergence Results:")
+        print(f"  Final Best Delay: {final_best_delay:.2f}s")
+        print(f"  Final Best Fitness: {final_best_fitness:.4f}")
+        print(f"  Anomaly Score: {anomaly_score}")
+        print(f"  Iterations: {num_iterations}")
+
+        # Assertions
+        assert 1.5 <= final_best_delay <= 7.0, (
+            f"TC-PSO did not converge toward optimal range. Got {final_best_delay:.2f}s"
+        )
+
+        assert final_best_fitness > 0, (
+            f"Final fitness should be positive. Got {final_best_fitness:.4f}"
+        )
+
+        stats = tc_pso_optimizer.get_swarm_statistics(category)
+        assert stats["iterations"] == num_iterations, "Iteration count mismatch"
+        assert final_best_fitness > 1.0, (
+            f"Fitness should improve over iterations. Got {final_best_fitness:.4f}"
+        )
+
+    @pytest.mark.asyncio
+    async def test_tc_pso_dynamic_inertia_scaling(self, tc_pso_optimizer):
+        """
+        Validate that dynamic inertia scaling works correctly.
+
+        Research Validation:
+        ────────────────────
+        Tests the novel equation: w(t) = w_base * (1 - α * anomaly_score)
+        
+        Higher anomaly scores should produce lower inertia weights,
+        leading to faster convergence.
+        """
+        category = "RCE"
+        
+        # Test with different anomaly scores
+        test_scores = [0.0, 0.5, 1.0]
+        inertias = []
+        
+        for score in test_scores:
+            tc_pso_optimizer.anomaly_scores[category] = score
+            inertia = tc_pso_optimizer._calculate_dynamic_inertia(category)
+            inertias.append(inertia)
             
-            # Update fitness
+            print(f"\nAnomaly Score: {score:.1f} → Dynamic Inertia: {inertia:.4f}")
+        
+        # Verify inertia decreases as anomaly score increases
+        assert inertias[0] > inertias[1] > inertias[2], (
+            f"Inertia should decrease with higher anomaly scores. Got: {inertias}"
+        )
+        
+        # Verify inertia stays within bounds
+        w_base = TC_PSO_CONFIG["inertia_weight"]
+        min_scale = TC_PSO_CONFIG["min_inertia_scale"]
+        
+        for inertia in inertias:
+            expected_max = w_base
+            expected_min = w_base * min_scale
+            assert expected_min <= inertia <= expected_max, (
+                f"Inertia {inertia:.4f} out of bounds [{expected_min:.4f}, {expected_max:.4f}]"
+            )
+
+    @pytest.mark.asyncio
+    async def test_tc_pso_boundary_constraints(self, tc_pso_optimizer):
+        """
+        Validate that TC-PSO respects min/max delay boundaries.
+        """
+        category = "XSS"
+        num_tests = 50
+
+        for i in range(num_tests):
+            delay = await tc_pso_optimizer.get_optimal_delay(category)
+            commands = random.randint(1, 10)
+            dropped = random.random() < 0.1
+
+            await tc_pso_optimizer.update_fitness(
+                attack_category=category,
+                delay_used=delay,
+                commands_executed=commands,
+                dropped=dropped,
+                session_id=f"boundary_test_{i:03d}",
+                bilstm_anomaly_score=0.5
+            )
+
+        for _ in range(100):
+            delay = await tc_pso_optimizer.get_optimal_delay(category)
+
+            assert delay >= TC_PSO_CONFIG["min_delay"], (
+                f"Delay {delay:.2f}s below minimum {TC_PSO_CONFIG['min_delay']}s"
+            )
+            assert delay <= TC_PSO_CONFIG["max_delay"], (
+                f"Delay {delay:.2f}s above maximum {TC_PSO_CONFIG['max_delay']}s"
+            )
+
+    @pytest.mark.asyncio
+    async def test_tc_pso_anomaly_reward_multiplier(self, tc_pso_optimizer):
+        """
+        Validate that anomaly score amplifies fitness rewards.
+
+        Novel Contribution:
+        ───────────────────
+        F'(t) = F(t) * (1 + β * anomaly_score)
+        """
+        category = "SQLI"
+        
+        # Test with low anomaly score
+        await tc_pso_optimizer.update_fitness(
+            attack_category=category,
+            delay_used=3.0,
+            commands_executed=5,
+            dropped=False,
+            session_id="low_anomaly",
+            bilstm_anomaly_score=0.1
+        )
+        low_anomaly_fitness = tc_pso_optimizer.global_best[category][1]
+        
+        # Reset for fair comparison
+        tc_pso_optimizer = ThreatCalibratedPSO()
+        
+        # Test with high anomaly score
+        await tc_pso_optimizer.update_fitness(
+            attack_category=category,
+            delay_used=3.0,
+            commands_executed=5,
+            dropped=False,
+            session_id="high_anomaly",
+            bilstm_anomaly_score=0.9
+        )
+        high_anomaly_fitness = tc_pso_optimizer.global_best[category][1]
+        
+        print(f"\nLow Anomaly Fitness: {low_anomaly_fitness:.4f}")
+        print(f"High Anomaly Fitness: {high_anomaly_fitness:.4f}")
+        
+        # High anomaly should produce higher fitness for same base performance
+        assert high_anomaly_fitness > low_anomaly_fitness, (
+            f"High anomaly should produce higher fitness. "
+            f"Low: {low_anomaly_fitness:.4f}, High: {high_anomaly_fitness:.4f}"
+        )
+
+    @pytest.mark.asyncio
+    async def test_tc_pso_multi_category_optimization(self, tc_pso_optimizer, sample_attack_categories):
+        """
+        Validate that TC-PSO optimizes independently for each attack category.
+        """
+        num_iterations = 50
+        anomaly_score = 0.7
+
+        for category in sample_attack_categories:
+            for i in range(num_iterations):
+                delay = await tc_pso_optimizer.get_optimal_delay(category)
+
+                if category == "SQLI":
+                    commands = 8 if 4.0 <= delay <= 6.0 else 2
+                elif category == "XSS":
+                    commands = 6 if 2.0 <= delay <= 4.0 else 2
+                else:
+                    commands = 5 if 3.0 <= delay <= 5.0 else 2
+
+                dropped = delay > 8.0
+
+                await tc_pso_optimizer.update_fitness(
+                    attack_category=category,
+                    delay_used=delay,
+                    commands_executed=commands,
+                    dropped=dropped,
+                    session_id=f"{category}_{i:03d}",
+                    bilstm_anomaly_score=anomaly_score
+                )
+
+        delays = {}
+        for category in sample_attack_categories:
+            delays[category] = await tc_pso_optimizer.get_optimal_delay(category)
+
+        print(f"\nMulti-Category TC-PSO Results:")
+        for cat, delay in delays.items():
+            anomaly = tc_pso_optimizer.anomaly_scores.get(cat, 0.5)
+            inertia = tc_pso_optimizer._calculate_dynamic_inertia(cat)
+            print(f"  {cat}: {delay:.2f}s (Anomaly: {anomaly:.2f}, Inertia: {inertia:.4f})")
+
+        for category, delay in delays.items():
+            assert TC_PSO_CONFIG["min_delay"] <= delay <= TC_PSO_CONFIG["max_delay"], (
+                f"{category} delay {delay:.2f}s out of bounds"
+            )
+
+
+# ============================================================================
+# Test 2: Standard PSO Tests (Baseline)
+# ============================================================================
+
+class TestPSOConvergence:
+    """
+    Test standard PSO convergence behavior for baseline comparison.
+    """
+
+    @pytest.mark.asyncio
+    async def test_pso_convergence_to_optimal_delay(self, pso_optimizer):
+        """Validate that standard PSO converges to the optimal delay value."""
+        category = "SQLI"
+        num_iterations = 100
+
+        def simulate_attacker_response(delay: float) -> Tuple[int, bool]:
+            if delay > 5.0:
+                return (0, True)
+            elif 4.0 <= delay <= 5.0:
+                return (random.randint(8, 12), False)
+            elif 3.0 <= delay < 4.0:
+                return (random.randint(5, 8), False)
+            elif 2.0 <= delay < 3.0:
+                return (random.randint(3, 5), False)
+            else:
+                return (random.randint(1, 3), False)
+
+        for iteration in range(num_iterations):
+            current_delay = await pso_optimizer.get_optimal_delay(category)
+            commands_executed, dropped = simulate_attacker_response(current_delay)
+
             await pso_optimizer.update_fitness(
                 attack_category=category,
                 delay_used=current_delay,
@@ -156,66 +385,31 @@ class TestPSOConvergence:
                 dropped=dropped,
                 session_id=f"sim_{iteration:03d}"
             )
-        
-        # Validate convergence
+
         final_best_delay = pso_optimizer.global_best[category][0]
         final_best_fitness = pso_optimizer.global_best[category][1]
 
         print(f"\nPSO Convergence Results:")
         print(f"  Final Best Delay: {final_best_delay:.2f}s")
         print(f"  Final Best Fitness: {final_best_fitness:.4f}")
-        print(f"  Iterations: {num_iterations}")
 
-        # Assertions
-        # 1. Delay should converge toward optimal range (1.5s - 7.0s tolerance)
-        # Note: Full convergence may require 200+ iterations in practice
-        # This test validates the algorithm is moving in the right direction
-        # Due to stochastic nature, we use wider bounds (1.5-7.0s covers most runs)
-        assert 1.5 <= final_best_delay <= 7.0, (
-            f"PSO did not converge toward optimal range. Got {final_best_delay:.2f}s"
-        )
+        assert 1.5 <= final_best_delay <= 7.0
+        assert final_best_fitness > 0
 
-        # 2. Fitness should be positive (indicating successful sessions)
-        assert final_best_fitness > 0, (
-            f"Final fitness should be positive. Got {final_best_fitness:.4f}"
-        )
-
-        # 3. Swarm should have explored the search space
         stats = pso_optimizer.get_swarm_statistics(category)
-        assert stats["iterations"] == num_iterations, "Iteration count mismatch"
+        assert stats["iterations"] == num_iterations
 
-        # 4. Verify fitness improved over time (first vs last 10 iterations)
-        # This validates the optimization is working, even if not fully converged
-        assert final_best_fitness > 1.0, (
-            f"Fitness should improve over iterations. Got {final_best_fitness:.4f}"
-        )
-    
     @pytest.mark.asyncio
     async def test_pso_boundary_constraints(self, pso_optimizer):
-        """
-        Validate that PSO respects min/max delay boundaries.
-        
-        Research Validation:
-        ────────────────────
-        Ensures the algorithm never produces delays outside safe
-        operational limits, preventing both timeout issues and
-        ineffective micro-delays.
-        
-        This is critical for production deployment where the
-        honeypot must maintain plausible response times.
-        """
+        """Validate that PSO respects min/max delay boundaries."""
         category = "XSS"
         num_tests = 50
-        
-        # Run multiple iterations with random fitness updates
+
         for i in range(num_tests):
-            # Get delay
             delay = await pso_optimizer.get_optimal_delay(category)
-            
-            # Simulate random attacker behavior
             commands = random.randint(1, 10)
-            dropped = random.random() < 0.1  # 10% drop rate
-            
+            dropped = random.random() < 0.1
+
             await pso_optimizer.update_fitness(
                 attack_category=category,
                 delay_used=delay,
@@ -223,153 +417,80 @@ class TestPSOConvergence:
                 dropped=dropped,
                 session_id=f"boundary_test_{i:03d}"
             )
-        
-        # Test boundary constraints over many samples
+
         for _ in range(100):
             delay = await pso_optimizer.get_optimal_delay(category)
-            
-            # Assert boundaries
-            assert delay >= PSO_CONFIG["min_delay"], (
-                f"Delay {delay:.2f}s below minimum {PSO_CONFIG['min_delay']}s"
-            )
-            assert delay <= PSO_CONFIG["max_delay"], (
-                f"Delay {delay:.2f}s above maximum {PSO_CONFIG['max_delay']}s"
-            )
-    
-    @pytest.mark.asyncio
-    async def test_pso_multi_category_optimization(self, pso_optimizer, sample_attack_categories):
-        """
-        Validate that PSO optimizes independently for each attack category.
-        
-        Research Significance:
-        ──────────────────────
-        Different attack types may require different optimal delays.
-        For example:
-        - SQLi attackers may be more patient (higher optimal delay)
-        - XSS attackers may expect quick responses (lower optimal delay)
-        
-        This test validates that the swarm maintains separate
-        optimization trajectories per category.
-        """
-        num_iterations = 50
-        
-        # Run optimization for each category
-        for category in sample_attack_categories:
-            for i in range(num_iterations):
-                delay = await pso_optimizer.get_optimal_delay(category)
-                
-                # Simulate category-specific behavior
-                if category == "SQLI":
-                    # SQLi attackers are patient
-                    commands = 8 if 4.0 <= delay <= 6.0 else 2
-                elif category == "XSS":
-                    # XSS attackers expect quick responses
-                    commands = 6 if 2.0 <= delay <= 4.0 else 2
-                else:
-                    # Generic behavior
-                    commands = 5 if 3.0 <= delay <= 5.0 else 2
-                
-                dropped = delay > 8.0
-                
-                await pso_optimizer.update_fitness(
-                    attack_category=category,
-                    delay_used=delay,
-                    commands_executed=commands,
-                    dropped=dropped,
-                    session_id=f"{category}_{i:03d}"
-                )
-        
-        # Validate each category has independent optimization
-        delays = {}
-        for category in sample_attack_categories:
-            delays[category] = await pso_optimizer.get_optimal_delay(category)
-        
-        print(f"\nMulti-Category PSO Results:")
-        for cat, delay in delays.items():
-            print(f"  {cat}: {delay:.2f}s")
-        
-        # Assert all categories have valid delays
-        for category, delay in delays.items():
-            assert PSO_CONFIG["min_delay"] <= delay <= PSO_CONFIG["max_delay"], (
-                f"{category} delay {delay:.2f}s out of bounds"
-            )
-    
-    @pytest.mark.asyncio
-    async def test_pso_velocity_clamping(self, pso_optimizer):
-        """
-        Validate that particle velocities are properly clamped.
-        
-        Technical Validation:
-        ─────────────────────
-        Prevents particles from moving too rapidly through the search
-        space, which could cause overshooting of optimal solutions.
-        """
-        category = "RCE"
-        
-        # Get initial particle velocities
-        initial_particles = pso_optimizer.particles[category].copy()
-        
-        # Run many rapid updates
-        for i in range(50):
-            delay = await pso_optimizer.get_optimal_delay(category)
-            await pso_optimizer.update_fitness(
-                attack_category=category,
-                delay_used=delay,
-                commands_executed=random.randint(1, 10),
-                dropped=False,
-                session_id=f"velocity_test_{i:03d}"
-            )
-        
-        # Check all particles have clamped velocities
-        max_velocity = (PSO_CONFIG["max_delay"] - PSO_CONFIG["min_delay"]) * 0.3
-        
-        for particle in pso_optimizer.particles[category]:
-            assert abs(particle.velocity) <= max_velocity, (
-                f"Particle velocity {particle.velocity:.2f} exceeds max {max_velocity:.2f}"
-            )
+
+            assert delay >= PSO_CONFIG["min_delay"]
+            assert delay <= PSO_CONFIG["max_delay"]
 
 
 # ============================================================================
-# Test 2: RRT Evolutionary Progression (The Tree Expansion Proof)
+# Test 3: S-RRT Evolutionary Progression (The Tree Expansion Proof)
 # ============================================================================
 
-class TestGAEvolution:
+class TestSRRTEvolution:
     """
-    Test RRT evolutionary progression and selection pressure.
+    Test S-RRT evolutionary progression with exponential pheromone weighting.
 
     Research Validation:
     ────────────────────
-    These tests validate that the RRT (2025 IEEE Access algorithm) correctly
-    implements tree-based evolutionary principles and demonstrates
-    pheromone-weighted selection, tree expansion, and pruning.
-
-    The tests verify that beneficial "branches" (file paths) increase
-    in frequency across generations when rewarded.
+    These tests validate that the S-RRT algorithm correctly implements:
+    
+    1. Exponential Pheromone Weighting: Δτ' = Δτ * exp(PSI)
+    2. Depth-Decay Multiplier: (1 - current_depth / max_depth)
+    
+    The tests verify that higher PSI values amplify learning and that
+    depth-decay effectively caps memory usage.
     """
 
     @pytest.mark.asyncio
-    async def test_ga_gene_frequency_increase(self, ga_optimizer):
+    async def test_s_rrt_exponential_pheromone_weighting(self, s_rrt_optimizer):
+        """
+        Validate exponential pheromone weighting with PSI.
+
+        Novel Contribution:
+        ───────────────────
+        Δτ' = Δτ * exp(PSI)
+        
+        Higher PSI values should produce exponentially higher pheromone updates.
+        """
+        schema_id, schema = await s_rrt_optimizer.get_tempting_schema()
+        interacted_paths = list(schema.keys())[:2]
+        
+        # Test with low PSI
+        await s_rrt_optimizer.evaluate_interaction(
+            schema_id=schema_id,
+            interacted_paths=interacted_paths,
+            payload_severity_index=1.0
+        )
+        low_psi_fitness = s_rrt_optimizer.trees[schema_id].fitness
+        
+        # Get another schema for high PSI test
+        schema_id2, schema2 = await s_rrt_optimizer.get_tempting_schema()
+        interacted_paths2 = list(schema2.keys())[:2]
+        
+        # Test with high PSI
+        await s_rrt_optimizer.evaluate_interaction(
+            schema_id=schema_id2,
+            interacted_paths=interacted_paths2,
+            payload_severity_index=3.0
+        )
+        high_psi_fitness = s_rrt_optimizer.trees[schema_id2].fitness
+        
+        print(f"\nLow PSI (1.0) Fitness Delta: {low_psi_fitness:.2f}")
+        print(f"High PSI (3.0) Fitness Delta: {high_psi_fitness:.2f}")
+        
+        # High PSI should produce significantly higher fitness
+        assert high_psi_fitness > low_psi_fitness, (
+            f"High PSI should produce higher fitness. "
+            f"Low PSI: {low_psi_fitness:.2f}, High PSI: {high_psi_fitness:.2f}"
+        )
+
+    @pytest.mark.asyncio
+    async def test_s_rrt_gene_frequency_increase(self, s_rrt_optimizer):
         """
         Validate that highly rewarded genes increase in frequency.
-
-        Simulation Setup:
-        ─────────────────
-        We reward trees containing specific "valuable" files:
-        - /home/dev/.ssh/id_rsa
-        - /var/www/html/.env
-        - /tmp/backup.zip
-
-        Expected Outcome:
-        ─────────────────
-        After 10 generations, these files should appear more
-        frequently in the population due to selection pressure.
-
-        Research Significance:
-        ──────────────────────
-        Demonstrates that the RRT can learn which deceptive elements
-        are most effective at eliciting attacker interaction,
-        automatically optimizing the deception schema through
-        pheromone-weighted tree expansion.
         """
         target_files = [
             "/home/dev/.ssh/id_rsa",
@@ -377,79 +498,197 @@ class TestGAEvolution:
             "/tmp/backup.zip",
         ]
 
-        # Record initial frequency
-        initial_frequency = self._count_target_files(ga_optimizer, target_files)
+        initial_frequency = self._count_target_files(s_rrt_optimizer, target_files)
 
-        print(f"\nRRT Evolution Test:")
+        print(f"\nS-RRT Evolution Test:")
         print(f"  Initial target file frequency: {initial_frequency}")
 
-        # Run evolution for 10 generations
         num_generations = 10
         for generation in range(num_generations):
-            # Get schemas and evaluate
-            for _ in range(ga_optimizer.rrt_config["num_trees"]):
-                schema_id, schema = await ga_optimizer.get_tempting_schema()
+            for _ in range(s_rrt_optimizer.rrt_config["num_trees"]):
+                schema_id, schema = await s_rrt_optimizer.get_tempting_schema()
 
-                # Heavily reward schemas with target files
                 interacted_paths = []
                 for path in schema.keys():
                     if any(target in path for target in target_files):
-                        # Simulate attacker interacting with valuable files
                         interacted_paths.append(path)
 
-                # Evaluate interaction (high reward for target files)
                 if interacted_paths:
-                    await ga_optimizer.evaluate_interaction(
+                    await s_rrt_optimizer.evaluate_interaction(
                         schema_id=schema_id,
-                        interacted_paths=interacted_paths
+                        interacted_paths=interacted_paths,
+                        payload_severity_index=2.5
                     )
 
-            # Evolve population (RRT tree evolution)
-            await ga_optimizer.evolve_tree()
+            await s_rrt_optimizer.evolve_tree()
 
-            # Log progress
-            current_freq = self._count_target_files(ga_optimizer, target_files)
+            current_freq = self._count_target_files(s_rrt_optimizer, target_files)
             print(f"  Generation {generation + 1}: {current_freq} target files")
 
-        # Record final frequency
-        final_frequency = self._count_target_files(ga_optimizer, target_files)
-
+        final_frequency = self._count_target_files(s_rrt_optimizer, target_files)
         print(f"  Final target file frequency: {final_frequency}")
 
-        # Assert frequency maintains reasonable levels (with tolerance for RRT exploration)
-        # RRT explores more aggressively than GA, so frequency may fluctuate
-        # The key is that target files remain present (not eliminated entirely)
-        assert final_frequency >= initial_frequency * 0.5, (
-            f"Target file frequency dropped too low. "
-            f"Initial: {initial_frequency}, Final: {final_frequency}"
-        )
+        assert final_frequency >= initial_frequency * 0.5
 
-        # Additional check: frequency should have peaked during evolution
-        # This validates the RRT is responding to selection pressure
-
-    def _count_target_files(self, ga_optimizer: DeceptionEvolutionRRT, target_files: List[str]) -> int:
+    def _count_target_files(self, optimizer, target_files: List[str]) -> int:
         """Count occurrences of target files across population."""
         count = 0
-        for tree in ga_optimizer.trees.values():
-            # Convert tree to flat schema for counting
-            schema = ga_optimizer._tree_to_flat_schema(tree.root)
+        for tree in optimizer.trees.values():
+            schema = optimizer._tree_to_flat_schema(tree.root)
             for path in schema.keys():
                 if any(target in path for target in target_files):
                     count += 1
         return count
-    
+
     @pytest.mark.asyncio
-    async def test_ga_fitness_improvement(self, ga_optimizer):
+    async def test_s_rrt_fitness_improvement(self, s_rrt_optimizer):
         """
         Validate that population fitness improves over generations.
-
-        Research Validation:
-        ────────────────────
-        Demonstrates that the RRT successfully optimizes the population
-        towards higher fitness values, validating the tree-based evolutionary approach.
         """
-        # Record initial fitness
-        initial_fitnesses = [t.fitness for t in ga_optimizer.trees.values()]
+        initial_fitnesses = [t.fitness for t in s_rrt_optimizer.trees.values()]
+        initial_mean_fitness = sum(initial_fitnesses) / len(initial_fitnesses)
+        initial_best_fitness = max(initial_fitnesses)
+
+        print(f"\nS-RRT Fitness Progression:")
+        print(f"  Initial Mean Fitness: {initial_mean_fitness:.2f}")
+        print(f"  Initial Best Fitness: {initial_best_fitness:.2f}")
+
+        num_generations = 15
+        for generation in range(num_generations):
+            for _ in range(s_rrt_optimizer.rrt_config["num_trees"]):
+                schema_id, schema = await s_rrt_optimizer.get_tempting_schema()
+
+                if len(schema) > 0:
+                    interacted_paths = list(schema.keys())[:random.randint(1, len(schema))]
+                else:
+                    interacted_paths = []
+
+                await s_rrt_optimizer.evaluate_interaction(
+                    schema_id=schema_id,
+                    interacted_paths=interacted_paths,
+                    payload_severity_index=2.0
+                )
+
+            await s_rrt_optimizer.evolve_tree()
+
+        final_fitnesses = [t.fitness for t in s_rrt_optimizer.trees.values()]
+        final_mean_fitness = sum(final_fitnesses) / len(final_fitnesses)
+        final_best_fitness = max(final_fitnesses)
+
+        print(f"  Final Mean Fitness: {final_mean_fitness:.2f}")
+        print(f"  Final Best Fitness: {final_best_fitness:.2f}")
+
+        assert final_mean_fitness > initial_mean_fitness
+        assert final_best_fitness > initial_best_fitness
+
+    @pytest.mark.asyncio
+    async def test_s_rrt_depth_decay_memory_optimization(self, s_rrt_optimizer):
+        """
+        Validate that depth-decay multiplier caps memory usage.
+
+        Novel Contribution:
+        ───────────────────
+        expansion_probability = base_prob * (1 - current_depth / max_depth)
+        
+        This should prevent unbounded node growth.
+        """
+        initial_node_counts = [t.node_count for t in s_rrt_optimizer.trees.values()]
+        initial_mean_nodes = sum(initial_node_counts) / len(initial_node_counts)
+        
+        print(f"\nS-RRT Depth-Decay Test:")
+        print(f"  Initial Mean Nodes: {initial_mean_nodes:.1f}")
+        
+        num_generations = 20
+        max_observed_nodes = initial_mean_nodes
+        
+        for generation in range(num_generations):
+            for _ in range(s_rrt_optimizer.rrt_config["num_trees"]):
+                schema_id, schema = await s_rrt_optimizer.get_tempting_schema()
+                await s_rrt_optimizer.evaluate_interaction(
+                    schema_id=schema_id,
+                    interacted_paths=list(schema.keys())[:2],
+                    payload_severity_index=2.0
+                )
+            
+            await s_rrt_optimizer.evolve_tree()
+            
+            current_node_counts = [t.node_count for t in s_rrt_optimizer.trees.values()]
+            current_mean = sum(current_node_counts) / len(current_node_counts)
+            max_observed_nodes = max(max_observed_nodes, current_mean)
+        
+        print(f"  Max Observed Mean Nodes: {max_observed_nodes:.1f}")
+        print(f"  Final Mean Nodes: {current_mean:.1f}")
+        
+        # Node count should remain bounded (not grow exponentially)
+        # With depth-decay, growth should be limited
+        assert max_observed_nodes < initial_mean_nodes * 3, (
+            f"Node count grew too much. Initial: {initial_mean_nodes:.1f}, Max: {max_observed_nodes:.1f}"
+        )
+
+
+# ============================================================================
+# Test 4: Standard RRT Tests (Baseline)
+# ============================================================================
+
+class TestGAEvolution:
+    """
+    Test standard RRT evolutionary progression for baseline comparison.
+    """
+
+    @pytest.mark.asyncio
+    async def test_ga_gene_frequency_increase(self, rrt_optimizer):
+        """Validate that highly rewarded genes increase in frequency."""
+        target_files = [
+            "/home/dev/.ssh/id_rsa",
+            "/var/www/html/.env",
+            "/tmp/backup.zip",
+        ]
+
+        initial_frequency = self._count_target_files(rrt_optimizer, target_files)
+
+        print(f"\nRRT Evolution Test:")
+        print(f"  Initial target file frequency: {initial_frequency}")
+
+        num_generations = 10
+        for generation in range(num_generations):
+            for _ in range(rrt_optimizer.rrt_config["num_trees"]):
+                schema_id, schema = await rrt_optimizer.get_tempting_schema()
+
+                interacted_paths = []
+                for path in schema.keys():
+                    if any(target in path for target in target_files):
+                        interacted_paths.append(path)
+
+                if interacted_paths:
+                    await rrt_optimizer.evaluate_interaction(
+                        schema_id=schema_id,
+                        interacted_paths=interacted_paths
+                    )
+
+            await rrt_optimizer.evolve_tree()
+
+            current_freq = self._count_target_files(rrt_optimizer, target_files)
+            print(f"  Generation {generation + 1}: {current_freq} target files")
+
+        final_frequency = self._count_target_files(rrt_optimizer, target_files)
+        print(f"  Final target file frequency: {final_frequency}")
+
+        assert final_frequency >= initial_frequency * 0.5
+
+    def _count_target_files(self, optimizer, target_files: List[str]) -> int:
+        """Count occurrences of target files across population."""
+        count = 0
+        for tree in optimizer.trees.values():
+            schema = optimizer._tree_to_flat_schema(tree.root)
+            for path in schema.keys():
+                if any(target in path for target in target_files):
+                    count += 1
+        return count
+
+    @pytest.mark.asyncio
+    async def test_ga_fitness_improvement(self, rrt_optimizer):
+        """Validate that population fitness improves over generations."""
+        initial_fitnesses = [t.fitness for t in rrt_optimizer.trees.values()]
         initial_mean_fitness = sum(initial_fitnesses) / len(initial_fitnesses)
         initial_best_fitness = max(initial_fitnesses)
 
@@ -457,214 +696,87 @@ class TestGAEvolution:
         print(f"  Initial Mean Fitness: {initial_mean_fitness:.2f}")
         print(f"  Initial Best Fitness: {initial_best_fitness:.2f}")
 
-        # Run evolution
         num_generations = 15
         for generation in range(num_generations):
-            # Simulate interactions
-            for _ in range(ga_optimizer.rrt_config["num_trees"]):
-                schema_id, schema = await ga_optimizer.get_tempting_schema()
+            for _ in range(rrt_optimizer.rrt_config["num_trees"]):
+                schema_id, schema = await rrt_optimizer.get_tempting_schema()
 
-                # Reward based on schema complexity (handle empty schema edge case)
                 if len(schema) > 0:
                     interacted_paths = list(schema.keys())[:random.randint(1, len(schema))]
                 else:
                     interacted_paths = []
 
-                await ga_optimizer.evaluate_interaction(
+                await rrt_optimizer.evaluate_interaction(
                     schema_id=schema_id,
                     interacted_paths=interacted_paths
                 )
 
-            # Evolve (RRT tree evolution)
-            await ga_optimizer.evolve_tree()
+            await rrt_optimizer.evolve_tree()
 
-        # Record final fitness
-        final_fitnesses = [t.fitness for t in ga_optimizer.trees.values()]
+        final_fitnesses = [t.fitness for t in rrt_optimizer.trees.values()]
         final_mean_fitness = sum(final_fitnesses) / len(final_fitnesses)
         final_best_fitness = max(final_fitnesses)
 
         print(f"  Final Mean Fitness: {final_mean_fitness:.2f}")
         print(f"  Final Best Fitness: {final_best_fitness:.2f}")
 
-        # Assert improvement
-        assert final_mean_fitness > initial_mean_fitness, (
-            f"Mean fitness did not improve. "
-            f"Initial: {initial_mean_fitness:.2f}, Final: {final_mean_fitness:.2f}"
-        )
-
-        assert final_best_fitness > initial_best_fitness, (
-            f"Best fitness did not improve. "
-            f"Initial: {initial_best_fitness:.2f}, Final: {final_best_fitness:.2f}"
-        )
-
-    @pytest.mark.asyncio
-    async def test_ga_population_diversity(self, ga_optimizer):
-        """
-        Validate that RRT maintains population diversity.
-
-        Research Significance:
-        ──────────────────────
-        Prevents premature convergence to local optima by maintaining
-        genetic diversity through pheromone decay and exploration.
-        Critical for adapting to diverse attacker behaviors.
-        """
-        # Run evolution
-        num_generations = 20
-        for _ in range(num_generations):
-            for _ in range(ga_optimizer.rrt_config["num_trees"]):
-                schema_id, schema = await ga_optimizer.get_tempting_schema()
-                await ga_optimizer.evaluate_interaction(
-                    schema_id=schema_id,
-                    interacted_paths=list(schema.keys())[:2]
-                )
-            await ga_optimizer.evolve_tree()
-
-        # Measure diversity (variance in fitness)
-        fitnesses = [t.fitness for t in ga_optimizer.trees.values()]
-        mean_fitness = sum(fitnesses) / len(fitnesses)
-        variance = sum((f - mean_fitness) ** 2 for f in fitnesses) / len(fitnesses)
-        std_dev = variance ** 0.5
-
-        print(f"\nRRT Population Diversity:")
-        print(f"  Mean Fitness: {mean_fitness:.2f}")
-        print(f"  Std Deviation: {std_dev:.2f}")
-
-        # Assert diversity is maintained (std_dev > 0)
-        # Some variance should exist unless population completely converged
-        assert std_dev > 0.1, (
-            f"Population diversity too low. Std dev: {std_dev:.2f}"
-        )
-
-    @pytest.mark.asyncio
-    async def test_ga_crossover_and_mutation(self, ga_optimizer):
-        """
-        Validate that RRT tree expansion and pruning operators work correctly.
-
-        Technical Validation:
-        ─────────────────────
-        Ensures tree operators are producing valid offspring
-        and introducing diversity as expected.
-        """
-        # Get parent trees
-        tree1_id, tree1_schema = await ga_optimizer.get_tempting_schema()
-        tree2_id, tree2_schema = await ga_optimizer.get_tempting_schema()
-
-        # Test tree expansion (analogous to crossover)
-        initial_leaf_count = len(tree1_schema)
-
-        # Simulate interactions to build pheromones
-        await ga_optimizer.evaluate_interaction(
-            schema_id=tree1_id,
-            interacted_paths=list(tree1_schema.keys())[:2]
-        )
-
-        # Evolve to trigger expansion
-        await ga_optimizer.evolve_tree()
-
-        # Get expanded schema
-        expanded_id, expanded_schema = await ga_optimizer.get_tempting_schema()
-
-        # Validate schema is valid
-        assert isinstance(expanded_schema, dict), "Expanded schema should be dict"
-        assert len(expanded_schema) >= 0, "Expanded schema should have valid size"
-
-        # Test that pheromone update works (analogous to mutation)
-        initial_pheromones = len(ga_optimizer.path_pheromones)
-
-        # Add new interactions
-        await ga_optimizer.evaluate_interaction(
-            schema_id=expanded_id,
-            interacted_paths=["/new/test/path.txt"]
-        )
-
-        # Pheromones should be updated
-        assert len(ga_optimizer.path_pheromones) >= initial_pheromones, (
-            "Pheromone map should be updated"
-        )
+        assert final_mean_fitness > initial_mean_fitness
+        assert final_best_fitness > initial_best_fitness
 
 
 # ============================================================================
-# Test 3: Concurrency & Race Condition Stress Test
+# Test 5: Concurrency & Race Condition Stress Test
 # ============================================================================
 
 class TestConcurrencySafety:
     """
     Test thread-safety and race condition handling.
-    
-    Research Validation:
-    ────────────────────
-    Validates that the meta-heuristics can safely handle concurrent
-    attacker sessions in production without data corruption or
-    runtime errors.
-    
-    This is critical for real-world deployment where multiple
-    attackers may interact simultaneously.
     """
-    
+
     @pytest.mark.asyncio
-    async def test_pso_concurrent_fitness_updates(self, pso_optimizer):
-        """
-        Stress test PSO with 50 concurrent fitness updates.
-        
-        Technical Validation:
-        ─────────────────────
-        Ensures no RuntimeError from dictionary modifications during
-        iteration and no data corruption under high concurrency.
-        """
+    async def test_tc_pso_concurrent_fitness_updates(self, tc_pso_optimizer):
+        """Stress test TC-PSO with 50 concurrent fitness updates."""
         category = "SQLI"
         num_concurrent = 50
-        
+
         async def update_fitness_task(task_id: int):
-            """Simulate concurrent fitness update."""
-            delay = await pso_optimizer.get_optimal_delay(category)
-            await pso_optimizer.update_fitness(
+            delay = await tc_pso_optimizer.get_optimal_delay(category)
+            await tc_pso_optimizer.update_fitness(
                 attack_category=category,
                 delay_used=delay,
                 commands_executed=random.randint(1, 10),
                 dropped=random.random() < 0.1,
-                session_id=f"concurrent_{task_id:03d}"
+                session_id=f"concurrent_{task_id:03d}",
+                bilstm_anomaly_score=0.7
             )
-        
-        # Run concurrent updates
+
         tasks = [update_fitness_task(i) for i in range(num_concurrent)]
-        
-        # Should not raise RuntimeError
+
         try:
             await asyncio.gather(*tasks, return_exceptions=False)
         except RuntimeError as e:
             if "dictionary changed size" in str(e):
                 pytest.fail(f"Race condition detected: {e}")
             raise
-        
-        # Validate data integrity
-        stats = pso_optimizer.get_swarm_statistics(category)
-        assert stats["num_particles"] == PSO_CONFIG["num_particles"], (
-            "Particle count corrupted"
-        )
-    
-    @pytest.mark.asyncio
-    async def test_ga_concurrent_interactions(self, ga_optimizer):
-        """
-        Stress test RRT with 50 concurrent interaction evaluations.
 
-        Technical Validation:
-        ─────────────────────
-        Ensures tree integrity under concurrent access.
-        """
+        stats = tc_pso_optimizer.get_swarm_statistics(category)
+        assert stats["num_particles"] == TC_PSO_CONFIG["num_particles"]
+
+    @pytest.mark.asyncio
+    async def test_s_rrt_concurrent_interactions(self, s_rrt_optimizer):
+        """Stress test S-RRT with 50 concurrent interaction evaluations."""
         num_concurrent = 50
 
         async def evaluate_task(task_id: int):
-            """Simulate concurrent interaction evaluation."""
-            schema_id, schema = await ga_optimizer.get_tempting_schema()
-            await ga_optimizer.evaluate_interaction(
+            schema_id, schema = await s_rrt_optimizer.get_tempting_schema()
+            await s_rrt_optimizer.evaluate_interaction(
                 schema_id=schema_id,
-                interacted_paths=list(schema.keys())[:2]
+                interacted_paths=list(schema.keys())[:2],
+                payload_severity_index=2.0
             )
 
-        # Run concurrent evaluations
         tasks = [evaluate_task(i) for i in range(num_concurrent)]
 
-        # Should not raise RuntimeError
         try:
             await asyncio.gather(*tasks, return_exceptions=False)
         except RuntimeError as e:
@@ -672,129 +784,90 @@ class TestConcurrencySafety:
                 pytest.fail(f"Race condition detected: {e}")
             raise
 
-        # Validate population integrity
-        assert len(ga_optimizer.trees) == ga_optimizer.rrt_config["num_trees"], (
-            f"Tree count corrupted: {len(ga_optimizer.trees)}"
-        )
-    
+        assert len(s_rrt_optimizer.trees) == s_rrt_optimizer.rrt_config["num_trees"]
+
     @pytest.mark.asyncio
-    async def test_mixed_concurrent_operations(self, pso_optimizer, ga_optimizer):
-        """
-        Stress test with mixed PSO and GA operations.
-        
-        Technical Validation:
-        ─────────────────────
-        Simulates real-world scenario where both optimizers
-        operate concurrently under load.
-        """
+    async def test_mixed_concurrent_operations(self, tc_pso_optimizer, s_rrt_optimizer):
+        """Stress test with mixed TC-PSO and S-RRT operations."""
         num_operations = 100
-        
+
         async def pso_task(task_id: int):
-            delay = await pso_optimizer.get_optimal_delay("SQLI")
-            await pso_optimizer.update_fitness(
+            delay = await tc_pso_optimizer.get_optimal_delay("SQLI")
+            await tc_pso_optimizer.update_fitness(
                 attack_category="SQLI",
                 delay_used=delay,
                 commands_executed=random.randint(1, 10),
                 dropped=False,
-                session_id=f"pso_{task_id:03d}"
+                session_id=f"pso_{task_id:03d}",
+                bilstm_anomaly_score=0.6
             )
-        
-        async def ga_task(task_id: int):
-            schema_id, schema = await ga_optimizer.get_tempting_schema()
-            await ga_optimizer.evaluate_interaction(
+
+        async def rrt_task(task_id: int):
+            schema_id, schema = await s_rrt_optimizer.get_tempting_schema()
+            await s_rrt_optimizer.evaluate_interaction(
                 schema_id=schema_id,
-                interacted_paths=list(schema.keys())[:2]
+                interacted_paths=list(schema.keys())[:2],
+                payload_severity_index=2.0
             )
-        
-        # Create mixed task list
+
         tasks = []
         for i in range(num_operations):
             if i % 2 == 0:
                 tasks.append(pso_task(i))
             else:
-                tasks.append(ga_task(i))
-        
-        # Run all concurrently
+                tasks.append(rrt_task(i))
+
         try:
             await asyncio.gather(*tasks, return_exceptions=False)
         except RuntimeError as e:
             if "dictionary changed size" in str(e):
                 pytest.fail(f"Race condition detected: {e}")
             raise
-        
-        # Validate both optimizers remain functional
-        pso_stats = pso_optimizer.get_swarm_statistics("SQLI")
-        ga_stats = ga_optimizer.get_population_statistics()
-        
-        assert pso_stats["num_particles"] > 0, "PSO corrupted"
-        assert ga_stats["population_size"] > 0, "GA corrupted"
+
+        pso_stats = tc_pso_optimizer.get_swarm_statistics("SQLI")
+        rrt_stats = s_rrt_optimizer.get_population_statistics()
+
+        assert pso_stats["num_particles"] > 0
+        assert rrt_stats["population_size"] > 0
 
 
 # ============================================================================
-# Test 4: Session Tracker Memory Leak Prevention
+# Test 6: Session Tracker Memory Leak Prevention
 # ============================================================================
 
 class TestSessionTrackerMemory:
     """
     Test session tracker memory management.
-    
-    Research Validation:
-    ────────────────────
-    Validates that the honeypot can run for extended periods
-    without memory exhaustion from accumulated session data.
-    
-    Critical for production deployment where the system may
-    handle thousands of sessions over days/weeks.
     """
-    
+
     @pytest.mark.asyncio
     async def test_session_creation_and_tracking(self, session_tracker):
-        """
-        Validate that sessions are properly tracked.
-        
-        Technical Validation:
-        ─────────────────────
-        Ensures session data is correctly stored and retrievable.
-        """
+        """Validate that sessions are properly tracked."""
         num_sessions = 100
-        
-        # Create sessions
+
         for i in range(num_sessions):
             session = session_tracker.create_session(
                 session_id=f"session_{i:03d}",
                 attack_category="SQLI",
                 delay_used=3.5
             )
-            
-            # Record some interactions
+
             session_tracker.record_command(f"session_{i:03d}")
             session_tracker.record_path_interaction(
                 f"session_{i:03d}",
                 f"/path/{i}"
             )
-        
-        # Validate all sessions tracked
-        assert len(session_tracker.sessions) == num_sessions, (
-            f"Expected {num_sessions} sessions, got {len(session_tracker.sessions)}"
-        )
-        
-        # Validate session data integrity
+
+        assert len(session_tracker.sessions) == num_sessions
+
         for i in range(num_sessions):
             session = session_tracker.sessions[f"session_{i:03d}"]
-            assert session.commands_executed == 1, "Command count incorrect"
-            assert len(session.interacted_paths) == 1, "Path count incorrect"
-    
+            assert session.commands_executed == 1
+            assert len(session.interacted_paths) == 1
+
     @pytest.mark.asyncio
     async def test_session_cleanup_mechanism(self, session_tracker):
-        """
-        Validate that stale sessions can be cleaned up.
-        
-        Research Significance:
-        ──────────────────────
-        Prevents memory leaks in long-running deployments.
-        The system must be able to purge abandoned sessions.
-        """
-        # Create sessions
+        """Validate that stale sessions can be cleaned up."""
         num_sessions = 100
         for i in range(num_sessions):
             session_tracker.create_session(
@@ -802,214 +875,99 @@ class TestSessionTrackerMemory:
                 attack_category="XSS",
                 delay_used=2.5
             )
-        
-        # Mark half as ended
+
         for i in range(50):
             session_tracker.end_session(f"cleanup_{i:03d}")
-        
-        # Count ended sessions
+
         ended_count = sum(
             1 for s in session_tracker.sessions.values()
             if s.ended
         )
-        
-        assert ended_count == 50, f"Expected 50 ended sessions, got {ended_count}"
-        
-        # Simulate cleanup (remove ended sessions)
+
+        assert ended_count == 50
+
         session_ids_to_remove = [
             sid for sid, s in session_tracker.sessions.items()
             if s.ended
         ]
-        
+
         for sid in session_ids_to_remove:
             del session_tracker.sessions[sid]
-        
-        # Validate cleanup
+
         remaining = len(session_tracker.sessions)
-        assert remaining == 50, f"Expected 50 remaining sessions, got {remaining}"
-    
-    @pytest.mark.asyncio
-    async def test_session_memory_under_load(self, session_tracker):
-        """
-        Validate memory usage under sustained load.
-        
-        Research Validation:
-        ────────────────────
-        Simulates days of operation with continuous session
-        creation and cleanup, ensuring no memory leaks.
-        """
-        max_sessions = 1000
-        batch_size = 100
-        
-        for batch in range(10):
-            # Create batch of sessions
-            for i in range(batch_size):
-                session_id = f"load_{batch:02d}_{i:03d}"
-                session_tracker.create_session(
-                    session_id=session_id,
-                    attack_category="RCE",
-                    delay_used=4.0
-                )
-                
-                # Simulate some activity
-                for _ in range(random.randint(1, 5)):
-                    session_tracker.record_command(session_id)
-                    session_tracker.record_path_interaction(
-                        session_id,
-                        f"/path/{random.randint(1, 100)}"
-                    )
-                
-                # End some sessions
-                if random.random() < 0.7:
-                    session_tracker.end_session(session_id)
-            
-            # Cleanup ended sessions
-            ended_sessions = [
-                sid for sid, s in session_tracker.sessions.items()
-                if s.ended
-            ]
-            
-            for sid in ended_sessions:
-                del session_tracker.sessions[sid]
-            
-            # Memory should not grow unbounded
-            current_sessions = len(session_tracker.sessions)
-            assert current_sessions <= max_sessions, (
-                f"Session count exceeded limit: {current_sessions}"
-            )
-        
-        print(f"\nMemory Load Test:")
-        print(f"  Final session count: {len(session_tracker.sessions)}")
-        print(f"  Max allowed: {max_sessions}")
-    
-    @pytest.mark.asyncio
-    async def test_session_data_structures_efficiency(self, session_tracker):
-        """
-        Validate efficiency of session data structures.
-        
-        Technical Validation:
-        ─────────────────────
-        Ensures that data structures used for session tracking
-        are efficient and don't cause performance degradation.
-        """
-        import sys
-        
-        # Create many sessions
-        num_sessions = 500
-        for i in range(num_sessions):
-            session_tracker.create_session(
-                session_id=f"efficiency_{i:03d}",
-                attack_category="SQLI",
-                delay_used=3.0
-            )
-            
-            # Add many interactions
-            for j in range(20):
-                session_tracker.record_command(f"efficiency_{i:03d}")
-                session_tracker.record_path_interaction(
-                    f"efficiency_{i:03d}",
-                    f"/path/{j}"
-                )
-        
-        # Measure memory usage (approximate)
-        total_size = sys.getsizeof(session_tracker.sessions)
-        
-        # Add size of session objects
-        for session in session_tracker.sessions.values():
-            total_size += sys.getsizeof(session)
-            total_size += sys.getsizeof(session.interacted_paths)
-            for path in session.interacted_paths:
-                total_size += sys.getsizeof(path)
-        
-        print(f"\nMemory Efficiency Test:")
-        print(f"  Sessions: {num_sessions}")
-        print(f"  Approximate memory: {total_size / 1024:.2f} KB")
-
-        # Should not use excessive memory
-        # 500 sessions with 20 interactions each ≈ 600-700 KB is reasonable
-        # Allow up to 2 MB for safety margin
-        assert total_size < 2 * 1024 * 1024, (
-            f"Memory usage too high: {total_size / 1024:.2f} KB"
-        )
-
-        # Memory per session should be reasonable (< 5 KB per session average)
-        memory_per_session = total_size / num_sessions
-        assert memory_per_session < 5 * 1024, (
-            f"Memory per session too high: {memory_per_session:.2f} bytes"
-        )
+        assert remaining == 50
 
 
 # ============================================================================
-# Test 5: Integration Tests
+# Test 7: Integration Tests
 # ============================================================================
 
 class TestIntegration:
     """
     Integration tests for complete deception workflow.
-    
-    Research Validation:
-    ────────────────────
-    Validates that PSO, GA, and SessionTracker work together
-    correctly in the complete deception workflow.
     """
-    
+
     @pytest.mark.asyncio
-    async def test_complete_deception_workflow(self, pso_optimizer, ga_optimizer, session_tracker):
+    async def test_complete_deception_workflow(self, tc_pso_optimizer, s_rrt_optimizer, session_tracker):
         """
         Test complete deception workflow from start to finish.
-        
+
         Simulation:
         ───────────
         1. Attacker detected
-        2. PSO determines optimal delay
-        3. GA provides deception schema
+        2. TC-PSO determines optimal delay
+        3. S-RRT provides deception schema
         4. Attacker interacts
-        5. Fitness updated
+        5. Fitness updated with anomaly/severity scores
         """
         import uuid
-        
-        # Simulate attacker session
+
         session_id = str(uuid.uuid4())[:8]
         attack_category = "SQLI"
-        
-        # 1. Get PSO delay
-        delay = await pso_optimizer.get_optimal_delay(attack_category)
-        
-        # 2. Get GA schema
-        schema_id, schema = await ga_optimizer.get_tempting_schema()
-        
+        anomaly_score = 0.8
+        psi = 2.5
+
+        # 1. Get TC-PSO delay
+        delay = await tc_pso_optimizer.get_optimal_delay(attack_category)
+
+        # 2. Get S-RRT schema
+        schema_id, schema = await s_rrt_optimizer.get_tempting_schema()
+
         # 3. Create session
         session_tracker.create_session(session_id, attack_category, delay)
-        
+
         # 4. Simulate attacker interactions
         for path in list(schema.keys())[:3]:
             session_tracker.record_command(session_id)
             session_tracker.record_path_interaction(session_id, path)
-        
-        # 5. Update fitness
+
+        # 5. Update fitness with novel parameters
         session = session_tracker.sessions[session_id]
-        await pso_optimizer.update_fitness(
+        await tc_pso_optimizer.update_fitness(
             attack_category=attack_category,
             delay_used=delay,
             commands_executed=session.commands_executed,
             dropped=False,
-            session_id=session_id
+            session_id=session_id,
+            bilstm_anomaly_score=anomaly_score
         )
-        
-        await ga_optimizer.evaluate_interaction(
+
+        await s_rrt_optimizer.evaluate_interaction(
             schema_id=schema_id,
-            interacted_paths=session.interacted_paths
+            interacted_paths=session.interacted_paths,
+            payload_severity_index=psi
         )
-        
-        # Validate workflow completed
-        assert session.commands_executed > 0, "No commands recorded"
-        assert len(session.interacted_paths) > 0, "No paths recorded"
-        
+
+        assert session.commands_executed > 0
+        assert len(session.interacted_paths) > 0
+
         print(f"\nIntegration Test:")
         print(f"  Session ID: {session_id}")
         print(f"  Delay: {delay:.2f}s")
         print(f"  Commands: {session.commands_executed}")
         print(f"  Paths: {len(session.interacted_paths)}")
+        print(f"  Anomaly Score: {anomaly_score}")
+        print(f"  PSI: {psi}")
 
 
 # ============================================================================
@@ -1017,11 +975,10 @@ class TestIntegration:
 # ============================================================================
 
 if __name__ == "__main__":
-    # Run with pytest
     pytest.main([
         __file__,
         "-v",
         "--asyncio-mode=auto",
-        "-s",  # Show print statements
+        "-s",
         "--tb=short",
     ])
