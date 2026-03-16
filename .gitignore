@@ -77,3 +77,4 @@ dist/
 # ── MLX / model caches ───────────────────────────────────────────────────────
 *.mlpackage/
 mlx_model_cache/
+Backend/chamaeleon-4bit-balanced/
