@@ -1,0 +1,108 @@
+============================= test session starts ==============================
+platform darwin -- Python 3.14.0, pytest-9.0.2, pluggy-1.6.0 -- /opt/homebrew/opt/python@3.14/bin/python3.14
+cachedir: .pytest_cache
+rootdir: /Users/rohit/Documents/Sem-4_project/Chameleon-cybersecurity-ml/Backend
+configfile: pytest.ini
+plugins: asyncio-1.3.0
+asyncio: mode=Mode.AUTO, debug=False, asyncio_default_fixture_loop_scope=function, asyncio_default_test_loop_scope=function
+collecting ... collected 9 items
+
+tests/test_comparison_algorithms.py::TestTCPSOVsStandardPSO::test_tc_pso_beats_pso_final_fitness 
+============================================================
+TC-PSO vs Standard PSO — Final Fitness Comparison
+============================================================
+  Runs:             5
+  Iterations each:  100
+  Anomaly score:    0.85
+
+  TC-PSO  fitness per run: ['7.467', '5.208', '8.597', '7.467', '7.750']
+  Std PSO fitness per run: ['5.950', '4.150', '4.150', '5.950', '5.770']
+
+  TC-PSO  avg fitness: 7.2978
+  Std PSO avg fitness: 5.1940
+  Improvement:         +40.5%
+============================================================
+  TC-PSO wins: 5/5
+PASSED
+tests/test_comparison_algorithms.py::TestTCPSOVsStandardPSO::test_tc_pso_delay_quality 
+[Comparison] TC-PSO best delay: 1.87s (ideal: 4.5s)
+[Comparison] Std PSO best delay: 3.05s (ideal: 4.5s)
+PASSED
+tests/test_comparison_algorithms.py::TestTCPSOVsStandardPSO::test_tc_pso_high_threat_advantage 
+[Comparison] High-threat TC-PSO fitness: 4.2250
+[Comparison] Standard PSO fitness:         9.5500
+[Comparison] TC-PSO advantage:             -5.3250
+FAILED
+tests/test_comparison_algorithms.py::TestTCPSOVsStandardPSO::test_tc_pso_category_isolation_maintained 
+[Comparison] Category-specific delays:
+  SQLI           : 1.81s
+  XSS            : 2.97s
+  RCE            : 1.91s
+  BRUTE_FORCE    : 2.79s
+PASSED
+tests/test_comparison_algorithms.py::TestSRRTVsStandardRRT::test_s_rrt_beats_rrt_best_fitness 
+============================================================
+S-RRT vs Standard RRT — Best Fitness Comparison
+============================================================
+  Runs:              5
+  Generations each:  15
+  PSI (critical):    2.8
+
+  S-RRT bests: ['415974.45', '408714.87', '415974.45', '408714.87', '408714.87']
+  RRT   bests: ['67927.50', '34793.55', '67484.30', '66288.30', '66288.30']
+
+  S-RRT avg: 411618.71
+  RRT   avg: 60556.39
+  Improvement: +579.7%
+============================================================
+  S-RRT wins: 5/5
+PASSED
+tests/test_comparison_algorithms.py::TestSRRTVsStandardRRT::test_s_rrt_memory_efficiency 
+[Comparison] S-RRT mean nodes: 6.58
+[Comparison] RRT   mean nodes: 6.58
+PASSED
+tests/test_comparison_algorithms.py::TestSRRTVsStandardRRT::test_s_rrt_critical_psi_advantage 
+[Comparison] S-RRT (PSI=3.0) best fitness: 211670.79
+[Comparison] Standard RRT best fitness:     25180.80
+[Comparison] S-RRT advantage:               +740.6%
+PASSED
+tests/test_comparison_algorithms.py::TestSRRTVsStandardRRT::test_s_rrt_psi_scales_with_severity [Comparison] PSI=1.0: S-RRT=18135.00, RRT=17229.10, gap=+905.90
+[Comparison] PSI=2.0: S-RRT=52497.20, RRT=17229.10, gap=+35268.10
+[Comparison] PSI=3.0: S-RRT=142736.56, RRT=17229.10, gap=+125507.46
+PASSED
+tests/test_comparison_algorithms.py::TestSummaryReport::test_generate_comparison_summary 
+======================================================================
+   CHAMELEON NOVEL EQUATIONS — BENCHMARK COMPARISON SUMMARY
+======================================================================
+
+  ── TC-PSO (Eq 1+2) vs Standard PSO ──────────────────────────
+  Metric                                 Std PSO     TC-PSO        Δ
+  -----------------------------------------------------------------
+  Final Fitness                            5.950      7.467   +25.5%
+  Dynamic Inertia (A=0.85)                 0.729     0.4192 (reduced)
+
+  ── S-RRT (Eq 3+4) vs Standard RRT ───────────────────────────
+  Metric                                 Std RRT      S-RRT        Δ
+  -----------------------------------------------------------------
+  Best Fitness                          30190.05  180422.78  +497.6%
+  Mean Node Count                            6.7        6.5    -2.2%
+
+  ── Novel Equations Summary ───────────────────────────────────
+  Eq 1: w(t) = w_base × max(σ_min, 1-α·A(t))   w_base=0.729, σ_min=0.3, α=0.5
+  Eq 2: F'(t) = F(t) × (1 + β·A(t))           β=0.3 → max 1.3× boost
+  Eq 3: Δτ' = Δτ × exp(Ψ-1)                   Ψ∈[1,3] → 1×-7.39× range
+  Eq 4: P'_expand = P_expand × max(ε, 1-d/d_max)  d_max=6, ε=0.1
+======================================================================
+
+PASSED
+
+=================================== FAILURES ===================================
+___________ TestTCPSOVsStandardPSO.test_tc_pso_high_threat_advantage ___________
+tests/test_comparison_algorithms.py:204: in test_tc_pso_high_threat_advantage
+    assert tc_fit >= pso_fit, "TC-PSO must match or beat standard PSO under critical threat"
+E   AssertionError: TC-PSO must match or beat standard PSO under critical threat
+E   assert 4.2250000000000005 >= 9.55
+=========================== short test summary info ============================
+FAILED tests/test_comparison_algorithms.py::TestTCPSOVsStandardPSO::test_tc_pso_high_threat_advantage - AssertionError: TC-PSO must match or beat standard PSO under critical threat
+assert 4.2250000000000005 >= 9.55
+========================= 1 failed, 8 passed in 0.12s ==========================

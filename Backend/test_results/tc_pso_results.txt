@@ -1,0 +1,90 @@
+============================= test session starts ==============================
+platform darwin -- Python 3.14.0, pytest-9.0.2, pluggy-1.6.0 -- /opt/homebrew/opt/python@3.14/bin/python3.14
+cachedir: .pytest_cache
+rootdir: /Users/rohit/Documents/Sem-4_project/Chameleon-cybersecurity-ml/Backend
+configfile: pytest.ini
+plugins: asyncio-1.3.0
+asyncio: mode=Mode.AUTO, debug=False, asyncio_default_fixture_loop_scope=function, asyncio_default_test_loop_scope=function
+collecting ... collected 24 items
+
+tests/test_tc_pso_equations.py::TestEquation1DynamicInertia::test_eq1_benign_session_max_inertia 
+[Eq1] A=0.00 → w=0.7290 (expected 0.7290)
+PASSED
+tests/test_tc_pso_equations.py::TestEquation1DynamicInertia::test_eq1_moderate_threat_inertia 
+[Eq1] A=0.50 → w=0.5467 (expected 0.5467)
+PASSED
+tests/test_tc_pso_equations.py::TestEquation1DynamicInertia::test_eq1_high_threat_inertia 
+[Eq1] A=0.85 → w=0.4192 (expected 0.4192)
+PASSED
+tests/test_tc_pso_equations.py::TestEquation1DynamicInertia::test_eq1_critical_threat_floor 
+[Eq1] A=1.00 → w=0.3645 (expected 0.3645)
+PASSED
+tests/test_tc_pso_equations.py::TestEquation1DynamicInertia::test_eq1_strictly_monotone_decreasing 
+[Eq1] Monotonicity: ['0.7290', '0.6925', '0.6561', '0.6196', '0.5832', '0.5467', '0.5103', '0.4738', '0.4374', '0.4010', '0.3645']
+PASSED
+tests/test_tc_pso_equations.py::TestEquation1DynamicInertia::test_eq1_hard_lower_bound PASSED
+tests/test_tc_pso_equations.py::TestEquation1DynamicInertia::test_eq1_hard_upper_bound PASSED
+tests/test_tc_pso_equations.py::TestEquation1DynamicInertia::test_eq1_multiple_categories_independent 
+[Eq1] Category SQLI, A=0.1 → w=0.6925 (expected 0.6925)
+
+[Eq1] Category XSS, A=0.5 → w=0.5467 (expected 0.5467)
+
+[Eq1] Category RCE, A=0.9 → w=0.4010 (expected 0.4010)
+
+[Eq1] Category BRUTE_FORCE, A=0.3 → w=0.6196 (expected 0.6196)
+PASSED
+tests/test_tc_pso_equations.py::TestEquation1DynamicInertia::test_eq1_anomaly_clamping_above_one PASSED
+tests/test_tc_pso_equations.py::TestEquation1DynamicInertia::test_eq1_anomaly_clamping_below_zero PASSED
+tests/test_tc_pso_equations.py::TestEquation2AnomalyFitness::test_eq2_backward_compat_zero_anomaly 
+[Eq2] A=0.0 → multiplier=1.000 (expected 1.000)
+PASSED
+tests/test_tc_pso_equations.py::TestEquation2AnomalyFitness::test_eq2_moderate_amplification 
+[Eq2] A=0.50 → multiplier=1.1500 (expected 1.1500)
+PASSED
+tests/test_tc_pso_equations.py::TestEquation2AnomalyFitness::test_eq2_high_threat_amplification 
+[Eq2] A=0.85 → multiplier=1.2550 (expected 1.2550)
+PASSED
+tests/test_tc_pso_equations.py::TestEquation2AnomalyFitness::test_eq2_critical_max_amplification 
+[Eq2] A=1.00 → multiplier=1.3000 (expected 1.3000)
+PASSED
+tests/test_tc_pso_equations.py::TestEquation2AnomalyFitness::test_eq2_high_anomaly_beats_low 
+[Eq2] Low A=0.1 fitness: 6.1285
+[Eq2] High A=0.9 fitness: 7.5565
+PASSED
+tests/test_tc_pso_equations.py::TestEquation2AnomalyFitness::test_eq2_fitness_monotone_in_anomaly [Eq2] A=0.0 → fitness=4.1500
+[Eq2] A=0.2 → fitness=4.3990
+[Eq2] A=0.4 → fitness=4.6480
+[Eq2] A=0.6 → fitness=4.8970
+[Eq2] A=0.8 → fitness=5.1460
+[Eq2] A=1.0 → fitness=5.3950
+PASSED
+tests/test_tc_pso_equations.py::TestEquation2AnomalyFitness::test_eq2_drop_penalty_still_applied 
+[Eq2] No-drop fitness: 4.1275
+[Eq2] With-drop fitness: 0.9525
+PASSED
+tests/test_tc_pso_equations.py::TestEquation2AnomalyFitness::test_eq2_interaction_bonus_aggregation 
+[Eq2] 5-cmd fitness: 3.2500, 6-cmd fitness: 4.1500
+FAILED
+tests/test_tc_pso_equations.py::TestTCPSOIntegration::test_full_convergence_100_iterations 
+[Integration] 100-iter convergence: delay=3.37s, fitness=10.8557
+PASSED
+tests/test_tc_pso_equations.py::TestTCPSOIntegration::test_delay_stays_in_bounds_always PASSED
+tests/test_tc_pso_equations.py::TestTCPSOIntegration::test_high_anomaly_accelerates_convergence 
+[Integration] High-A fitness: 7.6457, Low-A fitness: 6.0393
+PASSED
+tests/test_tc_pso_equations.py::TestTCPSOIntegration::test_all_attack_categories_initialize PASSED
+tests/test_tc_pso_equations.py::TestTCPSOIntegration::test_particle_count_stable_under_updates PASSED
+tests/test_tc_pso_equations.py::TestTCPSOIntegration::test_swarm_statistics_structure PASSED
+
+=================================== FAILURES ===================================
+______ TestEquation2AnomalyFitness.test_eq2_interaction_bonus_aggregation ______
+tests/test_tc_pso_equations.py:379: in test_eq2_interaction_bonus_aggregation
+    assert abs(actual_delta - expected_delta) < 0.05, (
+E   AssertionError: Interaction bonus delta mismatch: expected ~0.2500, got 0.9000
+E   assert 0.6500000000000004 < 0.05
+E    +  where 0.6500000000000004 = abs((0.9000000000000004 - 0.25))
+=========================== short test summary info ============================
+FAILED tests/test_tc_pso_equations.py::TestEquation2AnomalyFitness::test_eq2_interaction_bonus_aggregation - AssertionError: Interaction bonus delta mismatch: expected ~0.2500, got 0.9000
+assert 0.6500000000000004 < 0.05
+ +  where 0.6500000000000004 = abs((0.9000000000000004 - 0.25))
+========================= 1 failed, 23 passed in 0.05s =========================
