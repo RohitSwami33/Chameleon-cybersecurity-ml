@@ -9,8 +9,8 @@ import random
 from datetime import datetime, timedelta, timezone
 from uuid import uuid4
 
-from database_postgres import db
-from models_sqlalchemy import HoneypotLog, Tenant
+from src.core.database_postgres import db
+from src.core.models_sqlalchemy import HoneypotLog, Tenant
 
 # ── Realistic attack corpus ────────────────────────────────────────
 

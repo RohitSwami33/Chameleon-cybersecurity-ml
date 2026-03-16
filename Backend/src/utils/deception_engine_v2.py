@@ -6,8 +6,8 @@ import random
 import re
 import uuid
 from typing import Optional
-from models import AttackType
-from attacker_session import AttackerSession, advance_session_stage
+from src.core.models import AttackType
+from src.utils.attacker_session import AttackerSession, advance_session_stage
 
 class ProgressiveDeceptionEngine:
     """

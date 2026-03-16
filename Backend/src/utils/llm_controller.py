@@ -30,7 +30,7 @@ from enum import Enum
 
 import httpx
 
-from config import settings
+from src.core.config import settings
 
 logger = logging.getLogger(__name__)
 

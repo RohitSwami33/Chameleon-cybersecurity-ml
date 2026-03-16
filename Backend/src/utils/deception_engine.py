@@ -1,6 +1,6 @@
 import random
-from models import AttackType, DeceptionResponse
-from config import settings
+from src.core.models import AttackType, DeceptionResponse
+from src.core.config import settings
 
 class DeceptionEngine:
     """

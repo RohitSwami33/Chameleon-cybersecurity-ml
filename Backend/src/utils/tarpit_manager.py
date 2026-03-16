@@ -1,7 +1,7 @@
 import time
 import random
 from typing import Tuple, Dict, List
-from config import settings
+from src.core.config import settings
 from datetime import datetime, timedelta
 
 class TarpitManager:

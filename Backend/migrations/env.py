@@ -21,8 +21,8 @@ import sys
 import os
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from models_sqlalchemy import Base
-from config import settings
+from src.core.models_sqlalchemy import Base
+from src.core.config import settings
 
 config = context.config
 

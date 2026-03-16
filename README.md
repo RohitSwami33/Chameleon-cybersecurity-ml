@@ -75,7 +75,7 @@ cp .env.example .env
 ### 3. Run the server
 ```bash
 cd Backend
-uvicorn main:app --host 0.0.0.0 --port 8000 --reload
+uvicorn src.api.main:app --host 0.0.0.0 --port 8000 --reload
 ```
 
 ### 4. Run the test suite

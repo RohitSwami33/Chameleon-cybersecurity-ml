@@ -25,7 +25,7 @@ from sqlalchemy.ext.asyncio import (
 )
 from sqlalchemy.orm import selectinload
 
-from models_sqlalchemy import (
+from src.core.models_sqlalchemy import (
     Base,
     Tenant,
     HoneypotLog,

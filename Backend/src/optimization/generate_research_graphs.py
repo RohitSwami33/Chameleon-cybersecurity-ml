@@ -18,7 +18,7 @@ import os
 # Add parent directory to path for imports
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
-from meta_heuristics import AdaptiveTarpitPSO, DeceptionEvolutionGA, PSO_CONFIG
+from src.optimization.meta_heuristics import AdaptiveTarpitPSO, DeceptionEvolutionGA, PSO_CONFIG
 
 # Check for matplotlib
 try:

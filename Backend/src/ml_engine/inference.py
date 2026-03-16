@@ -20,7 +20,7 @@ TOKENIZER_PATH = Path(__file__).parent.parent.parent / "models" / "tokenizer.pkl
 import torch
 import torch.nn as nn
 
-from simple_tokenizer import SimpleTokenizer, pad_sequences
+from src.ml_engine.simple_tokenizer import SimpleTokenizer, pad_sequences
 import numpy as np
 
 

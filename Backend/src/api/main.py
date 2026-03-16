@@ -29,22 +29,22 @@ import logging
 
 from pydantic import BaseModel, Field
 
-from config import settings
-from alert_manager import alert_manager
+from src.core.config import settings
+from src.utils.alert_manager import alert_manager
 
 # ── ORM & Pydantic models ───────────────────────────────────────────────
-from models import (
+from src.core.models import (
     UserInput, AttackLog, GeoLocation, ClassificationResult,
     DeceptionResponse, DashboardStats, LoginRequest, LoginResponse,
     AttackType,
 )
-from models_sqlalchemy import HoneypotLog, BeaconEvent
+from src.core.models_sqlalchemy import HoneypotLog, BeaconEvent
 
 # ── Auth ─────────────────────────────────────────────────────────────────
-from auth import create_access_token, verify_token, verify_credentials
+from src.api.auth import create_access_token, verify_token, verify_credentials
 
 # ── Async PostgreSQL (new) ──────────────────────────────────────────────
-from database_postgres import (
+from src.core.database_postgres import (
     get_db,                   # FastAPI Depends() → yields AsyncSession
     db,                       # Database singleton (.connect / .disconnect)
     save_honeypot_log,        # (session, tenant_id, ip, cmd, resp, meta)
@@ -52,44 +52,44 @@ from database_postgres import (
 )
 
 # ── Legacy MongoDB (existing endpoints) ─────────────────────────────────
-from database import (
+from src.core.database import (
     connect_to_mongo, close_mongo_connection, save_attack_log,
     get_attack_logs, get_attack_by_id, get_dashboard_stats,
     get_logs_by_ip,
 )
 
 # ── ML Inference (Local MLX Model) ──────────────────────────────────────────
-from local_inference import mlx_model
-from pipeline import evaluate_payload
+from src.ml_engine.local_inference import mlx_model
+from src.api.pipeline import evaluate_payload
 
 # ── LLM Deception Engine (DeepSeek API) ─────────────────────────────────
-from llm_controller import generate_deceptive_response
+from src.utils.llm_controller import generate_deceptive_response
 
 # ── Integrity Hashing ──────────────────────────────────────────────────
-from integrity import hash_log_entry as calculate_hash
+from src.utils.integrity import hash_log_entry as calculate_hash
 
 # ── Other Services ──────────────────────────────────────────────────────
-from ml_classifier import classifier
-from deception_engine import deception_engine
-from deception_engine_v2 import progressive_deception_engine
-from attacker_session import (
+from src.ml_engine.ml_classifier import classifier
+from src.utils.deception_engine import deception_engine
+from src.utils.deception_engine_v2 import progressive_deception_engine
+from src.utils.attacker_session import (
     get_or_create_session, update_session,
     generate_attacker_fingerprint, get_session_stats,
 )
-from tarpit_manager import tarpit_manager
-from blockchain_logger import blockchain_logger
-from report_generator import report_generator
-from login_rate_limiter import login_limiter
-from threat_score import threat_score_system
-from threat_intel_service import threat_intel_service
-from chatbot_service import get_chatbot
-from utils import get_current_time
+from src.utils.tarpit_manager import tarpit_manager
+from src.utils.blockchain_logger import blockchain_logger
+from src.utils.report_generator import report_generator
+from src.utils.login_rate_limiter import login_limiter
+from src.utils.threat_score import threat_score_system
+from src.utils.threat_intel_service import threat_intel_service
+from src.utils.chatbot_service import get_chatbot
+from src.utils.utils import get_current_time
 
 # ── SIEM Export ────────────────────────────────────────────────────────
 from api.export.stix import stix_router
 
 # ── Meta-Heuristic Optimization ───────────────────────────────────────
-from meta_heuristics import (
+from src.optimization.meta_heuristics import (
     pso_optimizer,      # Particle Swarm Optimization for adaptive tarpitting
     ga_optimizer,       # Genetic Algorithm for deception schema evolution
     session_tracker,    # Session tracking for fitness evaluation

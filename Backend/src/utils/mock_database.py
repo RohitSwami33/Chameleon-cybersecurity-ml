@@ -2,7 +2,7 @@
 
 from datetime import datetime, timedelta
 from typing import List, Dict, Optional
-from utils import get_current_time
+from src.utils.utils import get_current_time
 import random
 
 class MockDatabase:

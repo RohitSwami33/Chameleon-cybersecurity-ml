@@ -4,8 +4,8 @@ except ImportError:
     tf = None  # TensorFlow not available (e.g. Python 3.14) — heuristic mode only
 import numpy as np
 import re
-from config import settings, MODEL_PATH
-from models import AttackType, ClassificationResult
+from src.core.config import settings, MODEL_PATH
+from src.core.models import AttackType, ClassificationResult
 import os
 
 class MLClassifier:

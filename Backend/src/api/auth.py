@@ -3,7 +3,7 @@ from typing import Optional
 from jose import JWTError, jwt
 from fastapi import HTTPException, status, Depends
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
-from config import settings, ADMIN_USERNAME, ADMIN_PASSWORD
+from src.core.config import settings, ADMIN_USERNAME, ADMIN_PASSWORD
 
 security = HTTPBearer()
 

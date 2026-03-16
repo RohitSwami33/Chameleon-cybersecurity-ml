@@ -10,9 +10,9 @@ Integrates:
 
 import asyncio
 import logging
-from bilstm_inference import bilstm_model
-from local_inference import mlx_model
-from ml_classifier import classifier
+from src.ml_engine.bilstm_inference import bilstm_model
+from src.ml_engine.local_inference import mlx_model
+from src.ml_engine.ml_classifier import classifier
 
 logger = logging.getLogger(__name__)
 

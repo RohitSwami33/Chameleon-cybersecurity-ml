@@ -10,9 +10,9 @@ import sys
 import os
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from database_postgres import get_db, get_default_tenant
-from models_sqlalchemy import HoneypotLog
-from auth import verify_token
+from src.core.database_postgres import get_db, get_default_tenant
+from src.core.models_sqlalchemy import HoneypotLog
+from src.api.auth import verify_token
 
 stix_router = APIRouter()
 

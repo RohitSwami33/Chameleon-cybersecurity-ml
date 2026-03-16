@@ -13,8 +13,8 @@ from uuid import uuid4
 from sqlalchemy import select, func, desc, and_
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from database_postgres import db              # singleton Database instance
-from models_sqlalchemy import HoneypotLog
+from src.core.database_postgres import db              # singleton Database instance
+from src.core.models_sqlalchemy import HoneypotLog
 
 logger = logging.getLogger(__name__)
 

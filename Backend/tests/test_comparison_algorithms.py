@@ -24,7 +24,7 @@ from typing import List, Tuple, Dict
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from meta_heuristics import (
+from src.optimization.meta_heuristics import (
     ThreatCalibratedPSO,
     AdaptiveTarpitPSO,
     SemanticDeceptionRRT,

@@ -28,7 +28,7 @@ from typing import List, Tuple
 # ── path setup ──────────────────────────────────────────────────────────────
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from meta_heuristics import (
+from src.optimization.meta_heuristics import (
     ThreatCalibratedPSO,
     AdaptiveTarpitPSO,
     TC_PSO_CONFIG,

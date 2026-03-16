@@ -9,8 +9,8 @@ from typing import List, Dict, Optional
 import json
 from datetime import datetime
 
-from llm_controller import LLMController
-from config import settings
+from src.utils.llm_controller import LLMController
+from src.core.config import settings
 
 class CybersecurityChatbot:
     def __init__(self, api_key: str = None):

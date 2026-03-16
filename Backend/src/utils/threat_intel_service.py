@@ -6,7 +6,7 @@ import hashlib
 import json
 from datetime import datetime, timedelta
 from typing import Dict, List, Optional, Set
-from models import AttackType
+from src.core.models import AttackType
 
 class ThreatIntelligenceService:
     """

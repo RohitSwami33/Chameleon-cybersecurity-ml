@@ -56,7 +56,7 @@ from sklearn.model_selection import train_test_split
 from sklearn.metrics import classification_report, confusion_matrix, accuracy_score, precision_recall_fscore_support
 from sklearn.utils.class_weight import compute_class_weight
 
-from simple_tokenizer import SimpleTokenizer, pad_sequences
+from src.ml_engine.simple_tokenizer import SimpleTokenizer, pad_sequences
 
 print("=" * 70, flush=True)
 print(" CHAMELEON LSTM TRAINING (6k Dataset)", flush=True)
