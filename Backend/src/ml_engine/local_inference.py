@@ -13,7 +13,7 @@ logger = logging.getLogger(__name__)
 
 # Absolute path to the model relative to Backend
 # Using the newly trained balanced model (retrained on 2930 balanced samples)
-MODEL_DIR = Path(__file__).parent / "chamaeleon-4bit-balanced"
+MODEL_DIR = Path(__file__).parent.parent.parent / "finetuning-model" / "chamaeleon-4bit-balanced"
 
 class LocalMLXModel:
     _instance = None

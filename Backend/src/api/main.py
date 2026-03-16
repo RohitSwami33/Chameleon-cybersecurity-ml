@@ -86,7 +86,7 @@ from src.utils.chatbot_service import get_chatbot
 from src.utils.utils import get_current_time
 
 # ── SIEM Export ────────────────────────────────────────────────────────
-from api.export.stix import stix_router
+from src.api.export.stix import stix_router
 
 # ── Meta-Heuristic Optimization ───────────────────────────────────────
 from src.optimization.meta_heuristics import (

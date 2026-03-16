@@ -24,19 +24,31 @@ async def evaluate_payload(payload: str) -> str:
 
     For reliable benign user detection, we use the heuristic classifier as primary.
     The balanced model (retrained on 2930 samples with 50/50 distribution) reduces false positives.
+
+    FALLBACK BEHAVIOR:
+    - If MLX model is not loaded, trust heuristic classifier for high-confidence detections
+    - Heuristic confidence > 0.80 is considered reliable for production use
     """
     # Stage 1: Heuristic Classification (reliable for benign detection)
     classification = classifier.classify(payload)
-    logger.info(f"Pipeline Stage 1 [Heuristic]: Type={classification.attack_type.value}, Malicious={classification.is_malicious}")
+    logger.info(f"Pipeline Stage 1 [Heuristic]: Type={classification.attack_type.value}, Malicious={classification.is_malicious}, Confidence={classification.confidence:.2%}")
 
     # If heuristic says benign, trust it (avoids any ML false positives)
     if not classification.is_malicious:
         logger.info("Pipeline Stage 1 [Heuristic]: Benign input detected. Returning ALLOW.")
         return "ALLOW"
 
-    # Stage 2: Deep Analysis (Balanced MLX LLM) for potentially malicious inputs
-    mlx_verdict = await mlx_model.infer(payload)
-    logger.info(f"Pipeline Stage 2 [MLX-Balanced]: Verdict is {mlx_verdict}")
+    # If heuristic detects malicious with high confidence, trust it even if MLX fails
+    if classification.confidence > 0.80:
+        logger.info(f"Pipeline Stage 1 [Heuristic]: High-confidence malicious detected ({classification.confidence:.2%}). Returning BLOCK.")
+        return "BLOCK"
 
-    # The final authoritative verdict comes from the MLX model for malicious inputs
-    return mlx_verdict
+    # Stage 2: Deep Analysis (Balanced MLX LLM) for potentially malicious inputs
+    # Only reached if heuristic confidence is moderate (< 80%)
+    try:
+        mlx_verdict = await mlx_model.infer(payload)
+        logger.info(f"Pipeline Stage 2 [MLX-Balanced]: Verdict is {mlx_verdict}")
+        return mlx_verdict
+    except Exception as e:
+        logger.warning(f"MLX inference failed: {e}. Falling back to heuristic verdict: BLOCK")
+        return "BLOCK"
