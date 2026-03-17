@@ -78,3 +78,8 @@ dist/
 *.mlpackage/
 mlx_model_cache/
 Backend/chamaeleon-4bit-balanced/
+
+# Large model files (>2GB GitHub limit)
+models/*.safetensors
+models/*.bin
+Backend/chamaeleon-4bit-balanced/*.safetensors
