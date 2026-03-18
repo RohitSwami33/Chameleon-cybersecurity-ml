@@ -16,6 +16,9 @@ import { CommandBarProvider } from './components/ui/CommandBar';
 import DepthLayers from './components/DepthLayers';
 import GlobalBackground from './components/GlobalBackground';
 
+// NEW: Clean 2D Dashboard
+import Dashboard from './pages/Dashboard';
+
 // Pages
 import DashboardOverview from './pages/DashboardOverview';
 import AttackGlobePage from './pages/AttackGlobePage';
@@ -259,6 +262,9 @@ function AnimatedRoutes() {
           <Route path="/" element={<TrapInterface />} />
           <Route path="/trap" element={<TrapInterface />} />
           <Route path="/login" element={<Login />} />
+
+          {/* NEW: Clean 2D Telemetry Dashboard */}
+          <Route path="/dashboard-2d" element={<Dashboard />} />
 
           {/* Dashboard Routes with Page Transitions */}
           <Route

@@ -90,8 +90,10 @@ from src.api.export.stix import stix_router
 
 # ── Meta-Heuristic Optimization ───────────────────────────────────────
 from src.optimization.meta_heuristics import (
-    pso_optimizer,      # Particle Swarm Optimization for adaptive tarpitting
-    ga_optimizer,       # Genetic Algorithm for deception schema evolution
+    pso_optimizer,      # Standard PSO (baseline for comparison)
+    tc_pso_optimizer,   # TC-PSO: Threat-Calibrated PSO (OUR NOVEL ALGORITHM)
+    s_rrt_optimizer,    # S-RRT: Semantic Deception RRT (OUR NOVEL ALGORITHM)
+    rrt_optimizer,      # Standard RRT (baseline for comparison)
     session_tracker,    # Session tracking for fitness evaluation
 )
 
@@ -111,7 +113,7 @@ async def handle_deception_layer(payload: str, request_data: dict, request: Requ
     1. PSO (Particle Swarm Optimization): Dynamically adjusts tarpit delay
        to maximize attacker dwell time without triggering timeouts.
 
-    2. GA (Genetic Algorithm): Evolves fake file systems and mock responses
+    2. S-RRT (Semantic Deception RRT): Evolves fake file systems and mock responses
        based on attacker interaction patterns.
 
     Fitness Functions:
@@ -119,7 +121,7 @@ async def handle_deception_layer(payload: str, request_data: dict, request: Requ
     PSO: F(t) = (w₁ · C_exec) - (w₂ · P_drop)
          Where C_exec = commands executed, P_drop = disconnection penalty
 
-    GA:  F(s) = Σ(interaction_bonus) + complexity_bonus - staleness_penalty
+    S-RRT: F(s) = Σ(interaction_bonus) + complexity_bonus - staleness_penalty
     """
     logger.warning(f"🚨 [DECEPTION LAYER TRIGGERED] Payload: {payload[:100]}")
 
@@ -132,9 +134,9 @@ async def handle_deception_layer(payload: str, request_data: dict, request: Requ
     import uuid
     session_id = str(uuid.uuid4())[:8]
 
-    # ── PSO: Get optimal tarpit delay ──────────────────────────────────
-    optimal_delay = await pso_optimizer.get_optimal_delay(attack_category)
-    logger.info(f"🐜 PSO Optimal Delay | Category: {attack_category} | Delay: {optimal_delay:.2f}s")
+    # ── TC-PSO: Get optimal tarpit delay (NOVEL ALGORITHM) ──────────────────────────────────
+    optimal_delay = await tc_pso_optimizer.get_optimal_delay(attack_category)
+    logger.info(f"🐜 TC-PSO Optimal Delay (NOVEL) | Category: {attack_category} | Delay: {optimal_delay:.2f}s")
 
     # Create session tracker for this attacker
     session_tracker.create_session(session_id, attack_category, optimal_delay)
@@ -144,7 +146,7 @@ async def handle_deception_layer(payload: str, request_data: dict, request: Requ
     await asyncio.sleep(optimal_delay)
 
     # ── GA: Get tempting deception schema ──────────────────────────────
-    schema_id, fake_schema = await ga_optimizer.get_tempting_schema()
+    schema_id, fake_schema = await s_rrt_optimizer.get_tempting_schema()
     logger.info(f"🧬 GA Selected Schema | ID: {schema_id} | Paths: {len(fake_schema)}")
 
     # Store telemetry data locally or to DB to track their behavior
@@ -190,7 +192,7 @@ async def handle_deception_layer(payload: str, request_data: dict, request: Requ
                 tenant_id=tenant_id,
                 attacker_ip=ip,
                 command_entered=f"[DECEPTION] {payload}",
-                response_sent="Routed to deception layer with GA schema",
+                response_sent="Routed to deception layer with S-RRT schema",
                 log_metadata=log_meta,
             )
             session.add(log)
@@ -198,9 +200,9 @@ async def handle_deception_layer(payload: str, request_data: dict, request: Requ
     except Exception as e:
         logger.error(f"Failed to flag attacker in DB: {e}")
 
-    # The deception response is tailored based on action and GA schema
+    # The deception response is tailored based on action and S-RRT schema
     if action == "login":
-        # Record interaction for GA fitness
+        # Record interaction for S-RRT fitness
         session_tracker.record_path_interaction(session_id, "/api/auth/login")
 
         return JSONResponse(
@@ -223,7 +225,7 @@ async def handle_deception_layer(payload: str, request_data: dict, request: Requ
         fake_shell_db["id"] = "uid=0(root) gid=0(root) groups=0(root)\n"
         fake_shell_db["uname -a"] = "Linux web-prod-04 5.4.0-163-generic #180-Ubuntu SMP x86_64 GNU/Linux\n"
 
-        # Add GA-generated fake files
+        # Add S-RRT-generated fake files
         for path, content in fake_schema.items():
             cmd = f"cat {path}"
             fake_shell_db[cmd] = content
@@ -243,7 +245,7 @@ async def handle_deception_layer(payload: str, request_data: dict, request: Requ
 
         if cmd in fake_shell_db:
             fake_output = fake_shell_db[cmd]
-            # Record path interaction for GA fitness
+            # Record path interaction for S-RRT fitness
             session_tracker.record_path_interaction(session_id, cmd)
         else:
             # Fallback for unrecognized commands
@@ -1193,7 +1195,7 @@ async def health_check():
         "status": "healthy",
         "timestamp": datetime.utcnow().isoformat(),
         "ml_model": "chameleon_lstm_m4_50k",
-        "device": str(predictor.device),
+        "device": "Apple MLX (Metal GPU)",
     }
 
 
@@ -1270,30 +1272,83 @@ async def search_cybersecurity_info(
 @app.get("/api/meta-heuristics/stats")
 async def get_meta_heuristic_stats():
     """
-    Get statistics from PSO and GA optimizers for research monitoring.
+    Get statistics from TC-PSO and S-RRT optimizers for research monitoring.
 
     Returns real-time metrics on:
-    - PSO: Global best delays per attack category, swarm statistics
-    - GA: Current generation, best fitness, population diversity
+    - TC-PSO: Global best delays per attack category, swarm statistics
+    - S-RRT: Current generation, best fitness, population diversity
     """
+    import math
+
     pso_stats = {}
     for category in ["SQLI", "XSS", "SSI", "BRUTE_FORCE", "RCE", "PATH_TRAVERSAL", "GENERIC"]:
-        pso_stats[category] = pso_optimizer.get_swarm_statistics(category)
+        stats = tc_pso_optimizer.get_swarm_statistics(category)
+        # Ensure all float values are JSON-serializable
+        if stats:
+            for key, value in stats.items():
+                if isinstance(value, float) and (math.isinf(value) or math.isnan(value)):
+                    stats[key] = 0.0
+        pso_stats[category] = stats
 
-    ga_stats = ga_optimizer.get_population_statistics()
+    srrt_stats = s_rrt_optimizer.get_population_statistics()
+    # Ensure S-RRT stats are JSON-serializable
+    if srrt_stats:
+        for key, value in srrt_stats.items():
+            if isinstance(value, float) and (math.isinf(value) or math.isnan(value)):
+                srrt_stats[key] = 0.0
 
     return {
         "pso": pso_stats,
-        "ga": ga_stats,
+        "srrt": srrt_stats,
         "timestamp": datetime.utcnow().isoformat(),
     }
 
 
-@app.post("/api/meta-heuristics/ga/evolve")
+@app.post("/api/meta-heuristics/srrt/evolve")
 async def trigger_ga_evolution():
-    """Manually trigger GA evolution (for testing/research)."""
-    await ga_optimizer.evolve_population()
-    return {"status": "success", "generation": ga_optimizer.generation}
+    """Manually trigger S-RRT evolution (for testing/research)."""
+    await s_rrt_optimizer.evolve_tree()
+    return {"status": "success", "generation": s_rrt_optimizer.generation}
+
+
+@app.get("/api/meta-heuristics/rrt/schema")
+async def get_rrt_schema():
+    """
+    Get S-RRT deception schema (fake filesystem tree).
+
+    Returns the current best deception schema with pheromone heat mapping.
+    """
+    try:
+        tree_id, schema = await s_rrt_optimizer.get_tempting_schema()
+        stats = s_rrt_optimizer.get_tree_statistics()
+
+        # Format schema with pheromone data for frontend
+        formatted_schema = []
+        for path, content in schema.items():
+            pheromone = s_rrt_optimizer.path_pheromones.get(path, 1.0)
+            # Normalize pheromone to 0-1 range for heat visualization
+            heat = min(1.0, pheromone / 5.0)
+
+            formatted_schema.append({
+                "path": path,
+                "content": content[:200] if len(content) > 200 else content,  # Truncate for performance
+                "pheromone_level": round(heat, 2),
+                "interaction_count": 0  # Would need to track per-path
+            })
+
+        return {
+            "tree_id": tree_id,
+            "schema": formatted_schema,
+            "statistics": stats,
+            "total_pheromone_paths": len(s_rrt_optimizer.path_pheromones)
+        }
+    except Exception as e:
+        logger.error(f"Error getting RRT schema: {e}")
+        return {
+            "error": str(e),
+            "schema": [],
+            "statistics": {}
+        }
 
 
 @app.get("/api/meta-heuristics/session/{session_id}")
