@@ -68,7 +68,7 @@ from llm_controller import generate_deceptive_response
 # ── Integrity Hashing ──────────────────────────────────────────────────
 from integrity import hash_log_entry as calculate_hash
 
-# ── Other Services ──────────────────────────────────────────────────────────────
+# ── Other Services ──────────────────────────────────────────────────────
 from ml_classifier import classifier
 from deception_engine import deception_engine
 from deception_engine_v2 import progressive_deception_engine
@@ -85,61 +85,15 @@ from threat_intel_service import threat_intel_service
 from chatbot_service import get_chatbot
 from utils import get_current_time
 
-# ── SIEM Export ──────────────────────────────────────────────────────────────
+# ── SIEM Export ────────────────────────────────────────────────────────
 from api.export.stix import stix_router
 
-# ── Meta-Heuristic Optimization ─────────────────────────────────────────────
+# ── Meta-Heuristic Optimization ───────────────────────────────────────
 from meta_heuristics import (
     pso_optimizer,      # Particle Swarm Optimization for adaptive tarpitting
     ga_optimizer,       # Genetic Algorithm for deception schema evolution
     session_tracker,    # Session tracking for fitness evaluation
 )
-
-# ========================================================================
-# Algorithm A-E Hardening Imports (all wrapped in try/except for safety)
-# ========================================================================
-
-# Algorithm C: Deep Attacker Binding
-try:
-    from fingerprint_chain import fingerprint_chain, FingerprintChain
-    _FINGERPRINT_CHAIN_AVAILABLE = True
-except ImportError:
-    _FINGERPRINT_CHAIN_AVAILABLE = False
-
-# Algorithm C: Canary Trap System
-try:
-    from canary_system import canary_system
-    _CANARY_SYSTEM_AVAILABLE = True
-except ImportError:
-    _CANARY_SYSTEM_AVAILABLE = False
-
-# Algorithm D: Timing Mask
-try:
-    from timing_mask import timing_mask
-    _TIMING_MASK_AVAILABLE = True
-except ImportError:
-    _TIMING_MASK_AVAILABLE = False
-
-# Algorithm D: Response Mutator
-try:
-    from response_mutator import response_mutator
-    _RESPONSE_MUTATOR_AVAILABLE = True
-except ImportError:
-    _RESPONSE_MUTATOR_AVAILABLE = False
-
-# Algorithm E: Response Validator
-try:
-    from response_validator import response_validator
-    _RESPONSE_VALIDATOR_AVAILABLE = True
-except ImportError:
-    _RESPONSE_VALIDATOR_AVAILABLE = False
-
-# Algorithm E: Opaque State VM
-try:
-    from opaque_state import opaque_vm
-    _OPAQUE_VM_AVAILABLE = True
-except ImportError:
-    _OPAQUE_VM_AVAILABLE = False
 
 logger = logging.getLogger(__name__)
 
@@ -175,51 +129,19 @@ async def handle_deception_layer(payload: str, request_data: dict, request: Requ
     action = request_data.get("action", "generic")
 
     # Generate unique session ID for tracking
-    # Algorithm A: Use fingerprint-based session_id instead of random UUID
     import uuid
-    fingerprint = generate_attacker_fingerprint(
-        ip, request.headers.get("user-agent", "") if request else ""
-    )
-    session_id = fingerprint[:8]
+    session_id = str(uuid.uuid4())[:8]
 
-    # ── Algorithm C: Check for canary in incoming request ───────────────
-    if _CANARY_SYSTEM_AVAILABLE:
-        try:
-            request_str = f"{payload} {ip} {request.headers.get('user-agent', '') if request else ''}"
-            canary_match = canary_system.check_incoming(request_str)
-            if canary_match:
-                logger.warning(
-                    f"\U0001f6a8 CANARY MATCH in deception layer | "
-                    f"Original FP: {canary_match.get('session_fingerprint', 'unknown')[:12]}..."
-                )
-                # Re-bind to original session fingerprint
-                session_id = canary_match.get('session_fingerprint', session_id)[:8]
-        except Exception as e:
-            logger.debug(f"Canary check failed (non-fatal): {e}")
-
-    # ── PSO: Get optimal tarpit delay ─────────────────────────────────
+    # ── PSO: Get optimal tarpit delay ──────────────────────────────────
     optimal_delay = await pso_optimizer.get_optimal_delay(attack_category)
-    logger.info(f"\U0001f41c PSO Optimal Delay | Category: {attack_category} | Delay: {optimal_delay:.2f}s")
+    logger.info(f"🐜 PSO Optimal Delay | Category: {attack_category} | Delay: {optimal_delay:.2f}s")
 
     # Create session tracker for this attacker
     session_tracker.create_session(session_id, attack_category, optimal_delay)
 
-    # Algorithm D: Use timing mask instead of raw asyncio.sleep
-    import time as _time
-    _processing_start = _time.time()
-    if _TIMING_MASK_AVAILABLE:
-        try:
-            await timing_mask.serve_with_mask(
-                "",  # No response content yet, just delaying
-                payload_length=len(payload),
-                processing_start=_processing_start,
-                pso_delay=optimal_delay,
-            )
-        except Exception:
-            await asyncio.sleep(optimal_delay)
-    else:
-        logger.info(f"\U0001f578 Tarpitting attacker connection for {optimal_delay:.2f} seconds...")
-        await asyncio.sleep(optimal_delay)
+    # Apply PSO-optimized tarpit delay
+    logger.info(f"🕸 Tarpitting attacker connection for {optimal_delay:.2f} seconds...")
+    await asyncio.sleep(optimal_delay)
 
     # ── GA: Get tempting deception schema ──────────────────────────────
     schema_id, fake_schema = await ga_optimizer.get_tempting_schema()
@@ -340,21 +262,12 @@ async def handle_deception_layer(payload: str, request_data: dict, request: Requ
         # Generic deception response
         session_tracker.record_command(session_id)
 
-        deception_content = {
-            "status": "success",
-            "data": "Request accepted for processing.",
-            "schema_id": schema_id,
-        }
-
-        # Algorithm E: Sanitise before serving
-        if _RESPONSE_VALIDATOR_AVAILABLE:
-            try:
-                deception_content = response_validator.sanitise_dict(deception_content)
-            except Exception:
-                pass
-
         return JSONResponse(
-            content=deception_content,
+            content={
+                "status": "success",
+                "data": "Request accepted for processing.",
+                "schema_id": schema_id,
+            },
             status_code=200
         )
 
@@ -546,38 +459,8 @@ async def trap_execute(
     ip_address = payload.ip_address or get_client_ip(request)
     command = payload.command
 
-    # ── Algorithm C: Fingerprint chain matching ────────────────────────────
-    _active_fingerprint = None
-    if _FINGERPRINT_CHAIN_AVAILABLE:
-        try:
-            signals = FingerprintChain.collect_signals(request)
-            signals = FingerprintChain.update_payload_signals(signals, command)
-            matched_fp = fingerprint_chain.match_existing_session(signals)
-            if matched_fp:
-                _active_fingerprint = matched_fp
-                logger.info(f"FingerprintChain: Matched returning attacker {matched_fp[:12]}...")
-            else:
-                _active_fingerprint = fingerprint_chain.compute_fingerprint(signals)
-                fingerprint_chain.register(_active_fingerprint, signals)
-        except Exception as e:
-            logger.debug(f"FingerprintChain error (non-fatal): {e}")
-
-    # ── Algorithm C: Check for canary in incoming request ──────────────────
-    if _CANARY_SYSTEM_AVAILABLE:
-        try:
-            request_str = f"{command} {ip_address} {request.headers.get('user-agent', '')}"
-            canary_match = canary_system.check_incoming(request_str)
-            if canary_match:
-                original_fp = canary_match.get('session_fingerprint')
-                if original_fp:
-                    _active_fingerprint = original_fp
-                    logger.warning(f"CANARY DETECTED in trap_execute! Re-binding to {original_fp[:12]}...")
-        except Exception:
-            pass
-
     # ── Step 1: ML Prediction via Two-Stage Pipeline ─────────────────────
-    # Algorithm B: pass ip_address for behaviour classification
-    verdict = await evaluate_payload(command, ip_address=ip_address)
+    verdict = await evaluate_payload(command)
     is_malicious: bool = (verdict == "BLOCK")
     prediction_score: float = 0.99 if is_malicious else 0.01
 
@@ -591,24 +474,6 @@ async def trap_execute(
                 command=command,
                 ip_address=ip_address,
             )
-            # Algorithm E: Validate LLM response before serving
-            if _RESPONSE_VALIDATOR_AVAILABLE:
-                try:
-                    session_info = {"db_type": "MySQL", "current_stage": 1}
-                    if _active_fingerprint:
-                        try:
-                            from session_authority import SingleSourceSessionAuthority
-                            sa_data = SingleSourceSessionAuthority.get_session(_active_fingerprint)
-                            if sa_data:
-                                session_info = sa_data
-                        except Exception:
-                            pass
-                    valid, cleaned = response_validator.validate(response_text, session_info)
-                    if not valid:
-                        logger.warning("ResponseValidator: LLM response failed validation, serving fallback")
-                    response_text = cleaned
-                except Exception:
-                    pass
         except Exception as e:
             logger.error("DeepSeek LLM call failed, falling back to static: %s", e)
             response_text = _static_fallback(command)
@@ -617,33 +482,6 @@ async def trap_execute(
         # Low/medium confidence → cheap static reply to save API costs
         response_text = _static_fallback(command)
         honeytoken_session_id = None
-
-    # Algorithm D: Apply deterministic response mutation
-    if _RESPONSE_MUTATOR_AVAILABLE and _active_fingerprint:
-        try:
-            from session_authority import SingleSourceSessionAuthority
-            sa_data = SingleSourceSessionAuthority.get_session(_active_fingerprint)
-            req_count = sa_data.get("attempt_count", 0) if sa_data else 0
-            response_text = response_mutator.mutate(response_text, _active_fingerprint[:16], req_count)
-        except Exception:
-            pass
-
-    # Algorithm C: Plant canary in deception response
-    if _CANARY_SYSTEM_AVAILABLE and prediction_score > DECEPTION_THRESHOLD:
-        try:
-            fp_for_canary = _active_fingerprint or ip_address
-            response_text, canary_id = canary_system.plant_canary(
-                response_text, fp_for_canary, canary_type="generic"
-            )
-        except Exception:
-            pass
-
-    # Algorithm E: Final sanitise pass
-    if _RESPONSE_VALIDATOR_AVAILABLE:
-        try:
-            response_text = response_validator.sanitise(response_text)
-        except Exception:
-            pass
 
     # ── Step 3: Cryptographic Hash ──────────────────────────────────────
     #    Hash of (ip_address + command + response + prediction_score)

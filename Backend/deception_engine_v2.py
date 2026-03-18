@@ -53,37 +53,16 @@ class ProgressiveDeceptionEngine:
             }
         }
         
-        # Algorithm E: DB-type-aware flavor texts for consistency
-        self.flavor_texts = {
-            "MySQL": [
-                "Please contact your database administrator if the problem persists.",
-                "Check the MySQL manual for more information.",
-                "This error has been logged for security review.",
-                "For assistance, contact support@example.com",
-                "Error logged to /var/log/mysql/error.log",
-                "Connection ID: {conn_id}",
-                "Thread ID: {thread_id}",
-            ],
-            "PostgreSQL": [
-                "See server log for details.",
-                "Check the PostgreSQL documentation for syntax help.",
-                "Statement logged to pg_log/.",
-                "HINT: Check the column/table name spelling.",
-                "Connection PID: {conn_id}",
-            ],
-            "SQLite": [
-                "Check the SQLite documentation at sqlite.org.",
-                "Database file may be locked by another process.",
-                "Statement logged.",
-            ],
-            "MariaDB": [
-                "Please contact your database administrator if the problem persists.",
-                "Check the MariaDB manual for more information.",
-                "Error logged to /var/log/mariadb/error.log",
-                "Connection ID: {conn_id}",
-                "Thread ID: {thread_id}",
-            ],
-        }
+        # Flavor text to add realism
+        self.flavor_texts = [
+            "Please contact your database administrator if the problem persists.",
+            "Check the manual for more information.",
+            "This error has been logged for security review.",
+            "For assistance, contact support@example.com",
+            "Error logged to /var/log/mysql/error.log",
+            "Connection ID: {conn_id}",
+            "Thread ID: {thread_id}"
+        ]
     
     def extract_snippet(self, raw_input: str, max_length: int = 50) -> str:
         """
@@ -168,10 +147,7 @@ class ProgressiveDeceptionEngine:
     
     def add_flavor_text(self, message: str, session: AttackerSession) -> str:
         """
-        Add realistic, DB-type-aware flavor text to error messages.
-        
-        Algorithm E: Uses deterministic indexing via hash(fingerprint) so
-        the same attacker always sees the same flavor text for a given stage.
+        Add realistic flavor text to error messages.
         
         Args:
             message: Base error message
@@ -181,21 +157,7 @@ class ProgressiveDeceptionEngine:
             Enhanced message with flavor text
         """
         if random.random() < 0.3:  # 30% chance to add flavor
-            # Algorithm E: DB-type-aware flavor selection
-            db_type = getattr(session, 'db_type', 'MySQL')
-            texts = self.flavor_texts.get(db_type, self.flavor_texts.get("MySQL", []))
-            if not texts:
-                return message
-            
-            # Deterministic index from fingerprint (Algorithm E)
-            fp = getattr(session, 'attacker_fingerprint', '')
-            if fp:
-                import hashlib
-                idx = int(hashlib.md5(fp.encode()).hexdigest()[:8], 16) % len(texts)
-                flavor = texts[idx]
-            else:
-                flavor = random.choice(texts)
-            
+            flavor = random.choice(self.flavor_texts)
             flavor = flavor.format(
                 conn_id=self.generate_fake_connection_id(),
                 thread_id=random.randint(1, 999)

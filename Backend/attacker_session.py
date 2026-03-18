@@ -1,20 +1,11 @@
 """
 Attacker Session Model
 Tracks the progressive journey of each unique attacker through the honeypot
-
-Hardened with Algorithm A — HMAC-Seeded Deterministic Session Ledger:
-  • Fingerprint now uses HMAC-SHA256(SESSION_SECRET, ip+ua) instead of plain SHA-256
-  • _session_store delegates to SingleSourceSessionAuthority (PostgreSQL backend)
-  • Deterministic db_type/table_name selection (no more random.choice)
-  • All original function signatures preserved for backward compatibility
 """
 from datetime import datetime
 from typing import Optional, List, Dict, Any
 from pydantic import BaseModel, Field
 import hashlib
-import hmac
-import logging
-import os
 import random
 
 class SessionHistory(BaseModel):
@@ -55,87 +46,45 @@ class AttackerSession(BaseModel):
             }
         }
 
-# ── Algorithm A: HMAC-based fingerprinting ────────────────────────────────
-_SESSION_SECRET = os.getenv("SESSION_SECRET", "chameleon-default-session-secret-change-me")
-_logger = logging.getLogger(__name__)
-
-
 def generate_attacker_fingerprint(ip_address: str, user_agent: str) -> str:
     """
     Generate a unique fingerprint for an attacker based on IP and User-Agent.
-    
-    Now uses HMAC-SHA256(SESSION_SECRET, ip+ua) for deterministic, secret-keyed
-    fingerprinting (Algorithm A hardening).
     
     Args:
         ip_address: Attacker's IP address
         user_agent: Attacker's User-Agent string
         
     Returns:
-        HMAC-SHA256 hex digest of the combined identifiers
+        SHA256 hash of the combined identifiers
     """
     combined = f"{ip_address}:{user_agent or 'unknown'}"
-    try:
-        return hmac.new(
-            _SESSION_SECRET.encode(), combined.encode(), hashlib.sha256
-        ).hexdigest()
-    except Exception:
-        # Fallback to original behaviour if HMAC fails
-        return hashlib.sha256(combined.encode()).hexdigest()
+    return hashlib.sha256(combined.encode()).hexdigest()
 
 def initialize_session(fingerprint: str, attack_type: str) -> AttackerSession:
     """
-    Initialize a new attacker session with deterministic characteristics.
-    
-    Algorithm A: DB type is now derived deterministically from
-    HMAC(SECRET, fingerprint) instead of random.choice().
+    Initialize a new attacker session with random characteristics.
     
     Args:
         fingerprint: Unique attacker fingerprint
         attack_type: Type of attack detected
         
     Returns:
-        New AttackerSession with deterministic database type
+        New AttackerSession with randomized database type
     """
-    # Algorithm A: Use SessionAuthority for deterministic field selection
-    try:
-        from session_authority import SingleSourceSessionAuthority, compute_deterministic_fields
-        fields = compute_deterministic_fields(fingerprint)
-        db_type = fields["db_type"]
-    except Exception:
-        # Fallback to original random selection
-        db_types = ["MySQL", "PostgreSQL", "SQLite", "MariaDB"]
-        db_type = random.choice(db_types)
+    # Randomly assign a database type for consistency in error messages
+    db_types = ["MySQL", "PostgreSQL", "SQLite", "MariaDB"]
     
     return AttackerSession(
         attacker_fingerprint=fingerprint,
         attack_type=attack_type,
-        db_type=db_type,
+        db_type=random.choice(db_types),
         current_stage=1,
         attempt_count=0
     )
 
-# ── Algorithm A: Session store delegation to SingleSourceSessionAuthority ──
-# The dict is still used as a local cache, but SessionAuthority is the
-# source of truth (PostgreSQL → fallback in-memory).
+# In-memory session storage (in production, this would be MongoDB)
+# Key: attacker_fingerprint, Value: AttackerSession
 _session_store: Dict[str, AttackerSession] = {}
-
-
-def _sync_from_authority(fingerprint: str, attack_type: str = None) -> None:
-    """Ensure _session_store is synced with SessionAuthority."""
-    try:
-        from session_authority import SingleSourceSessionAuthority
-        auth_data = SingleSourceSessionAuthority.get_or_create(fingerprint, attack_type)
-        if auth_data and fingerprint not in _session_store:
-            _session_store[fingerprint] = AttackerSession(
-                attacker_fingerprint=fingerprint,
-                attack_type=auth_data.get("attack_type", attack_type),
-                db_type=auth_data.get("db_type", "MySQL"),
-                current_stage=auth_data.get("current_stage", 1),
-                attempt_count=auth_data.get("attempt_count", 0),
-            )
-    except Exception as e:
-        _logger.debug(f"SessionAuthority sync skipped: {e}")
 
 async def get_or_create_session(
     ip_address: str, 
@@ -144,9 +93,6 @@ async def get_or_create_session(
 ) -> AttackerSession:
     """
     Retrieve existing session or create a new one for an attacker.
-    
-    Algorithm A: Delegates to SingleSourceSessionAuthority (PostgreSQL) first,
-    then falls back to in-memory creation if PG is unavailable.
     
     Args:
         ip_address: Attacker's IP address
@@ -157,9 +103,6 @@ async def get_or_create_session(
         AttackerSession for this attacker
     """
     fingerprint = generate_attacker_fingerprint(ip_address, user_agent)
-    
-    # Algorithm A: Sync from authority first
-    _sync_from_authority(fingerprint, attack_type)
     
     if fingerprint not in _session_store:
         _session_store[fingerprint] = initialize_session(fingerprint, attack_type)
@@ -205,20 +148,6 @@ async def update_session(
     # Update session in store
     _session_store[session.attacker_fingerprint] = session
     
-    # Algorithm A: Sync update to SessionAuthority
-    try:
-        from session_authority import SingleSourceSessionAuthority
-        SingleSourceSessionAuthority.update_session(
-            session.attacker_fingerprint,
-            {
-                "attempt_count": session.attempt_count,
-                "attack_type": session.attack_type,
-                "current_stage": session.current_stage,
-            }
-        )
-    except Exception:
-        pass
-    
     return session
 
 async def advance_session_stage(session: AttackerSession) -> AttackerSession:
@@ -239,15 +168,6 @@ async def advance_session_stage(session: AttackerSession) -> AttackerSession:
     
     # Update in store
     _session_store[session.attacker_fingerprint] = session
-    
-    # Algorithm A: Sync stage advance to SessionAuthority
-    try:
-        from session_authority import SingleSourceSessionAuthority
-        SingleSourceSessionAuthority.advance_stage(
-            session.attacker_fingerprint, max_stage
-        )
-    except Exception:
-        pass
     
     return session
 

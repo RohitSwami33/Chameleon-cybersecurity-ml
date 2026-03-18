@@ -12,9 +12,6 @@ class Settings(BaseSettings):
     POSTGRES_PORT: int = int(os.getenv("POSTGRES_PORT", "5432"))
     POSTGRES_DB: str = os.getenv("POSTGRES_DB", "chameleon_db")
     
-    # Algorithm A: HMAC-SHA256 session key
-    SESSION_SECRET: str = os.getenv("SESSION_SECRET", "chameleon-default-session-secret-change-me")
-    
     # Connection pool settings
     DB_POOL_SIZE: int = int(os.getenv("DB_POOL_SIZE", "5"))
     DB_MAX_OVERFLOW: int = int(os.getenv("DB_MAX_OVERFLOW", "10"))

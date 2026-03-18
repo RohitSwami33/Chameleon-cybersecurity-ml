@@ -211,45 +211,11 @@ class LLMController:
             "cache_hits": 0,
             "provider": self.provider.value
         }
-        
-        # Algorithm A+E: import once at init for performance
-        self._session_authority = None
-        self._response_validator = None
-        try:
-            from session_authority import SingleSourceSessionAuthority
-            self._session_authority = SingleSourceSessionAuthority
-        except ImportError:
-            pass
-        try:
-            from response_validator import response_validator as _rv
-            self._response_validator = _rv
-        except ImportError:
-            pass
     
     def get_or_create_session(self, ip_address: str) -> CommandHistory:
         """Get or create a command history session for an IP."""
         if ip_address not in self._sessions:
             self._sessions[ip_address] = CommandHistory()
-        
-        # Algorithm A: Sync from SessionAuthority if available
-        if self._session_authority:
-            try:
-                from attacker_session import generate_attacker_fingerprint
-                fp = generate_attacker_fingerprint(ip_address, "")
-                sa_data = self._session_authority.get_or_create(fp)
-                if sa_data:
-                    # Enrich session with db_type/table info for prompt building
-                    session = self._sessions[ip_address]
-                    session.metadata = getattr(session, 'metadata', {})
-                    session.metadata.update({
-                        "db_type": sa_data.get("db_type", "MySQL"),
-                        "table_name": sa_data.get("table_name", "users"),
-                        "column_name": sa_data.get("column_name", "password"),
-                        "current_stage": sa_data.get("current_stage", 1),
-                    })
-            except Exception:
-                pass
-        
         return self._sessions[ip_address]
     
     def _build_prompt(self, command: str, history: CommandHistory, session_id: Optional[str] = None) -> str:
@@ -458,19 +424,6 @@ Generate the terminal output for this command. Remember to be realistic and cons
         
         if history:
             history.add_command(command, response)
-        
-        # Algorithm E: Validate response before returning
-        if self._response_validator:
-            try:
-                session_info = None
-                if history and hasattr(history, 'metadata'):
-                    session_info = history.metadata
-                valid, cleaned = self._response_validator.validate(response, session_info)
-                if not valid:
-                    logger.warning("LLMController: Response failed validation, serving cleaned version")
-                response = cleaned
-            except Exception:
-                pass
         
         return response, session_id
     
