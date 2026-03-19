@@ -37,7 +37,7 @@ from datetime import datetime
 # Add parent directory to path for imports
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from meta_heuristics import (
+from .meta_heuristics import (
     ThreatCalibratedPSO,
     AdaptiveTarpitPSO,
     SemanticDeceptionRRT,

@@ -22,7 +22,7 @@ class TestBlockchainSyncImport(unittest.TestCase):
 
     def test_import_module(self):
         """blockchain_sync should import without errors."""
-        import src.utils.blockchain_sync
+        import src.utils.blockchain_sync as blockchain_sync
         self.assertTrue(hasattr(blockchain_sync, "anchor_latest_root"))
         self.assertTrue(hasattr(blockchain_sync, "get_root_count"))
         self.assertTrue(hasattr(blockchain_sync, "get_latest_root"))
@@ -53,10 +53,10 @@ class TestBlockchainSyncImport(unittest.TestCase):
 class TestAnchorFunction(unittest.TestCase):
     """Test anchor_latest_root with mocked web3."""
 
-    @patch("blockchain_sync.PRIVATE_KEY", "0x" + "a1" * 32)
-    @patch("blockchain_sync.CONTRACT_ADDRESS", "0x" + "b2" * 20)
-    @patch("blockchain_sync.SEPOLIA_RPC_URL", "https://mock-rpc.example.com")
-    @patch("blockchain_sync._get_web3")
+    @patch("src.utils.blockchain_sync.PRIVATE_KEY", "0x" + "a1" * 32)
+    @patch("src.utils.blockchain_sync.CONTRACT_ADDRESS", "0x" + "b2" * 20)
+    @patch("src.utils.blockchain_sync.SEPOLIA_RPC_URL", "https://mock-rpc.example.com")
+    @patch("src.utils.blockchain_sync._get_web3")
     def test_anchor_builds_transaction(self, mock_get_web3):
         """anchor_latest_root should build, sign, and send a transaction."""
         # Mock web3 instance
@@ -113,7 +113,7 @@ class TestAnchorFunction(unittest.TestCase):
         self.assertEqual(result["root_stored"], "abc123def456")
         self.assertIn("etherscan_url", result)
 
-    @patch("blockchain_sync.PRIVATE_KEY", "")
+    @patch("src.utils.blockchain_sync.PRIVATE_KEY", "")
     def test_anchor_raises_without_private_key(self):
         """Should raise ValueError if PRIVATE_KEY is not set."""
         from src.utils.blockchain_sync import anchor_latest_root
@@ -122,7 +122,7 @@ class TestAnchorFunction(unittest.TestCase):
             asyncio.run(anchor_latest_root("test_root"))
         self.assertIn("PRIVATE_KEY", str(ctx.exception))
 
-    @patch("blockchain_sync.SEPOLIA_RPC_URL", "")
+    @patch("src.utils.blockchain_sync.SEPOLIA_RPC_URL", "")
     def test_raises_without_rpc_url(self):
         """Should raise ValueError if SEPOLIA_RPC_URL is not set."""
         from src.utils.blockchain_sync import _get_web3
@@ -131,9 +131,9 @@ class TestAnchorFunction(unittest.TestCase):
             _get_web3()
         self.assertIn("SEPOLIA_RPC_URL", str(ctx.exception))
 
-    @patch("blockchain_sync.CONTRACT_ADDRESS", "")
-    @patch("blockchain_sync.SEPOLIA_RPC_URL", "https://mock.example.com")
-    @patch("blockchain_sync._get_web3")
+    @patch("src.utils.blockchain_sync.CONTRACT_ADDRESS", "")
+    @patch("src.utils.blockchain_sync.SEPOLIA_RPC_URL", "https://mock.example.com")
+    @patch("src.utils.blockchain_sync._get_web3")
     def test_raises_without_contract_address(self, mock_w3):
         """Should raise ValueError if CONTRACT_ADDRESS is not set."""
         from src.utils.blockchain_sync import _get_contract
