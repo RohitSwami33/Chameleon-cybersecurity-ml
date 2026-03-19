@@ -14,8 +14,8 @@ Usage:
 import sys
 from pathlib import Path
 
-MODEL_PATH = Path(__file__).parent.parent.parent / "models" / "bilstm" / "chameleon_lstm_model.pt"
-TOKENIZER_PATH = Path(__file__).parent.parent.parent / "models" / "tokenizers" / "tokenizer.pkl"
+MODEL_PATH = Path(__file__).parent.parent.parent / "models" / 'models/bilstm/chameleon_lstm_model.pt'
+TOKENIZER_PATH = Path(__file__).parent.parent.parent / "models" / "tokenizer.pkl"
 
 import torch
 import torch.nn as nn

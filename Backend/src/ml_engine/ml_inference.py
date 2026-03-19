@@ -30,8 +30,8 @@ logger = logging.getLogger(__name__)
 # Paths (relative to this file's directory)
 # ---------------------------------------------------------------------------
 _BASE_DIR = Path(__file__).parent.parent.parent / "models"  # Backend/models/
-_MODEL_PATH = _BASE_DIR / "bilstm" / "chameleon_lstm_m4_50k.pth"
-_TOKENIZER_PATH = _BASE_DIR / 'tokenizers/tokenizer_50k.json'
+_MODEL_PATH = _BASE_DIR / "chameleon_lstm_m4_50k.pth"
+_TOKENIZER_PATH = _BASE_DIR / 'models/tokenizers/tokenizer_50k.json'
 
 # ---------------------------------------------------------------------------
 # Hyperparameters (must match training exactly)

@@ -14,7 +14,7 @@ import sys
 from pathlib import Path
 
 # Add Backend to path
-sys.path.insert(0, str(Path(__file__).parent.parent.parent))
+sys.path.insert(0, str(Path(__file__).parent))
 
 from src.api.pipeline import evaluate_payload
 from src.ml_engine.ml_classifier import classifier

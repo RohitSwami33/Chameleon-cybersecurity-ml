@@ -2,8 +2,8 @@ import sys
 import asyncio
 
 # Setup path so imports work
-from pathlib import Path
-sys.path.insert(0, str(Path(__file__).parent.parent.parent))
+import os
+sys.path.append(os.path.abspath('/Users/rohit/Documents/Sem-4_project/Chameleon-cybersecurity-ml/Backend'))
 
 from src.api.pipeline import evaluate_payload
 

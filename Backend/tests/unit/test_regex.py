@@ -1,6 +1,6 @@
 import sys
-from pathlib import Path
-sys.path.insert(0, str(Path(__file__).parent.parent.parent))
+import os
+sys.path.append(os.path.abspath('/Users/rohit/Documents/Sem-4_project/Chameleon-cybersecurity-ml/Backend'))
 
 from src.ml_engine.ml_classifier import classifier
 
