@@ -2,6 +2,12 @@ import random
 from src.core.models import AttackType, DeceptionResponse
 from src.core.config import settings
 
+
+def safe_reflect(command: str, max_len: int = 50) -> str:
+    """Safely reflect user input in error messages without injection risk."""
+    return command[:max_len] if command else ""
+
+
 class DeceptionEngine:
     """
     Adaptive Deception Engine - Generates fake error messages based on attack type

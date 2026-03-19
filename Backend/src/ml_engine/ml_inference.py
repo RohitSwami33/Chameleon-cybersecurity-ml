@@ -13,11 +13,14 @@ Usage:
     predictor = ChameleonPredictor()
     score = await predictor.predict("cat /etc/passwd")
     # score ≈ 0.97 (malicious)
+
+EC-029: Model health check with webhook alerting on failure.
 """
 
 import json
 import logging
 import threading
+import os
 from pathlib import Path
 from typing import List
 
@@ -25,6 +28,36 @@ import torch
 import torch.nn as nn
 
 logger = logging.getLogger(__name__)
+
+# EC-029: Model health flag
+MODEL_HEALTHY: bool = False
+
+
+def check_model_health(model) -> bool:
+    """
+    EC-029: Check if ML model is functioning correctly.
+    Returns True if model passes health check, False otherwise.
+    Sends webhook alert if model is unhealthy.
+    """
+    global MODEL_HEALTHY
+    try:
+        score = model.predict(["ls"])
+        s = float(score) if not hasattr(score, '__len__') else float(score[0])
+        assert 0.0 <= s <= 1.0
+        MODEL_HEALTHY = True
+        logger.info("ML model health check PASSED")
+        return True
+    except Exception as e:
+        MODEL_HEALTHY = False
+        logger.critical("ML MODEL FAILED: %s — heuristic-only mode active", e)
+        webhook = os.getenv("WEBHOOK_URL")
+        if webhook:
+            try:
+                import httpx
+                httpx.post(webhook, json={"text": f":warning: ML model unhealthy: {e}"}, timeout=5.0)
+            except Exception:
+                pass
+        return False
 
 # ---------------------------------------------------------------------------
 # Paths (relative to this file's directory)
@@ -225,10 +258,14 @@ class ChameleonPredictor:
             Float in [0.0, 1.0] — probability that the command is
             malicious.  Values above 0.85 are high-confidence attacks.
         """
+        from src.utils.threat_score import safe_score
+        
         encoded = self.tokenizer.encode(command)
         tensor = torch.tensor([encoded], dtype=torch.long, device=self.device)
 
         with torch.no_grad():
             output = self.model(tensor)
 
-        return float(output.item())
+        # EC-020: Apply safe_score to prevent NaN/Infinity poisoning from tensor output
+        raw_score = float(output.item()) if hasattr(output, "item") else float(output)
+        return safe_score(raw_score / 100.0)  # Normalize to [0,1] range

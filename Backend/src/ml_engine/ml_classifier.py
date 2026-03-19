@@ -8,6 +8,9 @@ from src.core.config import settings, MODEL_PATH
 from src.core.models import AttackType, ClassificationResult
 import os
 
+# EC-027: Bounded regex quantifiers to prevent ReDoS
+# All .* and .+ replaced with .{0,250} and .{1,250}
+
 class MLClassifier:
     def __init__(self):
         self.model = None
@@ -87,17 +90,18 @@ class MLClassifier:
         # =====================================================================
         # SSI (Server-Side Injection) Patterns - Check first (most specific)
         # =====================================================================
+        # EC-027: All .* replaced with .{0,250} to prevent ReDoS
         ssi_patterns = [
             r"<!--#exec", r"<!--#include", r"<!--#echo", r"<!--#config",
             r"<!--#set", r"<!--#printenv", r"<!--#flastmod", r"<!--#fsize",
-            r"\{\{.*\}\}",           # SSTI: Jinja2, Angular
-            r"\$\{.*\}",             # SSTI: Spring EL, JavaScript
-            r"<%.*%>",               # SSTI: JSP, ASP
-            r"\[\[.*\]\]",           # SSTI: Some templates
-            r"#\{.*\}",              # SSTI: Ruby, OGNL
-            r"\{\%.*\%\}",           # SSTI: Jinja2 blocks
+            r"\{\{.{0,250}\}\}",           # SSTI: Jinja2, Angular
+            r"\$\{.{0,250}\}",             # SSTI: Spring EL, JavaScript
+            r"<%.{0,250}%>",               # SSTI: JSP, ASP
+            r"\[\[.{0,250}\]\]",           # SSTI: Some templates
+            r"#\{.{0,250}\}",              # SSTI: Ruby, OGNL
+            r"\{\%.{0,250}\%\}",           # SSTI: Jinja2 blocks
             r"\{\{7\*7\}\}",         # SSTI test payload
-            r"\{\{.*\*.*\}\}",       # SSTI arithmetic
+            r"\{\{.{0,250}\*.{0,250}\}\}",       # SSTI arithmetic
         ]
         for pattern in ssi_patterns:
             if re.search(pattern, text, re.IGNORECASE):
@@ -106,18 +110,19 @@ class MLClassifier:
         # =====================================================================
         # XSS (Cross-Site Scripting) Patterns
         # =====================================================================
+        # EC-027: All .* replaced with .{0,250} to prevent ReDoS
         xss_patterns = [
             r"<script", r"</script>", r"javascript:", r"onerror\s*=",
             r"onload\s*=", r"onclick\s*=", r"onmouseover\s*=",
-            r"<iframe", r"<svg.*on", r"<math", r"<img.*onerror",
+            r"<iframe", r"<svg.{0,250}on", r"<math", r"<img.{0,250}onerror",
             r"document\.cookie", r"document\.location", r"document\.write",
             r"alert\s*\(", r"confirm\s*\(", r"prompt\s*\(",
             r"eval\s*\(", r"setTimeout\s*\(", r"setInterval\s*\(",
             r"innerHTML\s*=", r"outerHTML\s*=", r"insertAdjacentHTML",
             r"fromcharcode", r"atob\s*\(", r"btoa\s*\(",
-            r"<body.*on", r"<input.*on", r"<form.*on",
+            r"<body.{0,250}on", r"<input.{0,250}on", r"<form.{0,250}on",
             r"data:text/html", r"<embed", r"<object",
-            r"<details.*ontoggle", r"<marquee.*onstart",
+            r"<details.{0,250}ontoggle", r"<marquee.{0,250}onstart",
         ]
         for pattern in xss_patterns:
             if re.search(pattern, text, re.IGNORECASE):
@@ -126,17 +131,18 @@ class MLClassifier:
         # =====================================================================
         # SQL Injection (SQLi) Patterns
         # =====================================================================
+        # EC-027: All .* replaced with .{0,250} to prevent ReDoS
         sqli_patterns = [
             r"union\s+select", r"union\s+all\s+select",
             r"or\s+1\s*=\s*1", r"and\s+1\s*=\s*1",
             r"'\s*or\s*'", r"'\s*and\s*'",
             r"--\s*$", r"--\s+", r"#\s*$",
             r"drop\s+table", r"drop\s+database",
-            r"insert\s+into", r"update\s+.*\s+set",
+            r"insert\s+into", r"update\s+.{0,250}\s+set",
             r"delete\s+from", r"truncate\s+table",
             r"admin'\s*--", r"admin'\s*#",
             r"'\s*or\s+'1'\s*=\s*'1", r"'\s*or\s+true",
-            r"select\s+.*\s+from", r"select\s+.*\s+where",
+            r"select\s+.{0,250}\s+from", r"select\s+.{0,250}\s+where",
             r"exec\s+xp_", r"execute\s+xp_",
             r"waitfor\s+delay", r"sleep\s*\(",
             r"benchmark\s*\(", r"pg_sleep",
@@ -209,30 +215,31 @@ class MLClassifier:
         # =====================================================================
         # OS Command Injection / Destructive Commands
         # =====================================================================
+        # EC-027: All .* replaced with .{0,250} to prevent ReDoS
         os_patterns = [
             r"rm\s+-rf", r"rm\s+-fr", r"rm\s+/\s",
             r"wget\s+http", r"wget\s+https",
-            r"curl\s+.*\|\s*bash", r"curl\s+.*\|\s*sh",
+            r"curl\s+.{0,250}\|\s*bash", r"curl\s+.{0,250}\|\s*sh",
             r"cat\s+/etc/passwd", r"cat\s+/etc/shadow",
-            r"nc\s+-e", r"nc\s+.*-e", r"netcat\s+-e",
+            r"nc\s+-e", r"nc\s+.{0,250}-e", r"netcat\s+-e",
             r"bash\s+-i", r"bash\s+-c",
             r"chmod\s+\+x", r"chmod\s+777",
             r"chown\s+root", r"chown\s+sudo",
             r"sudo\s+su", r"sudo\s+bash", r"sudo\s+-i",
             r"su\s+-", r"su\s+root",
             r"mkfifo", r"mknod",
-            r"telnet\s+", r"ssh\s+.*@",
-            r"python.*-c\s+.*import\s+socket",
-            r"perl.*-e\s+.*socket",
-            r"ruby.*-e\s+.*socket",
-            r"php.*-r\s+.*fsockopen",
-            r"lua.*-e\s+.*socket",
+            r"telnet\s+", r"ssh\s+.{0,250}@",
+            r"python.{0,250}-c\s+.{0,250}import\s+socket",
+            r"perl.{0,250}-e\s+.{0,250}socket",
+            r"ruby.{0,250}-e\s+.{0,250}socket",
+            r"php.{0,250}-r\s+.{0,250}fsockopen",
+            r"lua.{0,250}-e\s+.{0,250}socket",
             r"nmap\s+", r"masscan\s+",
             r"hydra\s+", r"john\s+", r"hashcat\s+",
             r"sqlmap\s+", r"nikto\s+", r"nuclei\s+",
             r"metasploit", r"msfconsole",
-            r"meterpreter", r"reverse.*shell",
-            r"bind.*shell", r"payload.*sh",
+            r"meterpreter", r"reverse.{0,250}shell",
+            r"bind.{0,250}shell", r"payload.{0,250}sh",
             r"backdoor", r"trojan", r"rat\s",
             r"keylog", r"screen\s+capture",
             r"/dev/tcp/", r"/dev/udp/",
@@ -280,12 +287,13 @@ class MLClassifier:
             r"ldap://",
             r"tftp://",
             r"netdoc://",
-            r"http://.*:22",  # SSH port
-            r"http://.*:23",  # Telnet port
-            r"http://.*:3306", # MySQL port
-            r"http://.*:5432", # PostgreSQL port
-            r"http://.*:6379", # Redis port
-            r"http://.*:27017", # MongoDB port
+            # EC-027: All .* replaced with .{0,250} to prevent ReDoS
+            r"http/.{0,200}:22",  # SSH port
+            r"http/.{0,200}:23",  # Telnet port
+            r"http/.{0,200}:3306", # MySQL port
+            r"http/.{0,200}:5432", # PostgreSQL port
+            r"http/.{0,200}:6379", # Redis port
+            r"http/.{0,200}:27017", # MongoDB port
         ]
         for pattern in ssrf_patterns:
             if re.search(pattern, text, re.IGNORECASE):
@@ -294,8 +302,9 @@ class MLClassifier:
         # =====================================================================
         # XXE (XML External Entity) Patterns
         # =====================================================================
+        # EC-027: All .* replaced with .{0,250} to prevent ReDoS
         xxe_patterns = [
-            r"<!DOCTYPE.*\[",
+            r"<!DOCTYPE.{0,250}\[",
             r"<!ENTITY",
             r"SYSTEM\s+['\"]file:",
             r"SYSTEM\s+['\"]http:",
@@ -322,6 +331,22 @@ class MLClassifier:
         return AttackType.BENIGN, 0.0
 
     def classify(self, text: str) -> ClassificationResult:
+        # EC-044: Whitespace prompt guard — trivial input is benign
+        if not text or not text.strip():
+            return ClassificationResult(
+                attack_type=AttackType.BENIGN,
+                confidence=0.0,
+                is_malicious=False
+            )
+        
+        # EC-027: Input length pre-filter to prevent ReDoS
+        if len(text) > settings.MAX_INPUT_LENGTH:
+            return ClassificationResult(
+                attack_type=AttackType.BENIGN,
+                confidence=0.3,
+                is_malicious=False
+            )
+
         attack_type = AttackType.BENIGN
         confidence = 0.0
         is_malicious = False

@@ -1,12 +1,41 @@
 """
 Threat Score System - Blockchain-based IP Reputation Tracking
 Assigns reputation scores to IPs based on attack patterns
+
+CVWV (Clamp-Validate-Wrap-Verify) Layer 1: NaN/Infinity Protection
 """
 from datetime import datetime, timedelta
 from typing import Dict, List, Optional
 from collections import defaultdict
 import hashlib
 import json
+import math
+
+# CVWV Layer 1: Score bounds and neutral fallback
+SCORE_MIN: float = 0.0
+SCORE_MAX: float = 100.0
+SCORE_NEUTRAL: float = 50.0
+
+
+def safe_score(value: float) -> float:
+    """
+    CVWV Layer 1: Clamp. Returns 50.0 for NaN/Inf. Clamps to [0,100].
+    Novel algorithm: Prevents score poisoning via NaN/Infinity injection.
+    """
+    if not math.isfinite(value):
+        return SCORE_NEUTRAL
+    return max(SCORE_MIN, min(SCORE_MAX, value))
+
+
+def safe_delta(delta: float) -> float:
+    """
+    CVWV Layer 1 for deltas. Returns 0.0 for NaN/Inf.
+    Prevents score manipulation via infinite penalty bonuses.
+    """
+    if not math.isfinite(delta):
+        return 0.0
+    return max(-100.0, min(100.0, delta))
+
 
 class ThreatScoreSystem:
     def __init__(self):
@@ -41,32 +70,33 @@ class ThreatScoreSystem:
     def calculate_threat_score(self, ip_address: str, attack_type: str, is_malicious: bool) -> int:
         """
         Calculate and update threat score for an IP address
-        
+
         Args:
             ip_address: IP address to score
             attack_type: Type of attack detected
             is_malicious: Whether the attack was malicious
-            
+
         Returns:
             Updated threat score (0-100)
         """
         current_score = self.ip_scores[ip_address]
-        
+
         if not is_malicious:
             # Benign request - slowly improve score (max 100)
-            new_score = min(100, current_score + 1)
+            score_delta = safe_delta(1.0)
+            new_score = safe_score(current_score + score_delta)
         else:
             # Malicious attack - apply penalty
-            penalty = self.penalties.get(attack_type, 10)
-            new_score = max(0, current_score - penalty)
-        
+            penalty = safe_delta(float(self.penalties.get(attack_type, 10)))
+            new_score = safe_score(current_score - penalty)
+
         # Record the score change
-        self._record_score_change(ip_address, current_score, new_score, attack_type, is_malicious)
-        
+        self._record_score_change(ip_address, int(current_score), int(new_score), attack_type, is_malicious)
+
         # Update score
-        self.ip_scores[ip_address] = new_score
-        
-        return new_score
+        self.ip_scores[ip_address] = int(new_score)
+
+        return int(new_score)
     
     def _record_score_change(self, ip_address: str, old_score: int, new_score: int, 
                             attack_type: str, is_malicious: bool):
@@ -124,28 +154,28 @@ class ThreatScoreSystem:
     
     def get_ip_reputation(self, ip_address: str) -> dict:
         """Get complete reputation info for an IP"""
-        score = self.get_ip_score(ip_address)
-        level = self.get_reputation_level(score)
-        color = self.get_reputation_color(score)
-        
+        score = safe_score(float(self.get_ip_score(ip_address)))
+        level = self.get_reputation_level(int(score))
+        color = self.get_reputation_color(int(score))
+
         # Get attack statistics
         history = self.attack_history.get(ip_address, [])
         total_attacks = len([h for h in history if h.get("attack_type") != "BENIGN"])
-        
+
         # Get recent attacks (last 24 hours)
         cutoff = datetime.utcnow() - timedelta(hours=24)
         recent_attacks = len([h for h in history if h["timestamp"] > cutoff])
-        
+
         return {
             "ip_address": ip_address,
-            "score": score,
+            "score": int(score),
             "level": level,
             "color": color,
             "total_attacks": total_attacks,
             "recent_attacks": recent_attacks,
             "first_seen": history[0]["timestamp"].isoformat() if history else None,
             "last_seen": history[-1]["timestamp"].isoformat() if history else None,
-            "is_flagged": score < 40  # Flag if suspicious or worse
+            "is_flagged": score < 40.0  # Flag if suspicious or worse
         }
     
     def get_flagged_ips(self, threshold: int = 40) -> List[dict]:

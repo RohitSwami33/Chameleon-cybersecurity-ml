@@ -127,10 +127,27 @@ export const login = async (username, password) => {
 };
 
 export const executeCommand = async (command) => {
+  // EC-040: BFS-Key — Generate canvas fingerprint for NAT disambiguation
+  const canvasHash = (() => {
+    try {
+      const c = document.createElement('canvas');
+      const ctx = c.getContext('2d');
+      ctx.textBaseline = 'top';
+      ctx.font = '14px Arial';
+      ctx.fillText('BFS', 2, 2);
+      return c.toDataURL().slice(-32);
+    } catch(e) { return null; }
+  })();
+
+  // EC-040: Screen resolution for additional fingerprinting
+  const screenRes = window.screen ? window.screen.width + 'x' + window.screen.height : null;
+
   try {
     const response = await api.post('/trap/execute', {
       command,
       ip_address: null,  // backend will use the real client IP from the request
+      canvas_hash: canvasHash,
+      screen_resolution: screenRes,
     });
     return response.data;
   } catch (error) {

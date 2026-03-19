@@ -1,13 +1,72 @@
 from pydantic_settings import BaseSettings
-from typing import Optional
+from typing import Optional, Set, List, Any, Final
 import os
+import secrets
+import logging
+import sys
+
+_logger = logging.getLogger(__name__)
+
+# Deception threshold constant (DO NOT CHANGE without security review)
+DECEPTION_THRESHOLD: Final[float] = 0.85
+
+# Redis client for JWT revocation (graceful fallback if unavailable)
+try:
+    import redis.asyncio as aioredis
+    _redis_url = os.getenv("REDIS_URL", "redis://localhost:6379/0")
+    redis_client: Any = aioredis.from_url(_redis_url, decode_responses=True)
+    REDIS_AVAILABLE = True
+except Exception:
+    redis_client = None
+    REDIS_AVAILABLE = False
+    _logger.warning("Redis unavailable — JWT revocation in expiry-only mode")
+
+# Weak/default values that should never be used in production
+WEAK_VALUES: Set[str] = {
+    "", "admin", "password", "chameleon123", "changeme", "secret",
+    "your-secret-key-change-in-production", "default", "test",
+    "123456", "pass", "postgres", "chameleon"
+}
+
+# Required secrets that must be configured in production
+REQUIRED_SECRETS: List[str] = [
+    "ADMIN_USERNAME", "ADMIN_PASSWORD", "JWT_SECRET_KEY",
+    "POSTGRES_USER", "POSTGRES_PASSWORD",
+]
+
+# Optional secrets (feature disabled if not set)
+SOFT_REQUIRED: List[str] = ["DEEPSEEK_API_KEY", "GEMINI_API_KEY"]
+
+
+def validate_secrets() -> None:
+    """
+    Validate that required secrets are set and not using weak default values.
+    Exits with code 1 if validation fails.
+    Logs warnings to server logs only (never to HTTP responses).
+    """
+    errors = []
+    for key in REQUIRED_SECRETS:
+        val = os.getenv(key, "")
+        if not val:
+            errors.append(f"  MISSING: {key}")
+        elif val.lower() in WEAK_VALUES:
+            errors.append(f"  INSECURE DEFAULT: {key}")
+    if errors:
+        _logger.critical("CHAMELEON STARTUP ABORTED — INSECURE CONFIGURATION:")
+        for err in errors:
+            _logger.critical(err)
+        sys.exit(1)
+    for key in SOFT_REQUIRED:
+        if not os.getenv(key, ""):
+            _logger.warning("Optional secret %s not set — feature disabled", key)
+
 
 class Settings(BaseSettings):
     # ============================================================
     # PostgreSQL Database Configuration (NEW)
     # ============================================================
-    POSTGRES_USER: str = os.getenv("POSTGRES_USER", "chameleon")
-    POSTGRES_PASSWORD: str = os.getenv("POSTGRES_PASSWORD", "chameleon123")
+    POSTGRES_USER: str = os.getenv("POSTGRES_USER", "")
+    POSTGRES_PASSWORD: str = os.getenv("POSTGRES_PASSWORD", "")
     POSTGRES_HOST: str = os.getenv("POSTGRES_HOST", "localhost")
     POSTGRES_PORT: int = int(os.getenv("POSTGRES_PORT", "5432"))
     POSTGRES_DB: str = os.getenv("POSTGRES_DB", "chameleon_db")

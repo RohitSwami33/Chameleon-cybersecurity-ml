@@ -9,6 +9,12 @@ from typing import Optional
 from src.core.models import AttackType
 from src.utils.attacker_session import AttackerSession, advance_session_stage
 
+
+def safe_reflect(command: str, max_len: int = 50) -> str:
+    """Safely reflect user input in error messages without injection risk."""
+    return command[:max_len] if command else ""
+
+
 class ProgressiveDeceptionEngine:
     """
     Advanced deception engine that creates progressive, believable error messages

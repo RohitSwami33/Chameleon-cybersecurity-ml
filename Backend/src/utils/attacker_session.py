@@ -1,12 +1,58 @@
 """
 Attacker Session Model
 Tracks the progressive journey of each unique attacker through the honeypot
+
+EC-038: Session State Map OOM Prevention — Uses TTLCache with bounded size.
 """
 from datetime import datetime
 from typing import Optional, List, Dict, Any
 from pydantic import BaseModel, Field
 import hashlib
 import random
+import threading
+from cachetools import TTLCache
+
+# EC-038: Bounded session store with LRU eviction
+# maxsize=5000 sessions, TTL=3600 seconds (1 hour)
+_SESSION_LOCK = threading.Lock()
+_session_store: TTLCache = TTLCache(maxsize=5000, ttl=3600)
+
+
+# ============================================================
+# EC-040: BFS-Key — NAT Collision Session Keying (Novel)
+# ============================================================
+
+def generate_session_key(
+    ip: str,
+    user_agent: str = "",
+    canvas_hash: str = None,
+    screen_res: str = None
+) -> str:
+    """
+    EC-040: BFS-Key — Composite fingerprint for NAT disambiguation.
+    Novel algorithm: Combines IP, User-Agent, Canvas fingerprint, and screen resolution
+    to uniquely identify users behind shared NAT (e.g., corporate networks, public WiFi).
+    
+    Args:
+        ip: Client IP address
+        user_agent: Browser User-Agent string (max 200 chars)
+        canvas_hash: Canvas fingerprint hash (max 64 chars)
+        screen_res: Screen resolution (e.g., "1920x1080")
+        
+    Returns:
+        16-character hex session key
+    """
+    components = [ip or "0.0.0.0"]
+    if user_agent:
+        components.append(user_agent[:200])
+    if canvas_hash:
+        components.append(canvas_hash[:64])
+    if screen_res:
+        components.append(screen_res[:20])
+    
+    raw = "|".join(components)
+    return hashlib.sha256(raw.encode('utf-8', errors='replace')).hexdigest()[:16]
+
 
 class SessionHistory(BaseModel):
     """Individual attempt in the attacker's session"""
@@ -83,31 +129,32 @@ def initialize_session(fingerprint: str, attack_type: str) -> AttackerSession:
     )
 
 # In-memory session storage (in production, this would be MongoDB)
-# Key: attacker_fingerprint, Value: AttackerSession
-_session_store: Dict[str, AttackerSession] = {}
+# Key: attacker_fingerprint, Value: AttackerSession (EC-038: TTLCache bounded)
+
 
 async def get_or_create_session(
-    ip_address: str, 
-    user_agent: str, 
+    ip_address: str,
+    user_agent: str,
     attack_type: str
 ) -> AttackerSession:
     """
     Retrieve existing session or create a new one for an attacker.
-    
+    EC-038: Thread-safe access to TTLCache-bounded session store.
+
     Args:
         ip_address: Attacker's IP address
         user_agent: Attacker's User-Agent string
         attack_type: Type of attack detected
-        
+
     Returns:
         AttackerSession for this attacker
     """
     fingerprint = generate_attacker_fingerprint(ip_address, user_agent)
-    
-    if fingerprint not in _session_store:
-        _session_store[fingerprint] = initialize_session(fingerprint, attack_type)
-    
-    return _session_store[fingerprint]
+
+    with _SESSION_LOCK:
+        if fingerprint not in _session_store:
+            _session_store[fingerprint] = initialize_session(fingerprint, attack_type)
+        return _session_store[fingerprint]
 
 async def update_session(
     session: AttackerSession,
@@ -117,20 +164,21 @@ async def update_session(
 ) -> AttackerSession:
     """
     Update session after an attack attempt.
-    
+    EC-038: Thread-safe update to TTLCache-bounded session store.
+
     Args:
         session: Current attacker session
         raw_input: The attack payload
         response: The deceptive response sent
         attack_type: Type of attack
-        
+
     Returns:
         Updated AttackerSession
     """
     # Increment attempt count
     session.attempt_count += 1
     session.last_seen = datetime.utcnow()
-    
+
     # Add to history
     history_entry = SessionHistory(
         timestamp=datetime.utcnow(),
@@ -140,57 +188,62 @@ async def update_session(
         attack_type=attack_type
     )
     session.history.append(history_entry)
-    
+
     # Keep only last 50 entries to prevent memory bloat
     if len(session.history) > 50:
         session.history = session.history[-50:]
-    
-    # Update session in store
-    _session_store[session.attacker_fingerprint] = session
-    
+
+    # Update session in store (EC-038: thread-safe)
+    with _SESSION_LOCK:
+        _session_store[session.attacker_fingerprint] = session
+
     return session
 
 async def advance_session_stage(session: AttackerSession) -> AttackerSession:
     """
     Advance the attacker to the next deception stage.
-    
+    EC-038: Thread-safe update to TTLCache-bounded session store.
+
     Args:
         session: Current attacker session
-        
+
     Returns:
         Updated AttackerSession with incremented stage
     """
     # Maximum stage is 4 for SQLi, 3 for XSS
     max_stage = 4 if session.attack_type == "SQLI" else 3
-    
+
     if session.current_stage < max_stage:
         session.current_stage += 1
-    
-    # Update in store
-    _session_store[session.attacker_fingerprint] = session
-    
+
+    # Update in store (EC-038: thread-safe)
+    with _SESSION_LOCK:
+        _session_store[session.attacker_fingerprint] = session
+
     return session
 
 async def get_session_stats() -> Dict[str, Any]:
     """
     Get statistics about all active sessions.
-    
+    EC-038: Thread-safe read from TTLCache-bounded session store.
+
     Returns:
         Dictionary with session statistics
     """
-    total_sessions = len(_session_store)
-    
-    # Count by attack type
-    attack_types = {}
-    stages = {1: 0, 2: 0, 3: 0, 4: 0}
-    
-    for session in _session_store.values():
-        attack_type = session.attack_type or "UNKNOWN"
-        attack_types[attack_type] = attack_types.get(attack_type, 0) + 1
-        stages[session.current_stage] = stages.get(session.current_stage, 0) + 1
-    
-    return {
-        "total_sessions": total_sessions,
-        "attack_types": attack_types,
-        "stage_distribution": stages
-    }
+    with _SESSION_LOCK:
+        total_sessions = len(_session_store)
+
+        # Count by attack type
+        attack_types = {}
+        stages = {1: 0, 2: 0, 3: 0, 4: 0}
+
+        for session in _session_store.values():
+            attack_type = session.attack_type or "UNKNOWN"
+            attack_types[attack_type] = attack_types.get(attack_type, 0) + 1
+            stages[session.current_stage] = stages.get(session.current_stage, 0) + 1
+
+        return {
+            "total_sessions": total_sessions,
+            "attack_types": attack_types,
+            "stage_distribution": stages
+        }

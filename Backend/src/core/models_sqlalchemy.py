@@ -170,11 +170,14 @@ class HoneypotLog(Base):
         "Tenant",
         back_populates="logs"
     )
-    
+
     # Composite indexes for common queries
+    # EC-024: Added covering indexes for fast dashboard stats
     __table_args__ = (
         Index('ix_honeypot_logs_tenant_timestamp', 'tenant_id', 'timestamp'),
         Index('ix_honeypot_logs_ip_timestamp', 'attacker_ip', 'timestamp'),
+        Index('ix_honeypot_logs_timestamp_desc', 'timestamp', postgresql_using='timestamp DESC'),
+        Index('ix_honeypot_logs_attacker_ip', 'attacker_ip'),
     )
     
     def __repr__(self) -> str:
@@ -462,8 +465,8 @@ class DashboardStats(BaseModel):
 
 class LoginRequest(BaseModel):
     """Login request schema."""
-    username: str
-    password: str
+    username: str = Field(..., min_length=1, max_length=64, strip_whitespace=True)
+    password: str = Field(..., min_length=1, max_length=256)
 
 
 class LoginResponse(BaseModel):

@@ -1,6 +1,6 @@
 from enum import Enum
 from typing import Optional, List, Dict, Any
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 from datetime import datetime
 
 class AttackType(str, Enum):
@@ -64,8 +64,8 @@ class DashboardStats(BaseModel):
     merkle_root: Optional[str] = None
 
 class LoginRequest(BaseModel):
-    username: str
-    password: str
+    username: str = Field(..., min_length=1, max_length=64, strip_whitespace=True)
+    password: str = Field(..., min_length=1, max_length=256)
 
 class LoginResponse(BaseModel):
     access_token: str

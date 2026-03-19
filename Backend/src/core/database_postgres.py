@@ -264,6 +264,35 @@ async def get_default_tenant(session: AsyncSession) -> Optional[Tenant]:
     return result.scalar_one_or_none()
 
 
+async def deduct_tenant_credit(
+    session: AsyncSession,
+    tenant_id: str,
+    amount: int
+) -> bool:
+    """
+    Atomically deduct credit from tenant balance.
+    EC-021: Uses inline SQL arithmetic to prevent race conditions.
+    
+    Args:
+        session: Database session
+        tenant_id: Tenant UUID
+        amount: Amount to deduct
+        
+    Returns:
+        True if deduction succeeded, False if insufficient balance
+    """
+    from sqlalchemy import update
+    
+    result = await session.execute(
+        update(Tenant)
+        .where(Tenant.id == tenant_id)
+        .where(Tenant.credit_balance >= amount)
+        .values(credit_balance=Tenant.credit_balance - amount)
+    )
+    await session.commit()
+    return result.rowcount > 0
+
+
 # ============================================================
 # Repository Functions for HoneypotLog Operations
 # ============================================================
@@ -278,7 +307,7 @@ async def save_honeypot_log(
 ) -> HoneypotLog:
     """
     Save a honeypot log entry.
-    
+
     Args:
         session: Database session
         tenant_id: UUID of the tenant
@@ -286,13 +315,20 @@ async def save_honeypot_log(
         command_entered: Command entered by attacker
         response_sent: Deceptive response sent
         metadata: Optional metadata dict
-    
+
     Returns:
         Created HoneypotLog instance
     """
+    # EC-023: Validate IP to prevent 2MB string injection
+    from src.utils.utils import validate_ip
+    try:
+        safe_ip = validate_ip(attacker_ip)
+    except ValueError:
+        safe_ip = "0.0.0.0"
+    
     log = HoneypotLog(
         tenant_id=tenant_id,
-        attacker_ip=attacker_ip,
+        attacker_ip=safe_ip,
         command_entered=command_entered,
         response_sent=response_sent,
         log_metadata=metadata
@@ -419,35 +455,40 @@ async def update_reputation_score(
 ) -> ReputationScore:
     """
     Update reputation score for an IP address.
-    
+    EC-019: Uses safe_score/safe_delta to prevent NaN/Infinity poisoning.
+
     Args:
         session: Database session
         ip_address: IP address to update
         score_delta: Amount to change score (negative for malicious)
         attack_type: Optional attack type to record
         merkle_root: Optional Merkle root for integrity
-    
+
     Returns:
         Updated ReputationScore instance
     """
+    from src.utils.threat_score import safe_score, safe_delta
+    
     score = await get_or_create_reputation_score(session, ip_address)
-    
-    # Update score
-    score.reputation_score = max(0, min(100, score.reputation_score + score_delta))
+
+    # Update score with CVWV protection
+    safe_current = safe_score(float(score.reputation_score))
+    safe_change = safe_delta(float(score_delta))
+    score.reputation_score = int(safe_score(safe_current + safe_change))
     score.attack_count += 1
-    
+
     # Update attack type breakdown
     if attack_type:
         if not score.attack_types:
             score.attack_types = {}
         score.attack_types[attack_type] = score.attack_types.get(attack_type, 0) + 1
-    
+
     # Update Merkle root
     if merkle_root:
         score.merkle_root = merkle_root
-    
+
     score.last_updated = datetime.utcnow()
-    
+
     await session.flush()
     await session.refresh(score)
     return score
@@ -460,20 +501,25 @@ async def get_flagged_ips(
 ) -> List[ReputationScore]:
     """
     Get IPs with reputation score below threshold.
-    
+    EC-019: Uses COALESCE to handle NULL/NaN scores.
+
     Args:
         session: Database session
         threshold: Maximum reputation score to include
         limit: Maximum number of results
-    
+
     Returns:
         List of ReputationScore instances
     """
+    from sqlalchemy import text
     result = await session.execute(
-        select(ReputationScore)
-        .where(ReputationScore.reputation_score < threshold)
-        .order_by(ReputationScore.reputation_score.asc())
-        .limit(limit)
+        text("""
+            SELECT * FROM reputation_scores
+            WHERE COALESCE(NULLIF(reputation_score, 'NaN'::float), 50.0) < :threshold
+            ORDER BY reputation_score ASC
+            LIMIT :limit
+        """),
+        {"threshold": threshold, "limit": limit}
     )
     return result.scalars().all()
 
@@ -484,19 +530,24 @@ async def get_top_threats(
 ) -> List[ReputationScore]:
     """
     Get top threat IPs (lowest reputation scores).
-    
+    EC-019: Uses COALESCE to handle NULL/NaN scores.
+
     Args:
         session: Database session
         limit: Maximum number of results
-    
+
     Returns:
         List of ReputationScore instances
     """
+    from sqlalchemy import text
     result = await session.execute(
-        select(ReputationScore)
-        .where(ReputationScore.attack_count > 0)
-        .order_by(ReputationScore.reputation_score.asc())
-        .limit(limit)
+        text("""
+            SELECT * FROM reputation_scores
+            WHERE attack_count > 0
+            ORDER BY COALESCE(NULLIF(reputation_score, 'NaN'::float), 50.0) ASC
+            LIMIT :limit
+        """),
+        {"limit": limit}
     )
     return result.scalars().all()
 
@@ -594,26 +645,35 @@ async def get_dashboard_stats(session: AsyncSession) -> Dict[str, Any]:
 async def init_database() -> None:
     """
     Initialize database connection and create tables.
-    
+
     This should be called during application startup.
     """
     await db.connect()
     await db.create_tables()
-    
+
     # Create default tenant if not exists (for single-tenant mode)
+    # EC-018: Use ON CONFLICT to prevent race condition on concurrent startups
+    from sqlalchemy import text
+    import uuid
+    import secrets
+    
+    default_tenant_id = uuid.UUID('00000000-0000-0000-0000-000000000001')
+    default_api_key = secrets.token_hex(32)
+    
     async with get_db_context() as session:
-        existing = await get_default_tenant(session)
-        if not existing:
-            import secrets
-            default_api_key = secrets.token_hex(32)
-            await create_tenant(
-                session,
-                email="admin@chameleon.local",
-                api_key=default_api_key,
-                credit_balance=10000
-            )
-            logger.info(f"Created default tenant with API key: {default_api_key[:16]}...")
-            print(f"Created default tenant with API key: {default_api_key[:16]}...")
+        await session.execute(text("""
+            INSERT INTO tenants (id, email, api_key, credit_balance)
+            VALUES (:id, :email, :api_key, :credit_balance)
+            ON CONFLICT (id) DO NOTHING
+        """), {
+            "id": default_tenant_id,
+            "email": "admin@chameleon.local",
+            "api_key": default_api_key,
+            "credit_balance": 10000
+        })
+        await session.commit()
+        logger.info(f"Created default tenant with API key: {default_api_key[:16]}...")
+        print(f"Created default tenant with API key: {default_api_key[:16]}...")
 
 
 async def close_database() -> None:

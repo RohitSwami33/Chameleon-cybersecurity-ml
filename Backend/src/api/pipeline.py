@@ -6,6 +6,8 @@ Integrates:
   - Balanced MLX LLM for malicious classification
   - PSO for adaptive tarpitting
   - GA for dynamic deception schema evolution
+
+EC-025/026/028/031: Normalisation pipeline applied before classification.
 """
 
 import asyncio
@@ -13,6 +15,7 @@ import logging
 from src.ml_engine.bilstm_inference import bilstm_model
 from src.ml_engine.local_inference import mlx_model
 from src.ml_engine.ml_classifier import classifier
+from src.ml_engine.normaliser import normalise_pipeline
 
 logger = logging.getLogger(__name__)
 
@@ -28,9 +31,15 @@ async def evaluate_payload(payload: str) -> str:
     FALLBACK BEHAVIOR:
     - If MLX model is not loaded, trust heuristic classifier for high-confidence detections
     - Heuristic confidence > 0.80 is considered reliable for production use
+    
+    NOTE: Raw payload is logged BEFORE calling this function.
+    Normalisation is applied internally for classification only.
     """
+    # Apply normalisation pipeline before classification (EC-025/026/028/031)
+    normalised = normalise_pipeline(payload)
+    
     # Stage 1: Heuristic Classification (reliable for benign detection)
-    classification = classifier.classify(payload)
+    classification = classifier.classify(normalised)
     logger.info(f"Pipeline Stage 1 [Heuristic]: Type={classification.attack_type.value}, Malicious={classification.is_malicious}, Confidence={classification.confidence:.2%}")
 
     # If heuristic says benign, trust it (avoids any ML false positives)

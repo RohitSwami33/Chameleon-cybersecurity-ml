@@ -3,20 +3,68 @@ Database layer — reads from PostgreSQL via database_postgres.py.
 
 Every dashboard endpoint (get_attack_logs, get_dashboard_stats …) now queries
 the real `honeypot_logs` table instead of falling back to mock_database.
+
+EC-024: approximate_count() for fast dashboard stats without blocking COUNT(*).
 """
 
 import logging
+import json
 from typing import List, Optional, Dict, Any
 from datetime import datetime, timedelta
 from uuid import uuid4
 
-from sqlalchemy import select, func, desc, and_
+from sqlalchemy import select, func, desc, and_, text
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.core.database_postgres import db              # singleton Database instance
 from src.core.models_sqlalchemy import HoneypotLog
 
 logger = logging.getLogger(__name__)
+
+
+async def approximate_count(session: AsyncSession, table_name: str) -> int:
+    """
+    Get approximate row count using PostgreSQL statistics.
+    EC-024: Falls back to exact COUNT(*) if stats unavailable.
+    
+    Args:
+        session: Database session
+        table_name: Name of table to count
+        
+    Returns:
+        Approximate row count (fast) or exact count (slow fallback)
+    """
+    try:
+        result = await session.execute(
+            text("SELECT reltuples::bigint FROM pg_class WHERE relname = :t"),
+            {"t": table_name}
+        )
+        count = result.scalar()
+        if count is not None and count >= 0:
+            return int(count)
+    except Exception:
+        pass
+    
+    # Fallback to exact count
+    result = await session.execute(text(f"SELECT COUNT(*) FROM {table_name}"))
+    return int(result.scalar() or 0)
+
+
+def get_meta(raw) -> dict:
+    """
+    Safely parse JSONB metadata field.
+    EC-022: Handles both dict and JSON string storage formats.
+    """
+    if isinstance(raw, dict):
+        return raw
+    if raw is None:
+        return {}
+    try:
+        parsed = json.loads(raw)
+        return parsed if isinstance(parsed, dict) else {}
+    except (ValueError, TypeError):
+        return {}
+
 
 # ── helpers ──────────────────────────────────────────────────────────
 
@@ -25,7 +73,7 @@ def _row_to_dashboard_dict(row: HoneypotLog) -> dict:
     Convert a HoneypotLog ORM row → dict matching the AttackLog
     Pydantic model the frontend expects.
     """
-    meta = row.log_metadata or {}
+    meta = get_meta(row.log_metadata)
 
     classification = meta.get("classification")
     if not classification:
@@ -96,11 +144,18 @@ async def save_attack_log(log_data: dict) -> str:
             if not tenant_id:
                 tenant = await get_default_tenant(session)
                 tenant_id = str(tenant.id) if tenant else str(uuid4())
-                
+
+            # EC-023: Validate IP to prevent 2MB string injection
+            from src.utils.utils import validate_ip
+            try:
+                safe_ip = validate_ip(ip_addr)
+            except ValueError:
+                safe_ip = "0.0.0.0"
+
             row = HoneypotLog(
                 id=uuid4(),
                 tenant_id=tenant_id,
-                attacker_ip=ip_addr,
+                attacker_ip=safe_ip,
                 command_entered=log_data.get("raw_input", ""),
                 response_sent=log_data.get("deception_response", {}).get("message", ""),
                 timestamp=ts,
@@ -174,10 +229,8 @@ async def get_dashboard_stats() -> dict:
 
     try:
         async with db.session_factory() as session:
-            # Total rows
-            total = (await session.execute(
-                select(func.count()).select_from(HoneypotLog)
-            )).scalar() or 0
+            # Total rows (EC-024: use approximate count for speed)
+            total = await approximate_count(session, "honeypot_logs")
 
             # Fetch all rows (small dataset) to compute stats from metadata
             stmt = select(HoneypotLog).order_by(desc(HoneypotLog.timestamp))
@@ -192,7 +245,7 @@ async def get_dashboard_stats() -> dict:
             geo_counts: Dict[str, dict] = {}
 
             for row in rows:
-                meta = row.log_metadata or {}
+                meta = get_meta(row.log_metadata)
                 classification = meta.get("classification", {})
                 attack_type = classification.get("attack_type", "BENIGN")
                 is_mal = classification.get("is_malicious", False)

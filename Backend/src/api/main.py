@@ -15,6 +15,7 @@ from fastapi import (
     FastAPI, Request, BackgroundTasks, HTTPException,
     Query, Depends,
 )
+from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import StreamingResponse, JSONResponse, Response
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -26,11 +27,14 @@ from io import BytesIO
 import asyncio
 import random
 import logging
+import uuid
 
 from pydantic import BaseModel, Field
 
-from src.core.config import settings
+from src.core.config import settings, validate_secrets, redis_client, REDIS_AVAILABLE
 from src.utils.alert_manager import alert_manager
+from src.utils.utils import real_ip
+from src.utils.trap_rate_limiter import trap_limiter
 
 # ── ORM & Pydantic models ───────────────────────────────────────────────
 from src.core.models import (
@@ -41,7 +45,7 @@ from src.core.models import (
 from src.core.models_sqlalchemy import HoneypotLog, BeaconEvent
 
 # ── Auth ─────────────────────────────────────────────────────────────────
-from src.api.auth import create_access_token, verify_token, verify_credentials
+from src.api.auth import create_access_token, verify_token, verify_credentials, get_token_payload
 
 # ── Async PostgreSQL (new) ──────────────────────────────────────────────
 from src.core.database_postgres import (
@@ -279,7 +283,7 @@ async def handle_deception_layer(payload: str, request_data: dict, request: Requ
 
 class TrapExecuteRequest(BaseModel):
     """JSON payload for POST /trap/execute."""
-    command: str = Field(..., description="Raw shell command from the attacker")
+    command: str = Field(..., max_length=10_000, description="Raw shell command from the attacker")
     ip_address: Optional[str] = Field(None, description="Override attacker IP")
 
 
@@ -318,6 +322,19 @@ class ChatResponse(BaseModel):
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     """Start both database connections on startup; tear down on shutdown."""
+    validate_secrets()
+
+    # Start background task for trap rate limiter bucket cleanup
+    async def _cleanup_buckets():
+        while True:
+            await asyncio.sleep(3600)
+            trap_limiter.cleanup()
+    asyncio.create_task(_cleanup_buckets())
+
+    # Start background task for SWAD alert deduplication flush (EC-036)
+    from src.utils.alert_manager import swad_flush_loop
+    asyncio.create_task(swad_flush_loop())
+
     await connect_to_mongo()          # Legacy endpoints (no-op now)
     try:
         await db.connect()                # Async PostgreSQL for /trap/execute
@@ -338,6 +355,31 @@ app = FastAPI(
     version="2.0.0",
     lifespan=lifespan,
 )
+
+
+@app.middleware("http")
+async def body_size_guard(request: Request, call_next):
+    """Reject oversized payloads on /trap/execute endpoint."""
+    if request.url.path == "/trap/execute":
+        content_length = request.headers.get("content-length")
+        if content_length and int(content_length) > 10_240:
+            return JSONResponse({
+                "response": "bash: command not found",
+                "prediction_score": 0.0,
+                "is_malicious": False,
+                "hash": "0" * 64,
+                "session_id": "00000000-0000-0000-0000-000000000000"
+            }, status_code=200)
+    return await call_next(request)
+
+
+@app.exception_handler(RequestValidationError)
+async def validation_exception_handler(request, exc):
+    """Return generic 401 on validation errors for auth endpoints."""
+    if request.url.path in ("/api/auth/login", "/api/auth/token"):
+        return JSONResponse({"detail": "Invalid credentials"}, status_code=401)
+    return JSONResponse({"detail": "Validation error"}, status_code=422)
+
 
 # CORS — allow frontend origins
 app.add_middleware(
@@ -376,25 +418,35 @@ def get_client_ip(request: Request) -> str:
 
 
 async def fetch_geo_location(ip: str) -> Optional[GeoLocation]:
-    """Fetch geolocation for a public IP address."""
+    """Fetch geolocation for a public IP address with timeout and validation."""
     if ip in ("127.0.0.1", "localhost", "::1"):
         return None
     try:
-        async with httpx.AsyncClient() as client:
-            resp = await client.get(f"{settings.GEOIP_API_URL}{ip}")
-            if resp.status_code == 200:
-                data = resp.json()
-                if data.get("status") == "success":
-                    return GeoLocation(
-                        country=data.get("country"),
-                        region=data.get("regionName"),
-                        city=data.get("city"),
-                        latitude=data.get("lat"),
-                        longitude=data.get("lon"),
-                        isp=data.get("isp"),
-                    )
-    except Exception as e:
-        logger.warning("GeoIP lookup failed: %s", e)
+        async with httpx.AsyncClient(timeout=httpx.Timeout(3.0)) as client:
+            resp = await asyncio.wait_for(client.get(f"{settings.GEOIP_API_URL}{ip}"), timeout=3.0)
+            resp.raise_for_status()
+            ct = resp.headers.get("content-type", "")
+            if "json" not in ct and "javascript" not in ct:
+                logger.debug("Geo API non-JSON response for %s", ip)
+                return None
+            data = resp.json()
+            if not isinstance(data, dict):
+                return None
+            if data.get("status") == "success":
+                return GeoLocation(
+                    country=data.get("country"),
+                    region=data.get("regionName"),
+                    city=data.get("city"),
+                    latitude=data.get("lat"),
+                    longitude=data.get("lon"),
+                    isp=data.get("isp"),
+                )
+    except asyncio.TimeoutError:
+        logger.debug("Geo lookup timeout for %s", ip)
+    except (ValueError, KeyError):
+        logger.debug("Geo API parse error for %s", ip)
+    except Exception:
+        logger.debug("Geo lookup failed for %s", ip)
     return None
 
 
@@ -454,17 +506,47 @@ async def trap_execute(
     """
     Core honeypot pipeline (fully async, non-blocking):
 
-    1. Receive JSON  →  { "command": "...", "ip_address": "..." }
+    1. Receive JSON  →  { "command": "...", "ip_address": "...", "canvas_hash": "...", "screen_resolution": "..." }
     2. BiLSTM prediction  →  ChameleonPredictor.predict(command)
     3. Threshold gate:
-       • score > 0.85  →  DeepSeek LLM generates fake terminal output
-       • score ≤ 0.85  →  static 'command not found' (saves API $)
+       • score >= DECEPTION_THRESHOLD  →  DeepSeek LLM generates fake terminal output
+       • score < DECEPTION_THRESHOLD  →  static 'command not found' (saves API $)
     4. SHA-256 hash  →  calculate_hash(ip + command + response + score)
     5. PostgreSQL save  →  HoneypotLog with score + hash in JSONB metadata
     6. Return deceptive text to the attacker
+    
+    EC-040: Uses BFS-Key for NAT collision disambiguation.
     """
-    ip_address = payload.ip_address or get_client_ip(request)
+    # EC-040: BFS-Key session derivation for NAT disambiguation
+    from src.utils.attacker_session import generate_session_key
+    
+    ip_address = payload.ip_address or real_ip(request)
     command = payload.command
+    
+    # Extract BFS-Key components from request
+    ua = request.headers.get("user-agent", "")[:200]
+    
+    # Try to get canvas_hash and screen_resolution from request body
+    try:
+        body = await request.json()
+        canvas_hash = body.get("canvas_hash")
+        screen_res = body.get("screen_resolution")
+    except Exception:
+        canvas_hash = None
+        screen_res = None
+    
+    # Generate composite session key (EC-040: BFS-Key)
+    session_key = generate_session_key(ip_address, ua, canvas_hash, screen_res)
+
+    # ── Rate Limit Check (per-IP token bucket) ───────────────────────────
+    if not trap_limiter.consume(ip_address):
+        return JSONResponse({
+            "response": _static_fallback(command),
+            "prediction_score": 0.1,
+            "is_malicious": False,
+            "hash": "0" * 64,
+            "session_id": session_key
+        }, status_code=200)
 
     # ── Step 1: ML Prediction via Two-Stage Pipeline ─────────────────────
     verdict = await evaluate_payload(command)
@@ -472,9 +554,7 @@ async def trap_execute(
     prediction_score: float = 0.99 if is_malicious else 0.01
 
     # ── Step 2: Deceptive Response (threshold gate) ─────────────────────
-    DECEPTION_THRESHOLD = 0.85
-
-    if prediction_score > DECEPTION_THRESHOLD:
+    if prediction_score >= DECEPTION_THRESHOLD:
         # High-confidence attack → call DeepSeek LLM for realistic fake output
         try:
             response_text, honeytoken_session_id = await generate_deceptive_response(
@@ -526,7 +606,7 @@ async def trap_execute(
     # get_db dependency auto-commits on successful return
 
     # ── Step 4.5: Trigger Webhook Alert for Critical Attacks ────────────
-    if prediction_score > DECEPTION_THRESHOLD:
+    if prediction_score >= DECEPTION_THRESHOLD:
         background_tasks.add_task(
             alert_manager.trigger_critical_attack_alert,
             ip_address=ip_address,
@@ -579,7 +659,8 @@ async def beacon_tripwire(
     # ── Capture telemetry ────────────────────────────────────────────────
     source_ip = request.client.host if request.client else "unknown"
     forwarded_for = request.headers.get("X-Forwarded-For")
-    user_agent = request.headers.get("User-Agent", "unknown")
+    user_agent = request.headers.get("User-Agent", "unknown")[:512]
+    referer = request.headers.get("referer", "")[:512]
     
     # Capture all request headers for forensic analysis
     all_headers = dict(request.headers)
@@ -670,8 +751,11 @@ async def submit_trap(
         await asyncio.sleep(delay)
 
     # Classification (Local MLX model + old ML classifier for attack type mapping)
+    # EC-025/026/028/031: Apply normalisation pipeline before classification
+    from src.ml_engine.normaliser import normalise_pipeline
     verdict = await evaluate_payload(user_input.input_text)
-    classification = classifier.classify(user_input.input_text)
+    normalised_input = normalise_pipeline(user_input.input_text)
+    classification = classifier.classify(normalised_input)
     
     is_malicious = (verdict == "BLOCK")
     classification.is_malicious = is_malicious
@@ -733,7 +817,7 @@ async def login(
     request: Request,
     background_tasks: BackgroundTasks,
 ):
-    ip = get_client_ip(request)
+    ip = real_ip(request)
     user_agent = request.headers.get("User-Agent")
 
     # ── 0. Admin fast-path: verify credentials FIRST to avoid ML mis-flagging ──
@@ -747,9 +831,10 @@ async def login(
 
     # ── 1. Check if the username or password itself is a malicious payload ──
     combined_input = f"{login_data.username} {login_data.password}"
-    
-    # Run the regex heuristic classifier
-    classification = classifier.classify(combined_input)
+
+    # Run the regex heuristic classifier (EC-025/026/028/031: with normalisation)
+    normalised_input = normalise_pipeline(combined_input)
+    classification = classifier.classify(normalised_input)
     
     # The heuristic classifier naively flags strings containing "password" or "admin" 
     # as BRUTE_FORCE attacks. We must ignore this for the actual login endpoint, 
@@ -838,6 +923,20 @@ async def login(
     login_limiter.reset_attempts(ip)
     access_token = create_access_token(data={"sub": login_data.username})
     return LoginResponse(access_token=access_token)
+
+
+@app.post("/api/auth/logout")
+async def logout(payload: dict = Depends(get_token_payload)):
+    """Revoke JWT token by adding jti to Redis denylist."""
+    jti = payload.get("jti")
+    exp = payload.get("exp")
+    if jti and REDIS_AVAILABLE and redis_client:
+        try:
+            ttl = max(0, int(exp - datetime.utcnow().timestamp()))
+            await redis_client.setex(f"revoked_jti:{jti}", ttl, "1")
+        except Exception:
+            pass  # Redis error — fail open
+    return {"message": "Logged out"}
 
 
 # ========================================================================
@@ -933,7 +1032,9 @@ async def honeypot_log(request: Request, background_tasks: BackgroundTasks):
         username = event_data.get("username", "")
         if username:
             verdict = await evaluate_payload(username)
-            classification = classifier.classify(username)
+            # EC-025/026/028/031: Apply normalisation before classification
+            normalised_username = normalise_pipeline(username)
+            classification = classifier.classify(normalised_username)
             is_malicious = (verdict == "BLOCK")
             
             classification.is_malicious = is_malicious
