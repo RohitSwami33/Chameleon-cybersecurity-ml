@@ -21,7 +21,7 @@ BASE_DIR = Path("/Users/rohit/Documents/Sem-4_project/Chameleon-cybersecurity-ml
 FINAL_DATASET = BASE_DIR / 'data/raw/final_dataset.csv'
 OUTPUT_DIR = BASE_DIR / "Backend"
 MODEL_OUTPUT = OUTPUT_DIR / 'models/bilstm/chameleon_lstm_model.pt'
-TOKENIZER_OUTPUT = OUTPUT_DIR / "tokenizer.pkl"
+TOKENIZER_OUTPUT = OUTPUT_DIR / "models" / "tokenizers" / "tokenizer.pkl"
 
 MAX_WORDS = 5000
 MAX_SEQUENCE_LENGTH = 100
