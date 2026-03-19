@@ -35,7 +35,7 @@ const darkTheme = createTheme({
   palette: {
     mode: 'dark',
     primary: {
-      main: '#ff2a2a',
+      main: '#00d4ff',
       light: '#33ddff',
       dark: '#009abb',
     },
@@ -71,7 +71,7 @@ const darkTheme = createTheme({
       secondary: '#7a9bbf',
       disabled: '#3d5a7a',
     },
-    divider: 'rgba(255, 42, 42, 0.08)',
+    divider: 'rgba(0, 212, 255, 0.08)',
   },
   typography: {
     fontFamily: '"DM Sans", "Space Mono", sans-serif',
@@ -146,7 +146,7 @@ const darkTheme = createTheme({
           backgroundImage: 'none',
           backgroundColor: 'rgba(10, 15, 30, 0.85)',
           backdropFilter: 'blur(12px)',
-          border: '1px solid rgba(255, 42, 42, 0.08)',
+          border: '1px solid rgba(0, 212, 255, 0.08)',
         },
       },
     },
@@ -155,7 +155,7 @@ const darkTheme = createTheme({
         root: {
           backgroundImage: 'none',
           backgroundColor: '#0a0f1e',
-          border: '1px solid rgba(255, 42, 42, 0.08)',
+          border: '1px solid rgba(0, 212, 255, 0.08)',
         },
       },
     },
@@ -170,7 +170,7 @@ const darkTheme = createTheme({
     MuiTableCell: {
       styleOverrides: {
         root: {
-          borderBottom: '1px solid rgba(255, 42, 42, 0.06)',
+          borderBottom: '1px solid rgba(0, 212, 255, 0.06)',
         },
         head: {
           fontWeight: 700,
@@ -185,13 +185,13 @@ const darkTheme = createTheme({
         root: {
           '& .MuiOutlinedInput-root': {
             '& fieldset': {
-              borderColor: 'rgba(255, 42, 42, 0.15)',
+              borderColor: 'rgba(0, 212, 255, 0.15)',
             },
             '&:hover fieldset': {
-              borderColor: 'rgba(255, 42, 42, 0.3)',
+              borderColor: 'rgba(0, 212, 255, 0.3)',
             },
             '&.Mui-focused fieldset': {
-              borderColor: '#ff2a2a',
+              borderColor: '#00d4ff',
             },
           },
         },
@@ -201,10 +201,10 @@ const darkTheme = createTheme({
       styleOverrides: {
         switchBase: {
           '&.Mui-checked': {
-            color: '#ff2a2a',
+            color: '#00d4ff',
           },
           '&.Mui-checked + .MuiSwitch-track': {
-            backgroundColor: '#ff2a2a',
+            backgroundColor: '#00d4ff',
           },
         },
       },
@@ -213,7 +213,7 @@ const darkTheme = createTheme({
       styleOverrides: {
         paper: {
           backgroundColor: '#0a0f1e',
-          border: '1px solid rgba(255, 42, 42, 0.15)',
+          border: '1px solid rgba(0, 212, 255, 0.15)',
           backgroundImage: 'none',
         },
       },
@@ -222,7 +222,7 @@ const darkTheme = createTheme({
       styleOverrides: {
         tooltip: {
           backgroundColor: '#0f1628',
-          border: '1px solid rgba(255, 42, 42, 0.15)',
+          border: '1px solid rgba(0, 212, 255, 0.15)',
           fontSize: '0.75rem',
           fontFamily: '"IBM Plex Mono", monospace',
         },

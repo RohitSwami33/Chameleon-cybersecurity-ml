@@ -28,7 +28,7 @@ const AttackOverlayHUD = ({ attacks = [] }) => {
                         }}
                     />
                 </Box>
-                <Typography variant="h6" sx={{ color: '#ff2a2a', fontFamily: '"IBM Plex Mono", monospace', fontWeight: 600, textShadow: '0 0 10px rgba(255, 42, 42, 0.5)' }}>
+                <Typography variant="h6" sx={{ color: '#00d4ff', fontFamily: '"IBM Plex Mono", monospace', fontWeight: 600, textShadow: '0 0 10px rgba(0, 212, 255, 0.5)' }}>
                     {activeThreats} ACTIVE THREATS
                 </Typography>
             </Box>
@@ -42,7 +42,7 @@ const AttackOverlayHUD = ({ attacks = [] }) => {
                 p: 2,
                 backgroundColor: 'rgba(10, 15, 30, 0.6)',
                 backdropFilter: 'blur(12px)',
-                border: '1px solid rgba(255, 42, 42, 0.15)',
+                border: '1px solid rgba(0, 212, 255, 0.15)',
                 pointerEvents: 'auto'
             }}>
                 <Typography variant="overline" sx={{ color: '#7a9bbf', fontWeight: 700, display: 'block', mb: 1 }}>Recent Origins</Typography>
@@ -96,7 +96,7 @@ const AttackOverlayHUD = ({ attacks = [] }) => {
                     { label: 'XSS', color: '#ffa500' },
                     { label: 'Brute Force', color: '#ffea00' },
                     { label: 'Benign', color: '#00e676' },
-                    { label: 'Server SF', color: '#ff2a2a' }
+                    { label: 'Server SF', color: '#00d4ff' }
                 ].map(type => (
                     <Box key={type.label} sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                         <Box sx={{ width: 8, height: 8, borderRadius: '50%', backgroundColor: type.color, boxShadow: `0 0 8px ${type.color}` }} />

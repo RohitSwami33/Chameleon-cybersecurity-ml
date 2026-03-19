@@ -106,7 +106,7 @@ const LoginShield3D = () => {
         canvas.width = 128;
         canvas.height = 128;
         const ctx = canvas.getContext('2d');
-        ctx.fillStyle = '#ff2a2a';
+        ctx.fillStyle = '#00d4ff';
         ctx.font = 'bold 80px "IBM Plex Mono", monospace';
         ctx.textAlign = 'center';
         ctx.textBaseline = 'middle';
@@ -129,8 +129,8 @@ const LoginShield3D = () => {
         const flareCtx = flareCanvas.getContext('2d');
         const grad = flareCtx.createRadialGradient(64, 64, 0, 64, 64, 64);
         grad.addColorStop(0, 'rgba(255, 255, 255, 1)');
-        grad.addColorStop(0.2, 'rgba(255, 42, 42, 0.8)');
-        grad.addColorStop(1, 'rgba(255, 42, 42, 0)');
+        grad.addColorStop(0.2, 'rgba(0, 212, 255, 0.8)');
+        grad.addColorStop(1, 'rgba(0, 212, 255, 0)');
         flareCtx.fillStyle = grad;
         flareCtx.fillRect(0, 0, 128, 128);
 

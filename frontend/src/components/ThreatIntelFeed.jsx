@@ -76,7 +76,7 @@ const ThreatIntelFeed = () => {
     if (loading) {
         return (
             <Paper sx={{ p: 3, height: '100%', display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
-                <CircularProgress size={24} sx={{ color: '#ff2a2a' }} />
+                <CircularProgress size={24} sx={{ color: '#00d4ff' }} />
             </Paper>
         );
     }
@@ -90,7 +90,7 @@ const ThreatIntelFeed = () => {
                 flexDirection: 'column',
                 backgroundColor: 'rgba(10, 15, 30, 0.85)',
                 backdropFilter: 'blur(12px)',
-                border: '1px solid rgba(255, 42, 42, 0.08)',
+                border: '1px solid rgba(0, 212, 255, 0.08)',
                 borderRadius: '12px',
             }}>
             {/* Top Container grouping Stats & Radar */}
@@ -99,7 +99,7 @@ const ThreatIntelFeed = () => {
                     {/* Header */}
                     <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 2 }}>
                         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                            <SecurityIcon sx={{ color: '#ff2a2a' }} />
+                            <SecurityIcon sx={{ color: '#00d4ff' }} />
                             <Typography variant="h6" component="h2" sx={{ fontWeight: 600, fontSize: '0.95rem', color: '#e8f4fd' }}>
                                 Threat Intelligence Feed
                             </Typography>
@@ -131,9 +131,9 @@ const ThreatIntelFeed = () => {
                     {statistics && (
                         <Box sx={{
                             mb: 2, p: 2,
-                            backgroundColor: 'rgba(255, 42, 42, 0.04)',
+                            backgroundColor: 'rgba(0, 212, 255, 0.04)',
                             borderRadius: '8px',
-                            border: '1px solid rgba(255, 42, 42, 0.1)',
+                            border: '1px solid rgba(0, 212, 255, 0.1)',
                         }}>
                             <Typography variant="caption" sx={{ color: '#3d5a7a', display: 'block', mb: 1, textTransform: 'uppercase', letterSpacing: 1, fontWeight: 600, fontSize: '0.65rem' }}>
                                 CONSORTIUM STATISTICS
@@ -160,7 +160,7 @@ const ThreatIntelFeed = () => {
                 </Box>
             </Box>
 
-            <Divider sx={{ mb: 2, borderColor: 'rgba(255, 42, 42, 0.06)' }} />
+            <Divider sx={{ mb: 2, borderColor: 'rgba(0, 212, 255, 0.06)' }} />
 
             {/* Feed */}
             <Box sx={{ flexGrow: 1, overflowY: 'auto', maxHeight: 500 }}>
@@ -182,13 +182,13 @@ const ThreatIntelFeed = () => {
                                     borderRadius: '8px',
                                     backgroundColor: 'rgba(10, 15, 30, 0.5)',
                                     borderLeft: `3px solid ${getSeverityColor(report.severity)}`,
-                                    border: '1px solid rgba(255, 42, 42, 0.04)',
+                                    border: '1px solid rgba(0, 212, 255, 0.04)',
                                     borderLeftWidth: 3,
                                     borderLeftColor: getSeverityColor(report.severity),
                                     transition: 'all 0.2s',
                                     '&:hover': {
-                                        backgroundColor: 'rgba(255, 42, 42, 0.03)',
-                                        borderColor: 'rgba(255, 42, 42, 0.12)',
+                                        backgroundColor: 'rgba(0, 212, 255, 0.03)',
+                                        borderColor: 'rgba(0, 212, 255, 0.12)',
                                         borderLeftColor: getSeverityColor(report.severity),
                                     },
                                 }}>
@@ -215,7 +215,7 @@ const ThreatIntelFeed = () => {
                                     {/* Pattern Hash */}
                                     <Box sx={{ mb: 1 }}>
                                         <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, mb: 0.5 }}>
-                                            <FingerprintIcon sx={{ fontSize: 13, color: '#ff2a2a' }} />
+                                            <FingerprintIcon sx={{ fontSize: 13, color: '#00d4ff' }} />
                                             <Typography variant="caption" sx={{ color: '#3d5a7a', fontSize: '0.65rem' }}>Pattern Hash</Typography>
                                         </Box>
                                         <Typography variant="body2" sx={{
@@ -232,7 +232,7 @@ const ThreatIntelFeed = () => {
 
                                     {/* Signature */}
                                     <Typography variant="caption" sx={{ color: '#3d5a7a', fontSize: '0.65rem' }}>
-                                        Signature: <span style={{ fontFamily: '"IBM Plex Mono", monospace', color: '#ff2a2a' }}>{report.signature}</span>
+                                        Signature: <span style={{ fontFamily: '"IBM Plex Mono", monospace', color: '#00d4ff' }}>{report.signature}</span>
                                     </Typography>
 
                                     {/* Metadata */}
@@ -256,7 +256,7 @@ const ThreatIntelFeed = () => {
                 )}
             </Box>
 
-            <Box sx={{ mt: 2, pt: 2, borderTop: '1px solid rgba(255, 42, 42, 0.06)' }}>
+            <Box sx={{ mt: 2, pt: 2, borderTop: '1px solid rgba(0, 212, 255, 0.06)' }}>
                 <Typography variant="caption" sx={{ color: '#3d5a7a', fontSize: '0.7rem' }}>
                     Showing {feed.length} most recent threat intelligence reports
                 </Typography>

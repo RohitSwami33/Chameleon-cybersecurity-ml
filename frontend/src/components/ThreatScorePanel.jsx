@@ -15,15 +15,15 @@ const getReputationLevel = (score) => {
     if (score >= 80) return { label: 'CRITICAL', color: '#ff3d71' };
     if (score >= 60) return { label: 'MALICIOUS', color: '#ff6584' };
     if (score >= 40) return { label: 'SUSPICIOUS', color: '#ffab00' };
-    if (score >= 20) return { label: 'LOW RISK', color: '#ff2a2a' };
+    if (score >= 20) return { label: 'LOW RISK', color: '#00d4ff' };
     return { label: 'CLEAN', color: '#00e676' };
 };
 
 const getBarGradient = (score) => {
     if (score >= 80) return 'linear-gradient(90deg, #ff3d71, #ff6584)';
     if (score >= 60) return 'linear-gradient(90deg, #ff6584, #ffab00)';
-    if (score >= 40) return 'linear-gradient(90deg, #ffab00, #ff2a2a)';
-    return 'linear-gradient(90deg, #00e676, #ff2a2a)';
+    if (score >= 40) return 'linear-gradient(90deg, #ffab00, #00d4ff)';
+    return 'linear-gradient(90deg, #00e676, #00d4ff)';
 };
 
 const ThreatScorePanel = ({ topThreats, flaggedCount }) => {
@@ -60,7 +60,7 @@ const ThreatScorePanel = ({ topThreats, flaggedCount }) => {
                 flexDirection: 'column',
                 backgroundColor: 'rgba(10, 15, 30, 0.85)',
                 backdropFilter: 'blur(12px)',
-                border: '1px solid rgba(255, 42, 42, 0.08)',
+                border: '1px solid rgba(0, 212, 255, 0.08)',
                 borderRadius: '12px',
             }}
         >
@@ -94,7 +94,7 @@ const ThreatScorePanel = ({ topThreats, flaggedCount }) => {
 
             {loading ? (
                 <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', flexGrow: 1 }}>
-                    <CircularProgress size={24} sx={{ color: '#ff2a2a' }} />
+                    <CircularProgress size={24} sx={{ color: '#00d4ff' }} />
                 </Box>
             ) : displayData.length === 0 ? (
                 <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', flexGrow: 1 }}>
@@ -122,7 +122,7 @@ const ThreatScorePanel = ({ topThreats, flaggedCount }) => {
                                         p: 1.2,
                                         borderRadius: '8px',
                                         backgroundColor: 'rgba(10, 15, 30, 0.5)',
-                                        border: '1px solid rgba(255, 42, 42, 0.04)',
+                                        border: '1px solid rgba(0, 212, 255, 0.04)',
                                     }}
                                 >
                                     <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 0.8 }}>
@@ -151,7 +151,7 @@ const ThreatScorePanel = ({ topThreats, flaggedCount }) => {
                                         />
                                     </Box>
                                     <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                                        <Box sx={{ flexGrow: 1, position: 'relative', height: 4, borderRadius: 2, overflow: 'hidden', backgroundColor: 'rgba(255, 42, 42, 0.06)' }}>
+                                        <Box sx={{ flexGrow: 1, position: 'relative', height: 4, borderRadius: 2, overflow: 'hidden', backgroundColor: 'rgba(0, 212, 255, 0.06)' }}>
                                             <Box sx={{
                                                 position: 'absolute',
                                                 top: 0,

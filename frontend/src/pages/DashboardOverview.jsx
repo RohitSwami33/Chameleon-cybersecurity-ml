@@ -122,7 +122,7 @@ const DashboardOverview = () => {
     if (loading && !stats.total_attempts) {
         return (
             <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '100vh', backgroundColor: '#050810' }}>
-                <CircularProgress sx={{ color: '#ff2a2a' }} />
+                <CircularProgress sx={{ color: '#00d4ff' }} />
             </Box>
         );
     }

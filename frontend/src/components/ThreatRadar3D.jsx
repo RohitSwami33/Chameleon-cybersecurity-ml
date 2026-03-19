@@ -15,7 +15,7 @@ const ThreatRadar3D = ({ feed = [] }) => {
 
         if (itemsToPing.length > 0) {
             const addedPings = itemsToPing.map((threat, idx) => {
-                let color = '#ff2a2a';
+                let color = '#00d4ff';
                 if (threat.attack_type === 'SQLI' || threat.severity === 'CRITICAL') color = '#ff3d71';
                 else if (threat.attack_type === 'XSS' || threat.severity === 'MEDIUM') color = '#ffab00';
                 else if (threat.severity === 'HIGH') color = '#ff6584';
@@ -49,7 +49,7 @@ const ThreatRadar3D = ({ feed = [] }) => {
         if (feed.length === 0) return;
         const interval = setInterval(() => {
             const threat = feed[Math.floor(Math.random() * feed.length)];
-            let color = '#ff2a2a'; // default dim
+            let color = '#00d4ff'; // default dim
             if (threat.attack_type === 'SQLI' || threat.severity === 'CRITICAL') color = '#ff3d71';
             else if (threat.attack_type === 'XSS' || threat.severity === 'MEDIUM') color = '#ffab00';
             else if (threat.severity === 'HIGH') color = '#ff6584'; // bright
@@ -91,8 +91,8 @@ const ThreatRadar3D = ({ feed = [] }) => {
             <Box sx={{
                 width: 160, height: 160,
                 borderRadius: '50%',
-                background: 'radial-gradient(circle, rgba(255, 42, 42,0.05) 0%, transparent 70%)',
-                border: '1px solid rgba(255, 42, 42,0.2)',
+                background: 'radial-gradient(circle, rgba(0, 212, 255,0.05) 0%, transparent 70%)',
+                border: '1px solid rgba(0, 212, 255,0.2)',
                 position: 'relative',
                 overflow: 'hidden'
             }}>
@@ -101,7 +101,7 @@ const ThreatRadar3D = ({ feed = [] }) => {
                     width: '50%', height: '50%',
                     top: '50%', left: '50%',
                     transformOrigin: '0% 0%',
-                    background: 'conic-gradient(from 0deg, transparent 300deg, rgba(255, 42, 42,0.4) 360deg)',
+                    background: 'conic-gradient(from 0deg, transparent 300deg, rgba(0, 212, 255,0.4) 360deg)',
                     borderRadius: '0 100% 0 0',
                     animation: 'radarSweep 3s linear infinite'
                 }} />
@@ -113,7 +113,7 @@ const ThreatRadar3D = ({ feed = [] }) => {
                         top: `${50 - pct / 2}%`, left: `${50 - pct / 2}%`,
                         width: `${pct}%`, height: `${pct}%`,
                         borderRadius: '50%',
-                        border: '1px dashed rgba(255, 42, 42,0.15)',
+                        border: '1px dashed rgba(0, 212, 255,0.15)',
                         pointerEvents: 'none'
                     }} />
                 ))}
@@ -122,7 +122,7 @@ const ThreatRadar3D = ({ feed = [] }) => {
                 <Box sx={{
                     position: 'absolute', top: '50%', left: '50%',
                     transform: 'translate(-50%, -50%)',
-                    width: 4, height: 4, backgroundColor: '#ff2a2a',
+                    width: 4, height: 4, backgroundColor: '#00d4ff',
                     borderRadius: '50%', zIndex: 10
                 }} />
 
@@ -134,8 +134,8 @@ const ThreatRadar3D = ({ feed = [] }) => {
                 }}>
                     <Typography sx={{
                         fontFamily: '"Orbitron", sans-serif', fontWeight: 700,
-                        color: '#ff2a2a', fontSize: '0.9rem',
-                        textShadow: '0 0 8px rgba(255, 42, 42,0.8)'
+                        color: '#00d4ff', fontSize: '0.9rem',
+                        textShadow: '0 0 8px rgba(0, 212, 255,0.8)'
                     }}>
                         {feed.length}
                     </Typography>

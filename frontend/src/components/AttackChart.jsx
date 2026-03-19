@@ -50,7 +50,7 @@ const AttackChart = ({ attackDistribution }) => {
                 <Box
                     sx={{
                         backgroundColor: 'rgba(10, 15, 30, 0.95)',
-                        border: '1px solid rgba(255, 42, 42, 0.2)',
+                        border: '1px solid rgba(0, 212, 255, 0.2)',
                         p: 1.5,
                         borderRadius: '8px',
                         backdropFilter: 'blur(8px)',
@@ -70,7 +70,7 @@ const AttackChart = ({ attackDistribution }) => {
 
     return (
         <TiltCard
-            glowColor="#ff2a2a"
+            glowColor="#00d4ff"
             sx={{
                 p: '20px',
                 height: '100%',
@@ -78,7 +78,7 @@ const AttackChart = ({ attackDistribution }) => {
                 flexDirection: 'column',
                 backgroundColor: 'rgba(10, 15, 30, 0.85)',
                 backdropFilter: 'blur(12px)',
-                border: '1px solid rgba(255, 42, 42, 0.08)',
+                border: '1px solid rgba(0, 212, 255, 0.08)',
                 borderRadius: '12px',
             }}
         >
@@ -93,12 +93,12 @@ const AttackChart = ({ attackDistribution }) => {
                     size="small"
                     sx={{
                         '& .MuiToggleButton-root': {
-                            border: '1px solid rgba(255, 42, 42, 0.15)',
+                            border: '1px solid rgba(0, 212, 255, 0.15)',
                             color: '#7a9bbf',
                             padding: '4px 8px',
                             '&.Mui-selected': {
-                                backgroundColor: 'rgba(255, 42, 42, 0.12)',
-                                color: '#ff2a2a',
+                                backgroundColor: 'rgba(0, 212, 255, 0.12)',
+                                color: '#00d4ff',
                             },
                         },
                     }}
@@ -141,10 +141,10 @@ const AttackChart = ({ attackDistribution }) => {
                         </PieChart>
                     ) : (
                         <BarChart data={data} layout="vertical" margin={{ top: 5, right: 20, left: 40, bottom: 5 }}>
-                            <CartesianGrid strokeDasharray="3 3" stroke="rgba(255, 42, 42, 0.06)" horizontal={false} />
+                            <CartesianGrid strokeDasharray="3 3" stroke="rgba(0, 212, 255, 0.06)" horizontal={false} />
                             <XAxis type="number" stroke="#3d5a7a" tick={{ fontSize: 11 }} />
                             <YAxis dataKey="name" type="category" stroke="#3d5a7a" width={80} tick={{ fontSize: 11, fill: '#7a9bbf' }} />
-                            <Tooltip content={<CustomTooltip />} cursor={{ fill: 'rgba(255, 42, 42, 0.04)' }} />
+                            <Tooltip content={<CustomTooltip />} cursor={{ fill: 'rgba(0, 212, 255, 0.04)' }} />
                             <Bar dataKey="value" radius={[0, 6, 6, 0]} barSize={18}>
                                 {data.map((entry, index) => (
                                     <Cell key={`cell-${index}`} fill={entry.color} />

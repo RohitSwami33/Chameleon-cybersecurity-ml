@@ -66,9 +66,9 @@ const MerkleTree3D = ({ lastUpdated, recordsCount = 0 }) => {
         ];
 
         // Textures
-        const haloRootTex = createHaloTexture('rgba(255, 42, 42, 1)');
+        const haloRootTex = createHaloTexture('rgba(0, 212, 255, 1)');
         const haloBranchTex = createHaloTexture('rgba(124, 77, 255, 1)');
-        const haloLeafTex = createHaloTexture('rgba(255, 42, 42, 1)');
+        const haloLeafTex = createHaloTexture('rgba(0, 212, 255, 1)');
 
         nodeDefs.forEach(def => {
             const isRoot = def.type === 'root';
@@ -447,14 +447,14 @@ const MerkleTree3D = ({ lastUpdated, recordsCount = 0 }) => {
                         zIndex: 10,
                         backgroundColor: 'rgba(8, 14, 28, 0.85)',
                         backdropFilter: 'blur(8px)',
-                        border: '1px solid #ff2a2a',
+                        border: '1px solid #00d4ff',
                         borderRadius: '6px',
                         p: 1.5,
                         minWidth: 180,
                         transform: 'translate(0, 0)',
                     }}
                 >
-                    <Typography sx={{ color: '#ff2a2a', fontSize: '11px', fontFamily: '"IBM Plex Mono", monospace', fontWeight: 700, mb: 1 }}>
+                    <Typography sx={{ color: '#00d4ff', fontSize: '11px', fontFamily: '"IBM Plex Mono", monospace', fontWeight: 700, mb: 1 }}>
                         🔵 {tooltipLabel}
                     </Typography>
                     <Typography sx={{ color: '#e8f4fd', fontSize: '11px', fontFamily: '"IBM Plex Mono", monospace' }}>

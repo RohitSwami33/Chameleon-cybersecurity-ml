@@ -108,7 +108,7 @@ const AIChatbot = () => {
       height: '100%',
       display: 'flex',
       flexDirection: 'column',
-      background: 'linear-gradient(135deg, rgba(124, 77, 255, 0.05) 0%, rgba(255, 42, 42, 0.03) 100%)',
+      background: 'linear-gradient(135deg, rgba(124, 77, 255, 0.05) 0%, rgba(0, 212, 255, 0.03) 100%)',
       backdropFilter: 'blur(8px)',
       borderRadius: '12px',
       border: '1px solid rgba(124, 77, 255, 0.10)',
@@ -117,7 +117,7 @@ const AIChatbot = () => {
       {/* Header */}
       <Box sx={{
         p: 2,
-        background: 'linear-gradient(135deg, rgba(124, 77, 255, 0.2), rgba(255, 42, 42, 0.1))',
+        background: 'linear-gradient(135deg, rgba(124, 77, 255, 0.2), rgba(0, 212, 255, 0.1))',
         backdropFilter: 'blur(10px)',
         borderBottom: '1px solid rgba(124, 77, 255, 0.15)',
         display: 'flex',
@@ -208,10 +208,10 @@ const AIChatbot = () => {
                 flexDirection: message.role === 'user' ? 'row-reverse' : 'row',
               }}>
                 <Avatar sx={{
-                  bgcolor: message.role === 'user' ? 'rgba(255, 42, 42, 0.2)' : 'rgba(124, 77, 255, 0.2)',
-                  color: message.role === 'user' ? '#ff2a2a' : '#7c4dff',
+                  bgcolor: message.role === 'user' ? 'rgba(0, 212, 255, 0.2)' : 'rgba(124, 77, 255, 0.2)',
+                  color: message.role === 'user' ? '#00d4ff' : '#7c4dff',
                   width: 28, height: 28,
-                  border: `1px solid ${message.role === 'user' ? 'rgba(255, 42, 42, 0.3)' : 'rgba(124, 77, 255, 0.3)'}`,
+                  border: `1px solid ${message.role === 'user' ? 'rgba(0, 212, 255, 0.3)' : 'rgba(124, 77, 255, 0.3)'}`,
                 }}>
                   {message.role === 'user' ? <PersonIcon sx={{ fontSize: 16 }} /> : <BotIcon sx={{ fontSize: 16 }} />}
                 </Avatar>
@@ -219,11 +219,11 @@ const AIChatbot = () => {
                   <Paper elevation={0} sx={{
                     p: 1.5,
                     bgcolor: message.role === 'user'
-                      ? 'rgba(255, 42, 42, 0.08)'
+                      ? 'rgba(0, 212, 255, 0.08)'
                       : message.error
                         ? 'rgba(255, 61, 113, 0.1)'
                         : 'rgba(10, 15, 30, 0.2)',
-                    border: `1px solid ${message.role === 'user' ? 'rgba(255, 42, 42, 0.15)' : message.error ? 'rgba(255, 61, 113, 0.2)' : 'rgba(255, 42, 42, 0.06)'}`,
+                    border: `1px solid ${message.role === 'user' ? 'rgba(0, 212, 255, 0.15)' : message.error ? 'rgba(255, 61, 113, 0.2)' : 'rgba(0, 212, 255, 0.06)'}`,
                     borderRadius: '10px',
                     backdropFilter: 'blur(4px)',
                   }}>
@@ -239,12 +239,12 @@ const AIChatbot = () => {
 
                     {message.search_results?.length > 0 && (
                       <Box sx={{ mt: 1.5 }}>
-                        <Divider sx={{ mb: 1, borderColor: 'rgba(255, 42, 42, 0.08)' }} />
+                        <Divider sx={{ mb: 1, borderColor: 'rgba(0, 212, 255, 0.08)' }} />
                         <Typography variant="caption" sx={{ fontWeight: 600, color: '#7c4dff', fontSize: '0.7rem' }}>Sources:</Typography>
                         {message.search_results.slice(0, 3).map((result, i) => (
                           <Box key={i} sx={{ mt: 0.5 }}>
                             <Link href={result.url} target="_blank" rel="noopener noreferrer"
-                              sx={{ fontSize: '0.7rem', color: '#ff2a2a', textDecoration: 'none', '&:hover': { textDecoration: 'underline' } }}>
+                              sx={{ fontSize: '0.7rem', color: '#00d4ff', textDecoration: 'none', '&:hover': { textDecoration: 'underline' } }}>
                               {result.title}
                             </Link>
                           </Box>
@@ -258,7 +258,7 @@ const AIChatbot = () => {
                       </Typography>
                       {message.role === 'bot' && !message.error && (
                         <Tooltip title="Copy">
-                          <IconButton size="small" onClick={() => copyToClipboard(message.content)} sx={{ color: '#3d5a7a', p: 0.3, '&:hover': { color: '#ff2a2a' } }}>
+                          <IconButton size="small" onClick={() => copyToClipboard(message.content)} sx={{ color: '#3d5a7a', p: 0.3, '&:hover': { color: '#00d4ff' } }}>
                             <CopyIcon sx={{ fontSize: 12 }} />
                           </IconButton>
                         </Tooltip>
@@ -278,7 +278,7 @@ const AIChatbot = () => {
               <Avatar sx={{ bgcolor: 'rgba(124, 77, 255, 0.2)', color: '#7c4dff', width: 28, height: 28, border: '1px solid rgba(124, 77, 255, 0.3)' }}>
                 <BotIcon sx={{ fontSize: 16 }} />
               </Avatar>
-              <Paper elevation={0} sx={{ p: 1.5, bgcolor: 'rgba(10, 15, 30, 0.2)', border: '1px solid rgba(255, 42, 42, 0.06)', borderRadius: '10px', display: 'flex', alignItems: 'center', gap: 0.8, backdropFilter: 'blur(4px)' }}>
+              <Paper elevation={0} sx={{ p: 1.5, bgcolor: 'rgba(10, 15, 30, 0.2)', border: '1px solid rgba(0, 212, 255, 0.06)', borderRadius: '10px', display: 'flex', alignItems: 'center', gap: 0.8, backdropFilter: 'blur(4px)' }}>
                 {[0, 1, 2].map(i => (
                   <Box key={i} sx={{
                     width: 6, height: 6, borderRadius: '50%',
@@ -297,7 +297,7 @@ const AIChatbot = () => {
       {/* Input */}
       <Box sx={{
         p: 2,
-        background: 'linear-gradient(135deg, rgba(124, 77, 255, 0.08), rgba(255, 42, 42, 0.04))',
+        background: 'linear-gradient(135deg, rgba(124, 77, 255, 0.08), rgba(0, 212, 255, 0.04))',
         borderTop: '1px solid rgba(124, 77, 255, 0.1)',
       }}>
         <Box sx={{ display: 'flex', gap: 1 }}>

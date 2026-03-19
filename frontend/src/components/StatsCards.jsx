@@ -120,7 +120,7 @@ const StatCard = ({ title, value, icon, color, subtext, tooltip, delay = 0 }) =>
                                     fontSize: '0.65rem',
                                     color: '#3d5a7a',
                                     cursor: 'help',
-                                    border: '1px solid rgba(255, 42, 42, 0.1)',
+                                    border: '1px solid rgba(0, 212, 255, 0.1)',
                                     borderRadius: '4px',
                                     px: 0.8,
                                     py: 0.2,
@@ -190,8 +190,8 @@ const StatsCards = ({ stats }) => {
             <StatCard
                 title="Total Attempts"
                 value={total_attempts}
-                icon={<AssessmentIcon sx={{ color: '#ff2a2a', fontSize: 28 }} />}
-                color="#ff2a2a"
+                icon={<AssessmentIcon sx={{ color: '#00d4ff', fontSize: 28 }} />}
+                color="#00d4ff"
                 delay={0}
             />
             <StatCard

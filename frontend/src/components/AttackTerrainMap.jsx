@@ -125,7 +125,7 @@ const AttackTerrainMap = () => {
         scene.add(hemiLight);
 
         // Colors
-        const colorLow = new THREE.Color('#ff2a2a');
+        const colorLow = new THREE.Color('#00d4ff');
         const colorMid = new THREE.Color('#ffab00');
         const colorHigh = new THREE.Color('#ff3d71');
         const colorPeak = new THREE.Color('#ffffff');
@@ -376,7 +376,7 @@ const AttackTerrainMap = () => {
     return (
         <Paper elevation={0} sx={{
             position: 'relative', width: '100%', height: 420, overflow: 'hidden',
-            bgcolor: 'rgba(8, 14, 28, 0.4)', borderRadius: '12px', border: '1px solid rgba(255, 42, 42, 0.1)', mb: 3
+            bgcolor: 'rgba(8, 14, 28, 0.4)', borderRadius: '12px', border: '1px solid rgba(0, 212, 255, 0.1)', mb: 3
         }}>
             <Box ref={containerRef} sx={{ position: 'absolute', inset: 0 }}>
                 <Box ref={mountRef} sx={{ width: '100%', height: '100%', outline: 'none' }} />
@@ -386,9 +386,9 @@ const AttackTerrainMap = () => {
 
             {/* Top Right Controls */}
             <Box sx={{ position: 'absolute', top: 16, right: 16, display: 'flex', flexDirection: 'column', gap: 1, zIndex: 10 }}>
-                <ButtonGroup size="small" variant="outlined" sx={{ '& .MuiButton-root': { borderColor: 'rgba(255, 42, 42, 0.2)', color: '#7a9bbf', fontSize: '10px' } }}>
+                <ButtonGroup size="small" variant="outlined" sx={{ '& .MuiButton-root': { borderColor: 'rgba(0, 212, 255, 0.2)', color: '#7a9bbf', fontSize: '10px' } }}>
                     {['1H', '6H', '24H', '7D'].map(val => (
-                        <Button key={val} onClick={() => setTimeRange(val)} sx={{ bgcolor: timeRange === val ? 'rgba(255, 42, 42, 0.1) !important' : 'transparent', color: timeRange === val ? '#ff2a2a !important' : '#7a9bbf' }}>{val}</Button>
+                        <Button key={val} onClick={() => setTimeRange(val)} sx={{ bgcolor: timeRange === val ? 'rgba(0, 212, 255, 0.1) !important' : 'transparent', color: timeRange === val ? '#00d4ff !important' : '#7a9bbf' }}>{val}</Button>
                     ))}
                 </ButtonGroup>
 
@@ -409,23 +409,23 @@ const AttackTerrainMap = () => {
             <Paper elevation={0} sx={{
                 position: 'absolute', top: 16, left: 16, p: 1.5,
                 bgcolor: 'rgba(5, 8, 16, 0.7)', backdropFilter: 'blur(8px)',
-                border: '1px solid rgba(255, 42, 42, 0.1)', borderRadius: '8px'
+                border: '1px solid rgba(0, 212, 255, 0.1)', borderRadius: '8px'
             }}>
                 <Typography variant="caption" sx={{ color: '#e8f4fd', fontWeight: 600, display: 'block', mb: 1, fontSize: '10px', textTransform: 'uppercase', letterSpacing: 1 }}>
                     Threat Intensity
                 </Typography>
                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                    <Box sx={{ width: 80, height: 6, background: 'linear-gradient(90deg, #ff2a2a, #ffab00, #ff3d71, #ffffff)', borderRadius: '3px' }} />
+                    <Box sx={{ width: 80, height: 6, background: 'linear-gradient(90deg, #00d4ff, #ffab00, #ff3d71, #ffffff)', borderRadius: '3px' }} />
                 </Box>
                 <Box sx={{ display: 'flex', justifyContent: 'space-between', mt: 0.5 }}>
-                    <Typography variant="caption" sx={{ color: '#ff2a2a', fontSize: '9px' }}>Low</Typography>
+                    <Typography variant="caption" sx={{ color: '#00d4ff', fontSize: '9px' }}>Low</Typography>
                     <Typography variant="caption" sx={{ color: '#ffffff', fontSize: '9px' }}>Peak</Typography>
                 </Box>
             </Paper>
 
             {/* Category Labels (Left Edge) */}
             <Box sx={{ position: 'absolute', bottom: 40, left: 16, display: 'flex', flexDirection: 'column-reverse', height: '60%', justifyContent: 'space-between', pointerEvents: 'none' }}>
-                <Typography variant="caption" sx={{ color: '#ff2a2a', fontSize: '10px', fontWeight: 600 }}>SQLI</Typography>
+                <Typography variant="caption" sx={{ color: '#00d4ff', fontSize: '10px', fontWeight: 600 }}>SQLI</Typography>
                 <Typography variant="caption" sx={{ color: '#7c4dff', fontSize: '10px', fontWeight: 600 }}>XSS</Typography>
                 <Typography variant="caption" sx={{ color: '#ffab00', fontSize: '10px', fontWeight: 600 }}>SSI</Typography>
                 <Typography variant="caption" sx={{ color: '#7a9bbf', fontSize: '10px', fontWeight: 600 }}>BENIGN</Typography>

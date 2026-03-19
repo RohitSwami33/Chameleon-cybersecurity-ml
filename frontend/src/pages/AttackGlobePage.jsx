@@ -107,7 +107,7 @@ const AttackGlobePage = () => {
                         alignItems: 'center', 
                         height: '100%' 
                     }}>
-                        <CircularProgress sx={{ color: '#ff2a2a' }} />
+                        <CircularProgress sx={{ color: '#00d4ff' }} />
                     </Box>
                 ) : (
                     <AttackGlobeSimple
@@ -120,7 +120,7 @@ const AttackGlobePage = () => {
                     <FormControlLabel
                         control={
                             <Switch checked={useMockGeo} onChange={(e) => setUseMockGeo(e.target.checked)} size="small"
-                                sx={{ '& .MuiSwitch-switchBase.Mui-checked': { color: '#ff2a2a' }, '& .MuiSwitch-switchBase.Mui-checked + .MuiSwitch-track': { backgroundColor: '#ff2a2a' } }} />
+                                sx={{ '& .MuiSwitch-switchBase.Mui-checked': { color: '#00d4ff' }, '& .MuiSwitch-switchBase.Mui-checked + .MuiSwitch-track': { backgroundColor: '#00d4ff' } }} />
                         }
                         label={<Typography variant="body2" sx={{ color: '#7a9bbf', fontSize: '0.8rem', fontWeight: 600 }}>USE MOCK GEO-DATA</Typography>}
                     />

@@ -18,12 +18,12 @@ const DashboardSection = ({ title, subtitle, icon, defaultExpanded = true, child
         <Box sx={{
             mb: 2,
             borderRadius: '12px',
-            border: '1px solid rgba(255, 42, 42, 0.08)',
+            border: '1px solid rgba(0, 212, 255, 0.08)',
             background: 'rgba(10, 15, 30, 0.5)',
             backdropFilter: 'blur(8px)',
             overflow: 'hidden',
             transition: 'border-color 0.3s ease',
-            '&:hover': { borderColor: 'rgba(255, 42, 42, 0.15)' },
+            '&:hover': { borderColor: 'rgba(0, 212, 255, 0.15)' },
         }}>
             {/* Section Header */}
             <Box
@@ -35,9 +35,9 @@ const DashboardSection = ({ title, subtitle, icon, defaultExpanded = true, child
                     px: 2.5,
                     py: 1.5,
                     cursor: 'pointer',
-                    borderBottom: expanded ? '1px solid rgba(255, 42, 42, 0.06)' : 'none',
+                    borderBottom: expanded ? '1px solid rgba(0, 212, 255, 0.06)' : 'none',
                     transition: 'background-color 0.2s',
-                    '&:hover': { backgroundColor: 'rgba(255, 42, 42, 0.03)' },
+                    '&:hover': { backgroundColor: 'rgba(0, 212, 255, 0.03)' },
                 }}
             >
                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
@@ -51,7 +51,7 @@ const DashboardSection = ({ title, subtitle, icon, defaultExpanded = true, child
                             fontWeight: 600,
                             letterSpacing: '0.08em',
                             textTransform: 'uppercase',
-                            color: '#ff2a2a',
+                            color: '#00d4ff',
                         }}>
                             {title}
                         </Typography>
@@ -110,7 +110,7 @@ const AdvancedSystemsPage = () => {
 
             <Box sx={{ px: 2, py: 3, maxWidth: 1600, mx: 'auto' }}>
                 <Box sx={{ mb: 4, mt: 1 }}>
-                    <Typography variant="h4" sx={{ color: '#ff2a2a', fontFamily: '"Orbitron", sans-serif', fontWeight: 700, mb: 1 }}>
+                    <Typography variant="h4" sx={{ color: '#00d4ff', fontFamily: '"Orbitron", sans-serif', fontWeight: 700, mb: 1 }}>
                         ADVANCED DECEPTION SYSTEMS
                     </Typography>
                     <Typography variant="body2" sx={{ color: '#7a9bbf' }}>
