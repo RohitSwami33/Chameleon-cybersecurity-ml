@@ -22,9 +22,12 @@ import torch
 import torch.nn as nn
 from src.ml_engine.simple_tokenizer import SimpleTokenizer, pad_sequences
 
-MODEL_PATH = Path(__file__).parent / 'models/bilstm/chameleon_lstm_model.pt'
-TOKENIZER_PATH = Path(__file__).parent / "tokenizer.pkl"
-DATASET_PATH = Path(__file__).parent.parent / 'data/raw/custom_attack_data_6k.csv'
+# Backend project root (assuming this file is at Backend/tests/unit/test_50k_model.py)
+BASE_DIR = Path(__file__).resolve().parents[2]
+
+MODEL_PATH = BASE_DIR / 'models/bilstm/chameleon_lstm_model.pt'
+TOKENIZER_PATH = BASE_DIR / 'models/tokenizers/tokenizer.pkl'
+DATASET_PATH = BASE_DIR / 'data/raw/custom_attack_data_6k.csv'
 
 MAX_SEQUENCE_LENGTH = 150
 
