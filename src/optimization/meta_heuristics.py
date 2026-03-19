@@ -385,11 +385,16 @@ class ThreatCalibratedPSO:
         positions = [p.position for p in particles]
         fitnesses = [p.best_fitness for p in particles if p.best_fitness > float('-inf')]
 
+        # Get global best fitness, handle -inf for JSON serialization
+        global_best_fitness = self.global_best.get(category, (0, 0))[1]
+        if global_best_fitness == float('-inf') or global_best_fitness == float('inf'):
+            global_best_fitness = 0.0
+
         return {
             "category": category,
             "iterations": self.iteration_count.get(category, 0),
             "global_best_delay": self.global_best.get(category, (0, 0))[0],
-            "global_best_fitness": self.global_best.get(category, (0, 0))[1],
+            "global_best_fitness": global_best_fitness,
             "mean_position": sum(positions) / len(positions) if positions else 0,
             "std_position": math.sqrt(sum((x - sum(positions)/len(positions))**2 for x in positions) / len(positions)) if len(positions) > 1 else 0,
             "mean_fitness": sum(fitnesses) / len(fitnesses) if fitnesses else 0,
@@ -1309,17 +1314,24 @@ class SemanticDeceptionRRT:
             return {}
 
         fitnesses = [t.fitness for t in self.trees.values()]
+        # Filter out -inf values for JSON serialization
+        valid_fitnesses = [f for f in fitnesses if f != float('-inf') and f != float('inf')]
         depths = [t.depth for t in self.trees.values()]
         leaf_counts = [len(self._get_all_leaf_paths(t.root)) for t in self.trees.values()]
         node_counts = [t.node_count for t in self.trees.values()]
+
+        # Handle best_fitness for JSON
+        best_fitness = max(valid_fitnesses) if valid_fitnesses else 0.0
+        mean_fitness = sum(valid_fitnesses) / len(valid_fitnesses) if valid_fitnesses else 0.0
+        std_fitness = math.sqrt(sum((x - mean_fitness)**2 for x in valid_fitnesses) / len(valid_fitnesses)) if len(valid_fitnesses) > 1 else 0.0
 
         return {
             "generation": self.generation,
             "num_trees": len(self.trees),
             "population_size": len(self.trees),
-            "best_fitness": max(fitnesses),
-            "mean_fitness": sum(fitnesses) / len(fitnesses),
-            "std_fitness": math.sqrt(sum((x - sum(fitnesses)/len(fitnesses))**2 for x in fitnesses) / len(fitnesses)) if len(fitnesses) > 1 else 0,
+            "best_fitness": best_fitness,
+            "mean_fitness": mean_fitness,
+            "std_fitness": std_fitness,
             "mean_depth": sum(depths) / len(depths),
             "max_depth": max(depths),
             "mean_leaves": sum(leaf_counts) / len(leaf_counts),
@@ -1778,17 +1790,24 @@ class DeceptionEvolutionRRT:
             return {}
 
         fitnesses = [t.fitness for t in self.trees.values()]
+        # Filter out -inf values for JSON serialization
+        valid_fitnesses = [f for f in fitnesses if f != float('-inf') and f != float('inf')]
         depths = [t.depth for t in self.trees.values()]
         leaf_counts = [len(self._get_all_leaf_paths(t.root)) for t in self.trees.values()]
         node_counts = [t.node_count for t in self.trees.values()]
+
+        # Handle best_fitness for JSON
+        best_fitness = max(valid_fitnesses) if valid_fitnesses else 0.0
+        mean_fitness = sum(valid_fitnesses) / len(valid_fitnesses) if valid_fitnesses else 0.0
+        std_fitness = math.sqrt(sum((x - mean_fitness)**2 for x in valid_fitnesses) / len(valid_fitnesses)) if len(valid_fitnesses) > 1 else 0.0
 
         return {
             "generation": self.generation,
             "num_trees": len(self.trees),
             "population_size": len(self.trees),
-            "best_fitness": max(fitnesses),
-            "mean_fitness": sum(fitnesses) / len(fitnesses),
-            "std_fitness": math.sqrt(sum((x - sum(fitnesses)/len(fitnesses))**2 for x in fitnesses) / len(fitnesses)) if len(fitnesses) > 1 else 0,
+            "best_fitness": best_fitness,
+            "mean_fitness": mean_fitness,
+            "std_fitness": std_fitness,
             "mean_depth": sum(depths) / len(depths),
             "max_depth": max(depths),
             "mean_leaves": sum(leaf_counts) / len(leaf_counts),
@@ -1814,7 +1833,10 @@ s_rrt_optimizer = SemanticDeceptionRRT()
 # Backward compatibility aliases (standard versions for benchmarks)
 pso_optimizer = AdaptiveTarpitPSO()
 rrt_optimizer = DeceptionEvolutionRRT()
-ga_optimizer = rrt_optimizer  # Alias for pipeline compatibility
+
+# IMPORTANT: Our novel algorithm is S-RRT (Semantic Deception RRT), NOT GA!
+# The 'ga_optimizer' alias points to S-RRT for API compatibility
+ga_optimizer = s_rrt_optimizer  # S-RRT, NOT GA!
 
 
 # ============================================================================
