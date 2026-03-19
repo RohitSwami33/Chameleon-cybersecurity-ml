@@ -56,7 +56,10 @@ FINAL_DATASET = BASE_DIR / 'data/raw/final_dataset.csv'
 CUSTOM_DATASET = BASE_DIR / 'data/raw/custom_attack_data_6k.csv'
 OUTPUT_DIR = BASE_DIR / "Backend"
 
-MODEL_PATH = OUTPUT_DIR / "chameleon_lstm_m4_50k.pth"
+# Ensure model directory aligns with inference path: Backend/models/bilstm/chameleon_lstm_m4_50k.pth
+MODEL_DIR = OUTPUT_DIR / "models" / "bilstm"
+MODEL_DIR.mkdir(parents=True, exist_ok=True)
+MODEL_PATH = MODEL_DIR / "chameleon_lstm_m4_50k.pth"
 TOKENIZER_PATH = OUTPUT_DIR / 'models/tokenizers/tokenizer_50k.json'
 CONFUSION_MATRIX_PATH = OUTPUT_DIR / "confusion_matrix_50k.png"
 TRAINING_METRICS_PATH = OUTPUT_DIR / "training_metrics_50k.png"
