@@ -22,7 +22,7 @@ class TestBlockchainSyncImport(unittest.TestCase):
 
     def test_import_module(self):
         """blockchain_sync should import without errors."""
-        import src.utils.blockchain_sync
+        import src.utils.blockchain_sync as blockchain_sync
         self.assertTrue(hasattr(blockchain_sync, "anchor_latest_root"))
         self.assertTrue(hasattr(blockchain_sync, "get_root_count"))
         self.assertTrue(hasattr(blockchain_sync, "get_latest_root"))
