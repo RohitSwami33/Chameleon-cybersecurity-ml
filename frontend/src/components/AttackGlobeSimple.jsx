@@ -1,9 +1,7 @@
-// AttackGlobeSimple.jsx — 3D Spline scene QUARANTINED (performance).
-// Renders a lightweight SVG world-map with live attack arcs instead.
-import React, { useRef, useEffect, useState, useMemo } from 'react';
+import React from 'react';
 import { Box, Typography, Chip, Paper } from '@mui/material';
 import FiberManualRecordIcon from '@mui/icons-material/FiberManualRecord';
-
+import Spline from '@splinetool/react-spline';
 
 const AttackOverlayHUD = ({ attacks = [] }) => {
     const activeThreats = attacks.filter(a => a.classification?.attack_type !== 'BENIGN').length;
@@ -30,7 +28,7 @@ const AttackOverlayHUD = ({ attacks = [] }) => {
                         }}
                     />
                 </Box>
-                <Typography variant="h6" sx={{ color: '#00d4ff', fontFamily: '"IBM Plex Mono", monospace', fontWeight: 600, textShadow: '0 0 10px rgba(0, 212, 255, 0.5)' }}>
+                <Typography variant="h6" sx={{ color: '#ff2a2a', fontFamily: '"IBM Plex Mono", monospace', fontWeight: 600, textShadow: '0 0 10px rgba(255, 42, 42, 0.5)' }}>
                     {activeThreats} ACTIVE THREATS
                 </Typography>
             </Box>
@@ -44,7 +42,7 @@ const AttackOverlayHUD = ({ attacks = [] }) => {
                 p: 2,
                 backgroundColor: 'rgba(10, 15, 30, 0.6)',
                 backdropFilter: 'blur(12px)',
-                border: '1px solid rgba(0, 212, 255, 0.15)',
+                border: '1px solid rgba(255, 42, 42, 0.15)',
                 pointerEvents: 'auto'
             }}>
                 <Typography variant="overline" sx={{ color: '#7a9bbf', fontWeight: 700, display: 'block', mb: 1 }}>Recent Origins</Typography>
@@ -98,7 +96,7 @@ const AttackOverlayHUD = ({ attacks = [] }) => {
                     { label: 'XSS', color: '#ffa500' },
                     { label: 'Brute Force', color: '#ffea00' },
                     { label: 'Benign', color: '#00e676' },
-                    { label: 'Server SF', color: '#00d4ff' }
+                    { label: 'Server SF', color: '#ff2a2a' }
                 ].map(type => (
                     <Box key={type.label} sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                         <Box sx={{ width: 8, height: 8, borderRadius: '50%', backgroundColor: type.color, boxShadow: `0 0 8px ${type.color}` }} />
@@ -110,56 +108,13 @@ const AttackOverlayHUD = ({ attacks = [] }) => {
     );
 };
 
-// Fallback Map: The original SVG logic
-const geoToSvg = (lat, lon, width = 400, height = 220) => {
-    const x = ((lon + 180) / 360) * width;
-    const y = ((90 - lat) / 180) * height;
-    return { x, y };
-};
-
-const SVGWorldMapFallback = ({ attacks = [], serverLocation = { lat: 37.7749, lon: -122.4194 } }) => {
-    const svgRef = useRef(null);
-    const [dimensions, setDimensions] = useState({ width: 400, height: 220 });
-
-    const serverPoint = useMemo(() => geoToSvg(serverLocation.lat, serverLocation.lon, dimensions.width, dimensions.height), [serverLocation, dimensions]);
-
-    const attackArcs = useMemo(() => {
-        return attacks
-            .filter(a => a.geo_location?.latitude && a.geo_location?.longitude)
-            .slice(0, 50)
-            .map((attack, i) => {
-                const from = geoToSvg(attack.geo_location.latitude, attack.geo_location.longitude, dimensions.width, dimensions.height);
-                const isMalicious = attack.classification?.attack_type !== 'BENIGN';
-                return {
-                    id: `arc-${i}`,
-                    from,
-                    to: serverPoint,
-                    attack,
-                    isMalicious,
-                    color: isMalicious ? '#ff3d71' : '#00e676',
-                };
-            });
-    }, [attacks, serverPoint, dimensions]);
-
-    useEffect(() => {
-        const container = svgRef.current?.parentElement;
-        if (!container) return;
-
-        const observer = new ResizeObserver((entries) => {
-            for (const entry of entries) {
-                const { width } = entry.contentRect;
-                setDimensions({ width: Math.max(300, width), height: Math.max(150, width * 0.55) });
-            }
-        });
-        observer.observe(container);
-        return () => observer.disconnect();
-    }, []);
-
+export default function AttackGlobeSimple({ attacks = [] }) {
     return (
         <Paper
             sx={{
                 width: '100%',
                 height: '100%',
+                minHeight: 400,
                 display: 'flex',
                 flexDirection: 'column',
                 backgroundColor: '#050810',
@@ -167,6 +122,7 @@ const SVGWorldMapFallback = ({ attacks = [], serverLocation = { lat: 37.7749, lo
                 position: 'relative'
             }}
         >
+            {/* The 3D Spline Interactive Globe */}
             <Box sx={{
                 flexGrow: 1,
                 position: 'absolute',
@@ -174,55 +130,15 @@ const SVGWorldMapFallback = ({ attacks = [], serverLocation = { lat: 37.7749, lo
                 left: 0,
                 width: '100%',
                 height: '100%',
-                background: 'radial-gradient(ellipse at center, rgba(0, 212, 255, 0.03) 0%, transparent 70%)',
+                '& canvas': {
+                    outline: 'none', // removes the focus outline from the spline canvas
+                }
             }}>
-                <svg
-                    ref={svgRef}
-                    viewBox={`0 0 ${dimensions.width} ${dimensions.height}`}
-                    style={{ width: '100%', height: '100%' }}
-                    preserveAspectRatio="xMidYMid meet"
-                >
-                    <defs>
-                        <filter id="glow-red-fallback">
-                            <feGaussianBlur stdDeviation="2" result="blur" />
-                            <feMerge><feMergeNode in="blur" /><feMergeNode in="SourceGraphic" /></feMerge>
-                        </filter>
-                        <filter id="glow-green-fallback">
-                            <feGaussianBlur stdDeviation="1.5" result="blur" />
-                            <feMerge><feMergeNode in="blur" /><feMergeNode in="SourceGraphic" /></feMerge>
-                        </filter>
-                    </defs>
-
-                    {attackArcs.map((arc, i) => {
-                        const midX = (arc.from.x + arc.to.x) / 2;
-                        const midY = Math.min(arc.from.y, arc.to.y) - 25 - Math.random() * 15;
-                        return (
-                            <g key={arc.id}>
-                                <path
-                                    d={`M ${arc.from.x} ${arc.from.y} Q ${midX} ${midY} ${arc.to.x} ${arc.to.y}`}
-                                    fill="none"
-                                    stroke={arc.color}
-                                    strokeWidth={1}
-                                    strokeOpacity={0.4}
-                                    filter={arc.isMalicious ? 'url(#glow-red-fallback)' : 'url(#glow-green-fallback)'}
-                                    strokeDasharray="4,3"
-                                >
-                                    <animate attributeName="stroke-dashoffset" from="14" to="0" dur={`${2 + Math.random() * 2}s`} repeatCount="indefinite" />
-                                </path>
-                                <circle cx={arc.from.x} cy={arc.from.y} r={3} fill={arc.color} fillOpacity={0.8} />
-                            </g>
-                        );
-                    })}
-                    <circle cx={serverPoint.x} cy={serverPoint.y} r={5} fill="#00d4ff" />
-                </svg>
+                <Spline scene="https://prod.spline.design/4lwqTZL9TrjyqfcH/scene.splinecode" />
             </Box>
+            
+            {/* Overlay UI elements gracefully layered on top via absolute positioning */}
             <AttackOverlayHUD attacks={attacks} />
         </Paper>
     );
-};
-
-
-// Default export: renders the SVG world map directly (Spline 3D scene quarantined).
-export default function AttackGlobeSimple({ attacks = [], serverLocation = { lat: 37.7749, lon: -122.4194 } }) {
-    return <SVGWorldMapFallback attacks={attacks} serverLocation={serverLocation} />;
 }

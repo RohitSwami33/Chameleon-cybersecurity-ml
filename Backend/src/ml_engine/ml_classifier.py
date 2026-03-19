@@ -31,13 +31,13 @@ class MLClassifier:
                     custom_objects=custom_objects,
                     compile=False  # Skip compilation to avoid issues
                 )
-                print(f"✅ Loaded ML model from {MODEL_PATH}")
+                print(f"[OK] Loaded ML model from {MODEL_PATH}")
             else:
-                print(f"⚠️  Model file not found at {MODEL_PATH}")
-                print(f"⚠️  Using heuristic-based classification only")
+                print(f"[WARN] Model file not found at {MODEL_PATH}")
+                print(f"[WARN] Using heuristic-based classification only")
         except Exception as e:
-            print(f"⚠️  Error loading ML model: {e}")
-            print(f"⚠️  Falling back to heuristic-based classification")
+            print(f"[WARN] Error loading ML model: {e}")
+            print(f"[WARN] Falling back to heuristic-based classification")
             self.model = None
             
         self.build_char_mapping()

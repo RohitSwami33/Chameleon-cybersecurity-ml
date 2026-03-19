@@ -22,14 +22,14 @@ import { toast } from 'react-toastify';
  */
 
 const HEADER_STYLE = {
-    background: 'rgba(0,212,255,0.06)',
+    background: 'rgba(255, 42, 42,0.06)',
     color: '#7ec8e3',
     fontFamily: '"IBM Plex Mono", monospace',
     fontSize: '0.7rem',
     fontWeight: 700,
     letterSpacing: '0.08em',
     textTransform: 'uppercase',
-    borderBottom: '1px solid rgba(0,212,255,0.12)',
+    borderBottom: '1px solid rgba(255, 42, 42,0.12)',
     py: 1.5,
     whiteSpace: 'nowrap',
 };
@@ -105,9 +105,9 @@ function StatusChip({ status }) {
                 fontSize: '0.6rem',
                 fontWeight: 700,
                 ...MONO,
-                backgroundColor: isDeception ? 'rgba(255,165,0,0.1)' : 'rgba(0,212,255,0.08)',
-                color: isDeception ? '#ffa500' : '#00d4ff',
-                border: `1px solid ${isDeception ? 'rgba(255,165,0,0.2)' : 'rgba(0,212,255,0.15)'}`,
+                backgroundColor: isDeception ? 'rgba(255,165,0,0.1)' : 'rgba(255, 42, 42,0.08)',
+                color: isDeception ? '#ffa500' : '#ff2a2a',
+                border: `1px solid ${isDeception ? 'rgba(255,165,0,0.2)' : 'rgba(255, 42, 42,0.15)'}`,
             }}
         />
     );
@@ -175,7 +175,7 @@ const TelemetryTable = ({ logs = [], onRefresh, loading = false }) => {
             sx={{
                 backgroundColor: 'rgba(6, 10, 24, 0.92)',
                 backdropFilter: 'blur(16px)',
-                border: '1px solid rgba(0, 212, 255, 0.1)',
+                border: '1px solid rgba(255, 42, 42, 0.1)',
                 borderRadius: '14px',
                 overflow: 'hidden',
             }}
@@ -183,10 +183,10 @@ const TelemetryTable = ({ logs = [], onRefresh, loading = false }) => {
             {/* ── Header bar ── */}
             <Box sx={{
                 display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-                px: 3, py: 2, borderBottom: '1px solid rgba(0,212,255,0.08)'
+                px: 3, py: 2, borderBottom: '1px solid rgba(255, 42, 42,0.08)'
             }}>
                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
-                    <ShieldIcon sx={{ color: '#00d4ff', fontSize: 20 }} />
+                    <ShieldIcon sx={{ color: '#ff2a2a', fontSize: 20 }} />
                     <Typography sx={{
                         fontWeight: 700, fontSize: '0.95rem', color: '#e8f4fd',
                         fontFamily: '"DM Sans", sans-serif', letterSpacing: '-0.01em'
@@ -197,11 +197,11 @@ const TelemetryTable = ({ logs = [], onRefresh, loading = false }) => {
                         badgeContent={filtered.length}
                         sx={{
                             '& .MuiBadge-badge': {
-                                backgroundColor: '#00d4ff22',
-                                color: '#00d4ff',
+                                backgroundColor: '#ff2a2a22',
+                                color: '#ff2a2a',
                                 fontWeight: 700,
                                 fontSize: '0.65rem',
-                                border: '1px solid rgba(0,212,255,0.3)',
+                                border: '1px solid rgba(255, 42, 42,0.3)',
                             }
                         }}
                     />
@@ -221,15 +221,15 @@ const TelemetryTable = ({ logs = [], onRefresh, loading = false }) => {
                             '& .MuiOutlinedInput-root': {
                                 height: 34, fontSize: '0.78rem', ...MONO,
                                 color: '#e8f4fd',
-                                '& fieldset': { borderColor: 'rgba(0,212,255,0.15)' },
-                                '&:hover fieldset': { borderColor: 'rgba(0,212,255,0.3)' },
-                                '&.Mui-focused fieldset': { borderColor: '#00d4ff' },
+                                '& fieldset': { borderColor: 'rgba(255, 42, 42,0.15)' },
+                                '&:hover fieldset': { borderColor: 'rgba(255, 42, 42,0.3)' },
+                                '&.Mui-focused fieldset': { borderColor: '#ff2a2a' },
                             },
                         }}
                     />
                     {onRefresh && (
                         <Tooltip title="Refresh">
-                            <IconButton onClick={onRefresh} size="small" sx={{ color: '#00d4ff', border: '1px solid rgba(0,212,255,0.2)', borderRadius: '8px', p: 0.7 }}>
+                            <IconButton onClick={onRefresh} size="small" sx={{ color: '#ff2a2a', border: '1px solid rgba(255, 42, 42,0.2)', borderRadius: '8px', p: 0.7 }}>
                                 <RefreshIcon sx={{ fontSize: 16 }} />
                             </IconButton>
                         </Tooltip>
@@ -238,7 +238,7 @@ const TelemetryTable = ({ logs = [], onRefresh, loading = false }) => {
             </Box>
 
             {/* ── Loading bar ── */}
-            {loading && <LinearProgress sx={{ '& .MuiLinearProgress-bar': { backgroundColor: '#00d4ff' } }} />}
+            {loading && <LinearProgress sx={{ '& .MuiLinearProgress-bar': { backgroundColor: '#ff2a2a' } }} />}
 
             {/* ── Table ── */}
             <TableContainer sx={{ maxHeight: 520 }}>
@@ -275,7 +275,7 @@ const TelemetryTable = ({ logs = [], onRefresh, loading = false }) => {
                                     key={log._id || log.id || `${log.ip_address}-${log.timestamp}-${i}`}
                                     sx={{
                                         borderLeft: isDeception ? '3px solid #ffa500' : '3px solid transparent',
-                                        '&:hover': { backgroundColor: 'rgba(0,212,255,0.04)' },
+                                        '&:hover': { backgroundColor: 'rgba(255, 42, 42,0.04)' },
                                         transition: 'background-color 0.15s',
                                     }}
                                 >
@@ -323,7 +323,7 @@ const TelemetryTable = ({ logs = [], onRefresh, loading = false }) => {
                                     {/* Copy action */}
                                     <TableCell sx={{ py: 1.4, borderBottom: '1px solid rgba(255,255,255,0.04)' }}>
                                         <Tooltip title="Copy log as JSON">
-                                            <IconButton size="small" onClick={() => handleCopy(log)} sx={{ color: '#3d5a7a', p: 0.4, '&:hover': { color: '#00d4ff' } }}>
+                                            <IconButton size="small" onClick={() => handleCopy(log)} sx={{ color: '#3d5a7a', p: 0.4, '&:hover': { color: '#ff2a2a' } }}>
                                                 <ContentCopyIcon sx={{ fontSize: 13 }} />
                                             </IconButton>
                                         </Tooltip>
@@ -345,7 +345,7 @@ const TelemetryTable = ({ logs = [], onRefresh, loading = false }) => {
                 onRowsPerPageChange={(e) => { setRowsPerPage(parseInt(e.target.value, 10)); setPage(0); }}
                 rowsPerPageOptions={[10, 15, 25, 50]}
                 sx={{
-                    borderTop: '1px solid rgba(0,212,255,0.06)',
+                    borderTop: '1px solid rgba(255, 42, 42,0.06)',
                     color: '#5a7a9a',
                     '& .MuiTablePagination-toolbar': { minHeight: 44, px: 2 },
                     '& .MuiTypography-root': { fontSize: '0.73rem', ...MONO },

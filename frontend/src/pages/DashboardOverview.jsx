@@ -121,14 +121,14 @@ const DashboardOverview = () => {
 
     if (loading && !stats.total_attempts) {
         return (
-            <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '100vh' }}>
-                <CircularProgress sx={{ color: '#00d4ff' }} />
+            <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '100vh', backgroundColor: '#050810' }}>
+                <CircularProgress sx={{ color: '#ff2a2a' }} />
             </Box>
         );
     }
 
     return (
-        <Box sx={{ flexGrow: 1, minHeight: '100vh', position: 'relative', zIndex: 2 }}>
+        <Box sx={{ flexGrow: 1, minHeight: '100vh', position: 'relative', zIndex: 2, backgroundColor: '#050810' }}>
             <Navbar
                 lastUpdated={lastUpdated}
                 autoRefresh={autoRefresh}
@@ -138,10 +138,11 @@ const DashboardOverview = () => {
                 setUseMockGeo={setUseMockGeo}
             />
 
-            <Box sx={{ px: 2, py: 3 }}>
+            <Box sx={{ px: 2, py: 3, maxWidth: 1600, mx: 'auto' }}>
                 <FilterBadges />
                 <StatsCards stats={filteredStats} />
 
+                {/* ── Core Analytics Row ─────────────────────────── */}
                 <Box sx={{
                     display: 'grid',
                     gridTemplateColumns: { xs: '1fr', md: 'repeat(3, 1fr)' },
@@ -162,6 +163,7 @@ const DashboardOverview = () => {
                     </Box>
                 </Box>
 
+                {/* ── Telemetry Log Table ─────────────────────────── */}
                 <TelemetryTable
                     logs={filteredLogs}
                     onRefresh={handleRefresh}

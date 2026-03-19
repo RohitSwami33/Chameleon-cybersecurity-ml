@@ -49,20 +49,20 @@ function FilterBadges() {
         alignItems: 'center',
         gap: 1,
         padding: '6px 12px',
-        background: 'rgba(0, 212, 255, 0.04)',
+        background: 'rgba(255, 42, 42, 0.04)',
         borderRadius: '8px',
-        border: '1px solid rgba(0, 212, 255, 0.12)',
+        border: '1px solid rgba(255, 42, 42, 0.12)',
         flexWrap: 'wrap',
         mb: 2,
       }}
     >
       <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
-        <FilterListIcon sx={{ fontSize: 16, color: '#00d4ff' }} />
+        <FilterListIcon sx={{ fontSize: 16, color: '#ff2a2a' }} />
         <Typography
           variant="caption"
           sx={{
             fontWeight: 600,
-            color: '#00d4ff',
+            color: '#ff2a2a',
             textTransform: 'uppercase',
             letterSpacing: '0.5px',
             fontSize: '0.65rem',
@@ -90,15 +90,15 @@ function FilterBadges() {
             deleteIcon={<CloseIcon sx={{ fontSize: 14 }} />}
             size="small"
             sx={{
-              background: 'rgba(0, 212, 255, 0.1)',
+              background: 'rgba(255, 42, 42, 0.1)',
               color: '#e8f4fd',
-              border: '1px solid rgba(0, 212, 255, 0.2)',
+              border: '1px solid rgba(255, 42, 42, 0.2)',
               '& .MuiChip-deleteIcon': {
-                color: 'rgba(0, 212, 255, 0.5)',
-                '&:hover': { color: '#00d4ff' },
+                color: 'rgba(255, 42, 42, 0.5)',
+                '&:hover': { color: '#ff2a2a' },
               },
               '&:hover': {
-                background: 'rgba(0, 212, 255, 0.18)',
+                background: 'rgba(255, 42, 42, 0.18)',
               },
             }}
           />

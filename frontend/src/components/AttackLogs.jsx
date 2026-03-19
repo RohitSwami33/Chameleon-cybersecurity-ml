@@ -42,7 +42,7 @@ const AttackLogs = ({ logs = [], onViewDetails, onGenerateReport }) => {
             sx={{
                 backgroundColor: 'rgba(10, 15, 30, 0.85)',
                 backdropFilter: 'blur(12px)',
-                border: '1px solid rgba(0, 212, 255, 0.08)',
+                border: '1px solid rgba(255, 42, 42, 0.08)',
                 borderRadius: '12px',
                 overflow: 'hidden',
             }}
@@ -177,7 +177,7 @@ const AttackLogs = ({ logs = [], onViewDetails, onGenerateReport }) => {
                                                 </Tooltip>
                                                 {onGenerateReport && isMalicious && (
                                                     <Tooltip title="Generate Report">
-                                                        <IconButton size="small" onClick={() => onGenerateReport(log.ip_address)} sx={{ color: '#00d4ff', p: 0.3 }}>
+                                                        <IconButton size="small" onClick={() => onGenerateReport(log.ip_address)} sx={{ color: '#ff2a2a', p: 0.3 }}>
                                                             <DescriptionIcon sx={{ fontSize: 14 }} />
                                                         </IconButton>
                                                     </Tooltip>
@@ -204,7 +204,7 @@ const AttackLogs = ({ logs = [], onViewDetails, onGenerateReport }) => {
                 }}
                 rowsPerPageOptions={[10, 25, 50]}
                 sx={{
-                    borderTop: '1px solid rgba(0, 212, 255, 0.06)',
+                    borderTop: '1px solid rgba(255, 42, 42, 0.06)',
                     '& .MuiTablePagination-toolbar': { minHeight: 44 },
                     '& .MuiTypography-root': { fontSize: '0.75rem', color: '#7a9bbf' },
                 }}

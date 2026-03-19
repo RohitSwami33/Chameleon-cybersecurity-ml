@@ -25,6 +25,7 @@ import AttackGlobePage from './pages/AttackGlobePage';
 import AnalyticsPage from './pages/AnalyticsPage';
 import ThreatIntelPage from './pages/ThreatIntelPage';
 import ChatbotPage from './pages/ChatbotPage';
+import AdvancedSystemsPage from './pages/AdvancedSystemsPage';
 
 /**
  * Chameleon Forensics — MUI Dark Theme
@@ -34,7 +35,7 @@ const darkTheme = createTheme({
   palette: {
     mode: 'dark',
     primary: {
-      main: '#00d4ff',
+      main: '#ff2a2a',
       light: '#33ddff',
       dark: '#009abb',
     },
@@ -70,7 +71,7 @@ const darkTheme = createTheme({
       secondary: '#7a9bbf',
       disabled: '#3d5a7a',
     },
-    divider: 'rgba(0, 212, 255, 0.08)',
+    divider: 'rgba(255, 42, 42, 0.08)',
   },
   typography: {
     fontFamily: '"DM Sans", "Space Mono", sans-serif',
@@ -145,7 +146,7 @@ const darkTheme = createTheme({
           backgroundImage: 'none',
           backgroundColor: 'rgba(10, 15, 30, 0.85)',
           backdropFilter: 'blur(12px)',
-          border: '1px solid rgba(0, 212, 255, 0.08)',
+          border: '1px solid rgba(255, 42, 42, 0.08)',
         },
       },
     },
@@ -154,7 +155,7 @@ const darkTheme = createTheme({
         root: {
           backgroundImage: 'none',
           backgroundColor: '#0a0f1e',
-          border: '1px solid rgba(0, 212, 255, 0.08)',
+          border: '1px solid rgba(255, 42, 42, 0.08)',
         },
       },
     },
@@ -169,7 +170,7 @@ const darkTheme = createTheme({
     MuiTableCell: {
       styleOverrides: {
         root: {
-          borderBottom: '1px solid rgba(0, 212, 255, 0.06)',
+          borderBottom: '1px solid rgba(255, 42, 42, 0.06)',
         },
         head: {
           fontWeight: 700,
@@ -184,13 +185,13 @@ const darkTheme = createTheme({
         root: {
           '& .MuiOutlinedInput-root': {
             '& fieldset': {
-              borderColor: 'rgba(0, 212, 255, 0.15)',
+              borderColor: 'rgba(255, 42, 42, 0.15)',
             },
             '&:hover fieldset': {
-              borderColor: 'rgba(0, 212, 255, 0.3)',
+              borderColor: 'rgba(255, 42, 42, 0.3)',
             },
             '&.Mui-focused fieldset': {
-              borderColor: '#00d4ff',
+              borderColor: '#ff2a2a',
             },
           },
         },
@@ -200,10 +201,10 @@ const darkTheme = createTheme({
       styleOverrides: {
         switchBase: {
           '&.Mui-checked': {
-            color: '#00d4ff',
+            color: '#ff2a2a',
           },
           '&.Mui-checked + .MuiSwitch-track': {
-            backgroundColor: '#00d4ff',
+            backgroundColor: '#ff2a2a',
           },
         },
       },
@@ -212,7 +213,7 @@ const darkTheme = createTheme({
       styleOverrides: {
         paper: {
           backgroundColor: '#0a0f1e',
-          border: '1px solid rgba(0, 212, 255, 0.15)',
+          border: '1px solid rgba(255, 42, 42, 0.15)',
           backgroundImage: 'none',
         },
       },
@@ -221,7 +222,7 @@ const darkTheme = createTheme({
       styleOverrides: {
         tooltip: {
           backgroundColor: '#0f1628',
-          border: '1px solid rgba(0, 212, 255, 0.15)',
+          border: '1px solid rgba(255, 42, 42, 0.15)',
           fontSize: '0.75rem',
           fontFamily: '"IBM Plex Mono", monospace',
         },
@@ -293,6 +294,16 @@ function AnimatedRoutes() {
               <ProtectedRoute>
                 <PageTransition>
                   <AnalyticsPage />
+                </PageTransition>
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/dashboard/systems"
+            element={
+              <ProtectedRoute>
+                <PageTransition>
+                  <AdvancedSystemsPage />
                 </PageTransition>
               </ProtectedRoute>
             }

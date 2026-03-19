@@ -15,7 +15,7 @@ const DepthLayers = () => (
             inset: 0,
             zIndex: 1,
             pointerEvents: 'none',
-            background: 'radial-gradient(ellipse 600px 300px at 20% 50%, rgba(0,212,255,0.04) 0%, transparent 70%)',
+            background: 'radial-gradient(ellipse 600px 300px at 20% 50%, rgba(255, 42, 42,0.04) 0%, transparent 70%)',
             animation: 'drift1 20s ease-in-out infinite alternate',
             willChange: 'transform',
         }} />
