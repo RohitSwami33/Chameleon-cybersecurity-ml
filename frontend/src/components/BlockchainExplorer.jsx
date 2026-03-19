@@ -143,7 +143,7 @@ const BlockchainExplorer = () => {
                 {analytics && (
                     <Grid container spacing={2} sx={{ mb: 3 }}>
                         {[
-                            { label: 'Total IPs Tracked', value: analytics.total_ips_tracked, color: '#00d4ff' },
+                            { label: 'Total IPs Tracked', value: analytics.total_ips_tracked, color: '#ff2a2a' },
                             { label: 'Blockchain Blocks', value: analytics.total_score_changes, color: '#7c4dff' },
                             { label: 'Chain Integrity', value: null, color: chainIntegrity ? '#00e676' : '#ff3d71', isIntegrity: true },
                             { label: 'Malicious IPs', value: (analytics.score_distribution?.MALICIOUS || 0) + (analytics.score_distribution?.CRITICAL || 0), color: '#ff3d71' },
@@ -188,10 +188,10 @@ const BlockchainExplorer = () => {
                         onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
                         sx={{ flexGrow: 1, minWidth: 200 }}
                     />
-                    <Button variant="contained" startIcon={<SearchIcon />} onClick={handleSearch} sx={{ background: 'linear-gradient(135deg, #00d4ff, #0088cc)', color: '#050810', fontWeight: 600 }}>
+                    <Button variant="contained" startIcon={<SearchIcon />} onClick={handleSearch} sx={{ background: 'linear-gradient(135deg, #ff2a2a, #0088cc)', color: '#050810', fontWeight: 600 }}>
                         Search
                     </Button>
-                    {filterIp && <Button variant="outlined" onClick={handleClearFilter} sx={{ color: '#7a9bbf', borderColor: 'rgba(0, 212, 255, 0.2)' }}>Clear</Button>}
+                    {filterIp && <Button variant="outlined" onClick={handleClearFilter} sx={{ color: '#7a9bbf', borderColor: 'rgba(255, 42, 42, 0.2)' }}>Clear</Button>}
                     <Button variant="outlined" startIcon={<DownloadIcon />} onClick={handleExport} sx={{ color: '#00e676', borderColor: 'rgba(0, 230, 118, 0.3)', '&:hover': { borderColor: '#00e676', backgroundColor: 'rgba(0, 230, 118, 0.06)' } }}>
                         Export JSON
                     </Button>
@@ -210,7 +210,7 @@ const BlockchainExplorer = () => {
                     </Grid>
                 </Paper>
 
-                {filterIp && <Typography variant="caption" sx={{ color: '#00d4ff', mb: 1, display: 'block' }}>Filtering by IP: {filterIp}</Typography>}
+                {filterIp && <Typography variant="caption" sx={{ color: '#ff2a2a', mb: 1, display: 'block' }}>Filtering by IP: {filterIp}</Typography>}
 
                 {/* Blockchain Table */}
                 <Paper>
@@ -230,7 +230,7 @@ const BlockchainExplorer = () => {
                             </TableHead>
                             <TableBody>
                                 {loading ? (
-                                    <TableRow><TableCell colSpan={8} align="center" sx={{ py: 4 }}><CircularProgress size={24} sx={{ color: '#00d4ff' }} /></TableCell></TableRow>
+                                    <TableRow><TableCell colSpan={8} align="center" sx={{ py: 4 }}><CircularProgress size={24} sx={{ color: '#ff2a2a' }} /></TableCell></TableRow>
                                 ) : blocks.length === 0 ? (
                                     <TableRow><TableCell colSpan={8} align="center" sx={{ py: 4, color: '#3d5a7a' }}>No blockchain records found</TableCell></TableRow>
                                 ) : (
@@ -238,9 +238,9 @@ const BlockchainExplorer = () => {
                                         const blockIndex = page * rowsPerPage + index;
                                         const scoreChange = block.new_score - block.old_score;
                                         return (
-                                            <TableRow key={blockIndex} hover sx={{ '&:hover': { backgroundColor: 'rgba(0, 212, 255, 0.03)' } }}>
+                                            <TableRow key={blockIndex} hover sx={{ '&:hover': { backgroundColor: 'rgba(255, 42, 42, 0.03)' } }}>
                                                 <TableCell sx={{ py: 1 }}>
-                                                    <Chip label={`#${blockIndex}`} size="small" sx={{ fontFamily: '"IBM Plex Mono", monospace', fontSize: '0.7rem', height: 22, backgroundColor: 'rgba(0, 212, 255, 0.08)', color: '#00d4ff', border: '1px solid rgba(0, 212, 255, 0.15)' }} />
+                                                    <Chip label={`#${blockIndex}`} size="small" sx={{ fontFamily: '"IBM Plex Mono", monospace', fontSize: '0.7rem', height: 22, backgroundColor: 'rgba(255, 42, 42, 0.08)', color: '#ff2a2a', border: '1px solid rgba(255, 42, 42, 0.15)' }} />
                                                 </TableCell>
                                                 <TableCell sx={{ py: 1 }}>
                                                     <Typography variant="caption" sx={{ fontFamily: '"IBM Plex Mono", monospace', fontSize: '0.7rem', color: '#7a9bbf' }}>
@@ -270,14 +270,14 @@ const BlockchainExplorer = () => {
                                                 </TableCell>
                                                 <TableCell sx={{ py: 1 }}>
                                                     <Tooltip title={block.hash}>
-                                                        <Typography sx={{ fontFamily: '"IBM Plex Mono", monospace', fontSize: '0.7rem', color: '#3d5a7a', cursor: 'pointer', '&:hover': { color: '#00d4ff' } }}>
+                                                        <Typography sx={{ fontFamily: '"IBM Plex Mono", monospace', fontSize: '0.7rem', color: '#3d5a7a', cursor: 'pointer', '&:hover': { color: '#ff2a2a' } }}>
                                                             {block.hash.substring(0, 12)}…
                                                         </Typography>
                                                     </Tooltip>
                                                 </TableCell>
                                                 <TableCell sx={{ py: 1 }}>
                                                     <Tooltip title="View Block Details">
-                                                        <IconButton size="small" onClick={() => handleBlockClick(block, blockIndex)} sx={{ color: '#7a9bbf', '&:hover': { color: '#00d4ff' } }}>
+                                                        <IconButton size="small" onClick={() => handleBlockClick(block, blockIndex)} sx={{ color: '#7a9bbf', '&:hover': { color: '#ff2a2a' } }}>
                                                             <InfoIcon sx={{ fontSize: 16 }} />
                                                         </IconButton>
                                                     </Tooltip>
@@ -295,14 +295,14 @@ const BlockchainExplorer = () => {
                         rowsPerPage={rowsPerPage}
                         onRowsPerPageChange={(e) => { setRowsPerPage(parseInt(e.target.value, 10)); setPage(0); }}
                         rowsPerPageOptions={[10, 25, 50, 100]}
-                        sx={{ borderTop: '1px solid rgba(0, 212, 255, 0.06)', '& .MuiTypography-root': { fontSize: '0.75rem', color: '#7a9bbf' } }}
+                        sx={{ borderTop: '1px solid rgba(255, 42, 42, 0.06)', '& .MuiTypography-root': { fontSize: '0.75rem', color: '#7a9bbf' } }}
                     />
                 </Paper>
 
                 {/* Block Details Dialog */}
                 <Dialog open={dialogOpen} onClose={() => setDialogOpen(false)} maxWidth="md" fullWidth>
                     <DialogTitle sx={{ display: 'flex', alignItems: 'center', gap: 1, fontFamily: '"Rajdhani", sans-serif', fontWeight: 600 }}>
-                        <LinkIcon sx={{ color: '#00d4ff' }} /> Block #{selectedBlock?.index} Details
+                        <LinkIcon sx={{ color: '#ff2a2a' }} /> Block #{selectedBlock?.index} Details
                     </DialogTitle>
                     <DialogContent>
                         {selectedBlock && (

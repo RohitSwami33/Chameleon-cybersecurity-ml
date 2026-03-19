@@ -88,7 +88,7 @@ const Login = () => {
                     p: 4,
                     backgroundColor: 'rgba(8, 14, 28, 0.85)',
                     backdropFilter: 'blur(20px)',
-                    border: '1px solid rgba(0, 212, 255, 0.15)',
+                    border: '1px solid rgba(255, 42, 42, 0.15)',
                     borderRadius: '20px',
                 }}>
                     {/* Hero Element */}
@@ -100,7 +100,7 @@ const Login = () => {
                             color: '#e8f4fd',
                             mb: 0.5,
                         }}>
-                            CHAMELEON <span style={{ color: '#00d4ff' }}>FORENSICS</span>
+                            CHAMELEON <span style={{ color: '#ff2a2a' }}>FORENSICS</span>
                         </Typography>
                         <Typography variant="body2" sx={{ color: '#3d5a7a', fontFamily: '"DM Sans", sans-serif', fontSize: '0.8rem' }}>
                             Operator Authentication Required
@@ -109,10 +109,10 @@ const Login = () => {
                         <Box sx={{
                             mt: 1.5, mb: 0.5, py: 0.8, px: 1.5,
                             borderRadius: '8px',
-                            backgroundColor: 'rgba(0,212,255,0.06)',
-                            border: '1px solid rgba(0,212,255,0.12)',
+                            backgroundColor: 'rgba(255, 42, 42,0.06)',
+                            border: '1px solid rgba(255, 42, 42,0.12)',
                         }}>
-                            <Typography sx={{ fontFamily: '"IBM Plex Mono", monospace', fontSize: '0.68rem', color: '#00d4ff', opacity: 0.85 }}>
+                            <Typography sx={{ fontFamily: '"IBM Plex Mono", monospace', fontSize: '0.68rem', color: '#ff2a2a', opacity: 0.85 }}>
                                 👤 admin &nbsp;|&nbsp; 🔑 chameleon2024
                             </Typography>
                         </Box>
@@ -139,7 +139,7 @@ const Login = () => {
                                 '& .MuiInputBase-input': { color: '#e8f4fd', fontFamily: '"IBM Plex Mono", monospace' },
                                 '& .MuiOutlinedInput-root': {
                                     borderRadius: '10px',
-                                    backgroundColor: 'rgba(0, 212, 255, 0.03)',
+                                    backgroundColor: 'rgba(255, 42, 42, 0.03)',
                                 },
                             }}
                         />
@@ -175,7 +175,7 @@ const Login = () => {
                                 '& .MuiInputBase-input': { color: '#e8f4fd', fontFamily: '"IBM Plex Mono", monospace' },
                                 '& .MuiOutlinedInput-root': {
                                     borderRadius: '10px',
-                                    backgroundColor: 'rgba(0, 212, 255, 0.03)',
+                                    backgroundColor: 'rgba(255, 42, 42, 0.03)',
                                 },
                             }}
                         />
@@ -192,16 +192,16 @@ const Login = () => {
                                 fontWeight: 700,
                                 fontSize: '0.9rem',
                                 fontFamily: '"DM Sans", sans-serif',
-                                background: 'linear-gradient(135deg, #00d4ff 0%, #0088cc 100%)',
+                                background: 'linear-gradient(135deg, #ff2a2a 0%, #0088cc 100%)',
                                 color: '#050810',
                                 textTransform: 'none',
-                                boxShadow: '0 4px 24px rgba(0, 212, 255, 0.3)',
+                                boxShadow: '0 4px 24px rgba(255, 42, 42, 0.3)',
                                 '&:hover': {
                                     background: 'linear-gradient(135deg, #33ddff 0%, #00aaee 100%)',
-                                    boxShadow: '0 6px 32px rgba(0, 212, 255, 0.4)',
+                                    boxShadow: '0 6px 32px rgba(255, 42, 42, 0.4)',
                                 },
                                 '&:disabled': {
-                                    background: 'rgba(0, 212, 255, 0.15)',
+                                    background: 'rgba(255, 42, 42, 0.15)',
                                     color: '#3d5a7a',
                                 },
                             }}

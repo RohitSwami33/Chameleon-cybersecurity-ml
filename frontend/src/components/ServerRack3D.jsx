@@ -434,13 +434,13 @@ const ServerRack3D = () => {
                     p: 1.5,
                     bgcolor: 'rgba(8, 14, 28, 0.9)',
                     backdropFilter: 'blur(8px)',
-                    border: '1px solid #00d4ff',
+                    border: '1px solid #ff2a2a',
                     borderRadius: '6px',
                     pointerEvents: 'none',
                     zIndex: 20,
                     minWidth: 200
                 }}>
-                    <Typography sx={{ color: '#00d4ff', fontSize: '11px', fontWeight: 'bold', fontFamily: '"IBM Plex Mono", monospace', mb: 1 }}>
+                    <Typography sx={{ color: '#ff2a2a', fontSize: '11px', fontWeight: 'bold', fontFamily: '"IBM Plex Mono", monospace', mb: 1 }}>
                         ⬛ {tooltip.content.name}
                     </Typography>
                     <Typography sx={{ color: '#e8f4fd', fontSize: '10px', fontFamily: '"IBM Plex Mono", monospace' }}>

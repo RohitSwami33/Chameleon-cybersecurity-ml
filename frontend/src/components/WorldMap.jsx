@@ -33,11 +33,11 @@ const WorldMap = ({ geoLocations = [] }) => {
             flexDirection: 'column',
             backgroundColor: 'rgba(10, 15, 30, 0.85)',
             backdropFilter: 'blur(12px)',
-            border: '1px solid rgba(0, 212, 255, 0.08)',
+            border: '1px solid rgba(255, 42, 42, 0.08)',
             borderRadius: '12px',
         }}>
             <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
-                <PublicIcon sx={{ mr: 1, color: '#00d4ff', fontSize: 22 }} />
+                <PublicIcon sx={{ mr: 1, color: '#ff2a2a', fontSize: 22 }} />
                 <Typography variant="h6" component="h2" sx={{ fontWeight: 600, fontSize: '0.95rem', color: '#e8f4fd' }}>
                     Attack Origins Map
                 </Typography>
@@ -47,7 +47,7 @@ const WorldMap = ({ geoLocations = [] }) => {
                 flexGrow: 1,
                 borderRadius: '8px',
                 overflow: 'hidden',
-                background: 'radial-gradient(ellipse at center, rgba(0, 212, 255, 0.03), transparent 70%)',
+                background: 'radial-gradient(ellipse at center, rgba(255, 42, 42, 0.03), transparent 70%)',
                 position: 'relative',
             }}>
                 <svg viewBox="0 0 500 280" style={{ width: '100%', height: '100%' }} preserveAspectRatio="xMidYMid meet">
@@ -60,10 +60,10 @@ const WorldMap = ({ geoLocations = [] }) => {
 
                     {/* Grid */}
                     {Array.from({ length: 18 }).map((_, i) => (
-                        <line key={`v-${i}`} x1={i * 28} y1={0} x2={i * 28} y2={280} stroke="rgba(0, 212, 255, 0.04)" strokeWidth="0.5" />
+                        <line key={`v-${i}`} x1={i * 28} y1={0} x2={i * 28} y2={280} stroke="rgba(255, 42, 42, 0.04)" strokeWidth="0.5" />
                     ))}
                     {Array.from({ length: 10 }).map((_, i) => (
-                        <line key={`h-${i}`} x1={0} y1={i * 28} x2={500} y2={i * 28} stroke="rgba(0, 212, 255, 0.04)" strokeWidth="0.5" />
+                        <line key={`h-${i}`} x1={0} y1={i * 28} x2={500} y2={i * 28} stroke="rgba(255, 42, 42, 0.04)" strokeWidth="0.5" />
                     ))}
 
                     {/* Markers */}
@@ -80,7 +80,7 @@ const WorldMap = ({ geoLocations = [] }) => {
             </Box>
 
             {markers.length > 0 && (
-                <Box sx={{ mt: 1.5, pt: 1.5, borderTop: '1px solid rgba(0, 212, 255, 0.06)', display: 'flex', justifyContent: 'space-between' }}>
+                <Box sx={{ mt: 1.5, pt: 1.5, borderTop: '1px solid rgba(255, 42, 42, 0.06)', display: 'flex', justifyContent: 'space-between' }}>
                     <Typography variant="caption" sx={{ color: '#3d5a7a', fontSize: '0.7rem' }}>
                         {markers.length} location{markers.length !== 1 ? 's' : ''} tracked
                     </Typography>

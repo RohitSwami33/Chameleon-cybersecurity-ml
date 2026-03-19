@@ -3,7 +3,7 @@ import { motion } from 'framer-motion';
 import { Box } from '@mui/material';
 import { useMagneticTilt } from '../hooks/useMagneticTilt';
 
-function TiltCard({ children, strength = 12, glowColor = '#00d4ff', style = {}, sx = {}, ...props }) {
+function TiltCard({ children, strength = 12, glowColor = '#ff2a2a', style = {}, sx = {}, ...props }) {
     const { ref, transform, handleMouseMove, handleMouseLeave, glarePosition } = useMagneticTilt(strength);
 
     return (

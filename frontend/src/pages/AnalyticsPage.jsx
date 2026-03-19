@@ -14,8 +14,8 @@ const MerkleTree3D = lazy(() => import('../components/MerkleTree3D'));
 const ServerRack3D = lazy(() => import('../components/ServerRack3D'));
 
 const LoadingSkeleton = ({ width = '100%', height = 300 }) => (
-    <Box sx={{ width, height, background: 'rgba(0,212,255,0.03)', border: '1px solid rgba(0,212,255,0.08)', borderRadius: 2, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-        <CircularProgress size={24} sx={{ color: '#00d4ff' }} />
+    <Box sx={{ width, height, background: 'rgba(255, 42, 42,0.03)', border: '1px solid rgba(255, 42, 42,0.08)', borderRadius: 2, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        <CircularProgress size={24} sx={{ color: '#ff2a2a' }} />
     </Box>
 );
 
@@ -54,7 +54,7 @@ const AnalyticsPage = () => {
     if (loading && !stats) {
         return (
             <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '100vh' }}>
-                <CircularProgress sx={{ color: '#00d4ff' }} />
+                <CircularProgress sx={{ color: '#ff2a2a' }} />
             </Box>
         );
     }
@@ -95,7 +95,7 @@ const AnalyticsPage = () => {
                                 { label: 'Tarpit Status', status: 'Engaged (Adaptive)', color: '#ffab00' },
                             ].map((item, i) => (
                                 <motion.div key={i} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.1 }}>
-                                    <Box sx={{ padding: '12px 20px', background: 'rgba(5, 8, 16, 0.4)', borderRadius: '8px', border: '1px solid rgba(0,212,255,0.08)' }}>
+                                    <Box sx={{ padding: '12px 20px', background: 'rgba(5, 8, 16, 0.4)', borderRadius: '8px', border: '1px solid rgba(255, 42, 42,0.08)' }}>
                                         <Typography variant="body2" sx={{ color: '#7a9bbf', fontSize: '0.8rem', mb: 0.5 }}>{item.label}</Typography>
                                         <Typography variant="body1" sx={{ color: item.color, fontWeight: 600, fontFamily: '"DM Sans", sans-serif' }}>
                                             {item.status}
@@ -143,7 +143,7 @@ const AnalyticsPage = () => {
 
                     <Box sx={{
                         bgcolor: '#050810', p: 2, borderRadius: '8px',
-                        border: '1px solid rgba(0, 212, 255, 0.08)',
+                        border: '1px solid rgba(255, 42, 42, 0.08)',
                     }}>
                         <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 1 }}>
                             <Typography variant="caption" sx={{ color: '#3d5a7a', textTransform: 'uppercase', letterSpacing: 1, fontWeight: 600, fontSize: '0.6rem' }}>
@@ -152,7 +152,7 @@ const AnalyticsPage = () => {
                             {stats?.merkle_root && (
                                 <Button size="small" variant="outlined" startIcon={<ContentCopyIcon sx={{ fontSize: 12 }} />}
                                     onClick={() => { navigator.clipboard.writeText(stats.merkle_root); toast.success('Merkle root copied'); }}
-                                    sx={{ fontSize: '0.65rem', py: 0.3, color: '#00d4ff', borderColor: 'rgba(0, 212, 255, 0.25)' }}>
+                                    sx={{ fontSize: '0.65rem', py: 0.3, color: '#ff2a2a', borderColor: 'rgba(255, 42, 42, 0.25)' }}>
                                     Copy
                                 </Button>
                             )}
@@ -189,7 +189,7 @@ const AnalyticsPage = () => {
                         <Box sx={{ flex: 1, minWidth: 150, textAlign: 'right' }}>
                             <Button variant="outlined" size="small" startIcon={<LinkIcon />}
                                 onClick={() => navigate('/blockchain')}
-                                sx={{ fontSize: '0.75rem', color: '#00d4ff', borderColor: 'rgba(0, 212, 255, 0.25)', '&:hover': { borderColor: '#00d4ff', backgroundColor: 'rgba(0, 212, 255, 0.06)' } }}>
+                                sx={{ fontSize: '0.75rem', color: '#ff2a2a', borderColor: 'rgba(255, 42, 42, 0.25)', '&:hover': { borderColor: '#ff2a2a', backgroundColor: 'rgba(255, 42, 42, 0.06)' } }}>
                                 View Blockchain
                             </Button>
                         </Box>

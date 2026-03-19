@@ -324,14 +324,14 @@ export function CommandBarTrigger() {
         alignItems: 'center',
         gap: 1,
         padding: '4px 10px',
-        background: 'rgba(0, 212, 255, 0.04)',
-        border: '1px solid rgba(0, 212, 255, 0.12)',
+        background: 'rgba(255, 42, 42, 0.04)',
+        border: '1px solid rgba(255, 42, 42, 0.12)',
         borderRadius: '6px',
         cursor: 'pointer',
         transition: 'all 0.2s',
         '&:hover': {
-          background: 'rgba(0, 212, 255, 0.08)',
-          border: '1px solid rgba(0, 212, 255, 0.25)',
+          background: 'rgba(255, 42, 42, 0.08)',
+          border: '1px solid rgba(255, 42, 42, 0.25)',
         },
       }}
     >
@@ -348,12 +348,12 @@ export function CommandBarTrigger() {
         <Box
           sx={{
             padding: '1px 5px',
-            background: 'rgba(0, 212, 255, 0.06)',
+            background: 'rgba(255, 42, 42, 0.06)',
             borderRadius: '3px',
             fontSize: '0.65rem',
             fontFamily: '"IBM Plex Mono", monospace',
             color: '#3d5a7a',
-            border: '1px solid rgba(0, 212, 255, 0.1)',
+            border: '1px solid rgba(255, 42, 42, 0.1)',
           }}
         >
           {navigator.platform.includes('Mac') ? '⌘' : 'Ctrl'}
@@ -361,12 +361,12 @@ export function CommandBarTrigger() {
         <Box
           sx={{
             padding: '1px 5px',
-            background: 'rgba(0, 212, 255, 0.06)',
+            background: 'rgba(255, 42, 42, 0.06)',
             borderRadius: '3px',
             fontSize: '0.65rem',
             fontFamily: '"IBM Plex Mono", monospace',
             color: '#3d5a7a',
-            border: '1px solid rgba(0, 212, 255, 0.1)',
+            border: '1px solid rgba(255, 42, 42, 0.1)',
           }}
         >
           K

@@ -36,18 +36,18 @@ const ShieldSVG = () => (
         viewBox="0 0 24 24"
         fill="none"
         xmlns="http://www.w3.org/2000/svg"
-        style={{ filter: 'drop-shadow(0 0 6px rgba(0,212,255,0.7))' }}
+        style={{ filter: 'drop-shadow(0 0 6px rgba(255, 42, 42,0.7))' }}
     >
         <path
             d="M12 2L3 6v6c0 5.25 3.75 10.15 9 11.25C17.25 22.15 21 17.25 21 12V6L12 2z"
-            fill="rgba(0,212,255,0.15)"
-            stroke="#00d4ff"
+            fill="rgba(255, 42, 42,0.15)"
+            stroke="#ff2a2a"
             strokeWidth="1.5"
             strokeLinejoin="round"
         />
         <path
             d="M9 12l2 2 4-4"
-            stroke="#00d4ff"
+            stroke="#ff2a2a"
             strokeWidth="1.5"
             strokeLinecap="round"
             strokeLinejoin="round"
@@ -59,6 +59,7 @@ const ShieldSVG = () => (
 const NAV_ITEMS = [
     { path: '/dashboard', label: 'Overview', Icon: DashboardIcon },
     { path: '/dashboard/globe', label: 'Attack Globe', Icon: PublicIcon },
+    { path: '/dashboard/systems', label: 'Advanced Systems', Icon: SecurityIcon },
     { path: '/dashboard/analytics', label: 'Analytics', Icon: AssessmentIcon },
     { path: '/dashboard/threat-intel', label: 'Threat Intel', Icon: SecurityIcon },
     { path: '/dashboard/chatbot', label: 'AI Assistant', Icon: SmartToyIcon },
@@ -68,7 +69,7 @@ const NAV_ITEMS = [
 /* ─── Shared style tokens ────────────────────────────────────────────────── */
 const NAV_FONT = '"IBM Plex Mono", monospace';
 const BRAND_FONT = '"Orbitron", sans-serif';
-const CYAN = '#00d4ff';
+const CYAN = '#ff2a2a';
 const AMBER = '#ffab00';
 const MUTED = 'rgba(232, 244, 253, 0.7)';
 
@@ -138,8 +139,8 @@ const Navbar = ({
                             background: 'rgba(8, 14, 28, 0.75)',
                             backdropFilter: 'blur(24px) saturate(180%)',
                             WebkitBackdropFilter: 'blur(24px) saturate(180%)',
-                            border: '1px solid rgba(0, 212, 255, 0.12)',
-                            boxShadow: '0 8px 32px rgba(0,0,0,0.4), 0 0 0 1px rgba(0,212,255,0.05)',
+                            border: '1px solid rgba(255, 42, 42, 0.12)',
+                            boxShadow: '0 8px 32px rgba(0,0,0,0.4), 0 0 0 1px rgba(255, 42, 42,0.05)',
                             display: 'flex',
                             alignItems: 'center',
                             px: '24px',
@@ -201,13 +202,13 @@ const Navbar = ({
                                 size="small"
                                 sx={{
                                     color: CYAN,
-                                    border: `1px solid rgba(0,212,255,0.2)`,
+                                    border: `1px solid rgba(255, 42, 42,0.2)`,
                                     borderRadius: '999px',
                                     width: 32,
                                     height: 32,
                                     transition: 'background-color 0.2s, transform 0.2s',
                                     transform: drawerOpen ? 'rotate(90deg)' : 'rotate(0deg)',
-                                    '&:hover': { backgroundColor: 'rgba(0,212,255,0.08)' },
+                                    '&:hover': { backgroundColor: 'rgba(255, 42, 42,0.08)' },
                                 }}
                             >
                                 {drawerOpen
@@ -232,7 +233,7 @@ const Navbar = ({
                         backdropFilter: 'blur(24px) saturate(180%)',
                         WebkitBackdropFilter: 'blur(24px) saturate(180%)',
                         border: 'none',
-                        borderLeft: '1px solid rgba(0,212,255,0.12)',
+                        borderLeft: '1px solid rgba(255, 42, 42,0.12)',
                         backgroundImage: 'none',
                     },
                 }}
@@ -245,7 +246,7 @@ const Navbar = ({
                         justifyContent: 'space-between',
                         px: 2.5,
                         py: 2,
-                        borderBottom: '1px solid rgba(0,212,255,0.08)',
+                        borderBottom: '1px solid rgba(255, 42, 42,0.08)',
                     }}
                 >
                     <Box sx={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
@@ -295,9 +296,9 @@ const Navbar = ({
                                         mx: 1,
                                         my: 0.25,
                                         borderRadius: '12px',
-                                        backgroundColor: active ? 'rgba(0,212,255,0.08)' : 'transparent',
+                                        backgroundColor: active ? 'rgba(255, 42, 42,0.08)' : 'transparent',
                                         borderLeft: active ? `3px solid ${CYAN}` : '3px solid transparent',
-                                        '&:hover': { backgroundColor: 'rgba(0,212,255,0.05)' },
+                                        '&:hover': { backgroundColor: 'rgba(255, 42, 42,0.05)' },
                                     }}
                                 >
                                     <ListItemIcon sx={{ color: active ? CYAN : MUTED, minWidth: 36 }}>
@@ -322,7 +323,7 @@ const Navbar = ({
                     })}
                 </List>
 
-                <Divider sx={{ borderColor: 'rgba(0,212,255,0.08)', mx: 2, my: 1 }} />
+                <Divider sx={{ borderColor: 'rgba(255, 42, 42,0.08)', mx: 2, my: 1 }} />
 
                 {/* Drawer controls */}
                 <Box sx={{ px: 2.5, display: 'flex', flexDirection: 'column', gap: 1 }}>
@@ -368,7 +369,7 @@ const Navbar = ({
                     )}
                 </Box>
 
-                <Divider sx={{ borderColor: 'rgba(0,212,255,0.08)', mx: 2, my: 1 }} />
+                <Divider sx={{ borderColor: 'rgba(255, 42, 42,0.08)', mx: 2, my: 1 }} />
 
                 {/* Logout */}
                 <List>

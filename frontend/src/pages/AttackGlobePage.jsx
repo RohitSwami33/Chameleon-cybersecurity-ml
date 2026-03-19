@@ -23,6 +23,11 @@ const AttackGlobePage = () => {
         { country: 'Brazil', city: 'São Paulo', latitude: -23.5505, longitude: -46.6333 },
         { country: 'India', city: 'Mumbai', latitude: 19.0760, longitude: 72.8777 },
         { country: 'Australia', city: 'Sydney', latitude: -33.8688, longitude: 151.2093 },
+        { country: 'Canada', city: 'Toronto', latitude: 43.6532, longitude: -79.3832 },
+        { country: 'South Korea', city: 'Seoul', latitude: 37.5665, longitude: 126.9780 },
+        { country: 'Netherlands', city: 'Amsterdam', latitude: 52.3676, longitude: 4.9041 },
+        { country: 'Singapore', city: 'Singapore', latitude: 1.3521, longitude: 103.8198 },
+        { country: 'Turkey', city: 'Istanbul', latitude: 41.0082, longitude: 28.9784 },
     ];
 
     const logsWithGeo = useMockGeo ? logs.map((log, index) => {
@@ -31,6 +36,19 @@ const AttackGlobePage = () => {
         }
         return log;
     }) : logs;
+
+    // Generate synthetic attacks when DB is empty so the globe isn't blank
+    const displayAttacks = logsWithGeo.length > 0 ? logsWithGeo : mockGeoLocations.map((geo, i) => ({
+        id: `mock-${i}`,
+        timestamp: new Date(Date.now() - Math.random() * 3600000).toISOString(),
+        ip_address: `${Math.floor(Math.random()*255)}.${Math.floor(Math.random()*255)}.${Math.floor(Math.random()*255)}.${Math.floor(Math.random()*255)}`,
+        geo_location: geo,
+        classification: {
+            attack_type: ['SQLI', 'XSS', 'SSI', 'BRUTE_FORCE', 'BENIGN'][Math.floor(Math.random() * 5)],
+            confidence: Math.random(),
+            is_malicious: Math.random() > 0.3,
+        }
+    }));
 
     const fetchData = useCallback(async () => {
         try {
@@ -56,36 +74,53 @@ const AttackGlobePage = () => {
 
     const handleRefresh = () => { setLoading(true); fetchData(); };
 
-    if (loading && logs.length === 0) {
-        return (
-            <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '100vh', backgroundColor: '#050810' }}>
-                <CircularProgress sx={{ color: '#00d4ff' }} />
-            </Box>
-        );
-    }
-
     return (
-        <Box sx={{ flexGrow: 1, minHeight: '100vh', display: 'flex', flexDirection: 'column', backgroundColor: '#050810' }}>
-            <Box sx={{ zIndex: 20 }}>
+        <Box sx={{ 
+            flexGrow: 1, 
+            minHeight: '100vh', 
+            display: 'flex', 
+            flexDirection: 'column', 
+            backgroundColor: '#050810' 
+        }}>
+            <Box sx={{ zIndex: 20, flexShrink: 0 }}>
                 <Navbar
                     lastUpdated={lastUpdated}
                     autoRefresh={autoRefresh}
                     setAutoRefresh={setAutoRefresh}
                     onRefresh={handleRefresh}
+                    useMockGeo={useMockGeo}
+                    setUseMockGeo={setUseMockGeo}
                 />
             </Box>
 
-            <Box sx={{ flexGrow: 1, position: 'relative', minHeight: 'calc(100vh - 64px)' }}>
-                <AttackGlobeSimple
-                    attacks={logsWithGeo}
-                    serverLocation={{ lat: 37.7749, lon: -122.4194 }}
-                />
+            {/* Globe container — must have explicit height for the SVG to render */}
+            <Box sx={{ 
+                flexGrow: 1, 
+                position: 'relative', 
+                height: 'calc(100vh - 76px)',   /* navbar height ~76px with padding */
+                minHeight: 500,
+            }}>
+                {loading && logs.length === 0 ? (
+                    <Box sx={{ 
+                        display: 'flex', 
+                        justifyContent: 'center', 
+                        alignItems: 'center', 
+                        height: '100%' 
+                    }}>
+                        <CircularProgress sx={{ color: '#ff2a2a' }} />
+                    </Box>
+                ) : (
+                    <AttackGlobeSimple
+                        attacks={displayAttacks}
+                        serverLocation={{ lat: 37.7749, lon: -122.4194 }}
+                    />
+                )}
 
                 <Box sx={{ position: 'absolute', bottom: 24, left: 24, zIndex: 10 }}>
                     <FormControlLabel
                         control={
                             <Switch checked={useMockGeo} onChange={(e) => setUseMockGeo(e.target.checked)} size="small"
-                                sx={{ '& .MuiSwitch-switchBase.Mui-checked': { color: '#00d4ff' }, '& .MuiSwitch-switchBase.Mui-checked + .MuiSwitch-track': { backgroundColor: '#00d4ff' } }} />
+                                sx={{ '& .MuiSwitch-switchBase.Mui-checked': { color: '#ff2a2a' }, '& .MuiSwitch-switchBase.Mui-checked + .MuiSwitch-track': { backgroundColor: '#ff2a2a' } }} />
                         }
                         label={<Typography variant="body2" sx={{ color: '#7a9bbf', fontSize: '0.8rem', fontWeight: 600 }}>USE MOCK GEO-DATA</Typography>}
                     />

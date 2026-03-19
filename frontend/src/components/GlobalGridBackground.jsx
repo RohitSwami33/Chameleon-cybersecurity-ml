@@ -12,8 +12,8 @@ const GlobalGridBackground = () => (
             zIndex: 1,
             pointerEvents: 'none',
             backgroundImage: `
-                linear-gradient(rgba(0, 212, 255, 0.03) 1px, transparent 1px),
-                linear-gradient(90deg, rgba(0, 212, 255, 0.03) 1px, transparent 1px)
+                linear-gradient(rgba(255, 42, 42, 0.03) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(255, 42, 42, 0.03) 1px, transparent 1px)
             `,
             backgroundSize: '40px 40px',
             backgroundPosition: 'center center',

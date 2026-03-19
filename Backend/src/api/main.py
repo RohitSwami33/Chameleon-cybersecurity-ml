@@ -319,13 +319,18 @@ class ChatResponse(BaseModel):
 async def lifespan(app: FastAPI):
     """Start both database connections on startup; tear down on shutdown."""
     await connect_to_mongo()          # Legacy endpoints (no-op now)
-    await db.connect()                # Async PostgreSQL for /trap/execute
-    await db.create_tables()          # Ensure all tables exist
-    logger.info("✅ All databases connected")
+    try:
+        await db.connect()                # Async PostgreSQL for /trap/execute
+        await db.create_tables()          # Ensure all tables exist
+        logger.info("[OK] All databases connected")
+    except Exception as e:
+        logger.warning(f"[WARN] PostgreSQL connection failed: {e}")
+        logger.warning("[WARN] Running without database - some features will be limited")
     yield
     await close_mongo_connection()
-    await db.disconnect()
-    logger.info("🛑 All databases disconnected")
+    if db.connected:
+        await db.disconnect()
+    logger.info("[INFO] All databases disconnected")
 
 
 app = FastAPI(

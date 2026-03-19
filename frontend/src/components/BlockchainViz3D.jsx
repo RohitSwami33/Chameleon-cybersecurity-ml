@@ -280,7 +280,7 @@ const BlockchainViz3D = ({ blocks = [], chainIntegrity = true }) => {
                     p: 2,
                     backgroundColor: 'rgba(10, 22, 40, 0.95)',
                     backdropFilter: 'blur(12px)',
-                    border: '1px solid rgba(0, 212, 255, 0.4)',
+                    border: '1px solid rgba(255, 42, 42, 0.4)',
                     borderRadius: '12px',
                     zIndex: 10,
                     minWidth: 320,
@@ -288,7 +288,7 @@ const BlockchainViz3D = ({ blocks = [], chainIntegrity = true }) => {
                     boxShadow: '0 8px 32px rgba(0, 0, 0, 0.5)'
                 }}>
                     <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1, borderBottom: '1px solid rgba(255, 255, 255, 0.1)', pb: 1 }}>
-                        <Typography variant="caption" sx={{ color: '#00d4ff', fontFamily: '"IBM Plex Mono", monospace', fontWeight: 600 }}>
+                        <Typography variant="caption" sx={{ color: '#ff2a2a', fontFamily: '"IBM Plex Mono", monospace', fontWeight: 600 }}>
                             BLOCK ID: {hoveredBlock.hash?.substring(0, 8)}...
                         </Typography>
                         <Chip label={hoveredBlock.attack_type} size="small" sx={{

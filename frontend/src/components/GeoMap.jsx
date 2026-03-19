@@ -14,20 +14,20 @@ const GeoMap = ({ geoLocations }) => {
 
     return (
         <TiltCard
-            glowColor="#00d4ff"
+            glowColor="#ff2a2a"
             sx={{
                 p: '20px',
                 height: '100%',
                 backgroundColor: 'rgba(10, 15, 30, 0.85)',
                 backdropFilter: 'blur(12px)',
-                border: '1px solid rgba(0, 212, 255, 0.08)',
+                border: '1px solid rgba(255, 42, 42, 0.08)',
                 borderRadius: '12px',
                 display: 'flex',
                 flexDirection: 'column',
             }}
         >
             <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
-                <PublicIcon sx={{ mr: 1, color: '#00d4ff', fontSize: 22 }} />
+                <PublicIcon sx={{ mr: 1, color: '#ff2a2a', fontSize: 22 }} />
                 <Typography variant="h6" component="h2" sx={{ fontWeight: 600, fontSize: '0.95rem', color: '#e8f4fd' }}>
                     Attack Origins
                 </Typography>
@@ -58,11 +58,11 @@ const GeoMap = ({ geoLocations }) => {
                                     mb: 0.8,
                                     borderRadius: '8px',
                                     backgroundColor: 'rgba(10, 15, 30, 0.5)',
-                                    border: '1px solid rgba(0, 212, 255, 0.04)',
+                                    border: '1px solid rgba(255, 42, 42, 0.04)',
                                     transition: 'all 0.2s',
                                     '&:hover': {
-                                        backgroundColor: 'rgba(0, 212, 255, 0.04)',
-                                        borderColor: 'rgba(0, 212, 255, 0.15)',
+                                        backgroundColor: 'rgba(255, 42, 42, 0.04)',
+                                        borderColor: 'rgba(255, 42, 42, 0.15)',
                                     },
                                 }}
                             >
@@ -105,7 +105,7 @@ const GeoMap = ({ geoLocations }) => {
             )}
 
             {topLocations.length > 0 && (
-                <Box sx={{ mt: 1.5, pt: 1.5, borderTop: '1px solid rgba(0, 212, 255, 0.06)' }}>
+                <Box sx={{ mt: 1.5, pt: 1.5, borderTop: '1px solid rgba(255, 42, 42, 0.06)' }}>
                     <Typography variant="caption" sx={{ color: '#3d5a7a', fontSize: '0.7rem' }}>
                         Showing top {topLocations.length} attack locations
                     </Typography>
