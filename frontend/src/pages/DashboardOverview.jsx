@@ -12,6 +12,18 @@ import useAttackStore from '../stores/useAttackStore';
 import { getDashboardStats, getAttackLogs, generateReport } from '../services/api';
 import { downloadPDF } from '../utils/helpers';
 
+// Fetch blockchain integrity from public endpoint
+const fetchChainIntegrity = async () => {
+    try {
+        const response = await fetch('/api/public/blockchain?limit=1');
+        const data = await response.json();
+        return data.merkle_root || null;
+    } catch (error) {
+        console.error('Error fetching chain integrity:', error);
+        return null;
+    }
+};
+
 const DashboardOverview = () => {
     const [stats, setStats] = useState({
         total_attempts: 0, malicious_attempts: 0, benign_attempts: 0,
@@ -79,11 +91,12 @@ const DashboardOverview = () => {
 
     const fetchData = useCallback(async () => {
         try {
-            const [statsData, logsData] = await Promise.all([
+            const [statsData, logsData, merkleRoot] = await Promise.all([
                 getDashboardStats(),
-                getAttackLogs(0, 100)
+                getAttackLogs(0, 100),
+                fetchChainIntegrity()
             ]);
-            setStats(statsData);
+            setStats({...statsData, merkle_root: merkleRoot});
             setLogs(logsData);
             setAttacks(logsData);
             setLastUpdated(new Date());

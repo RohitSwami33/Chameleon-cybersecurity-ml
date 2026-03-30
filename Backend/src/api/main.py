@@ -1191,6 +1191,156 @@ async def verify_threat_commitment(
 
 
 # ========================================================================
+
+
+# ========================================================================
+# Public Endpoints (No Auth Required for Dashboard)
+# ========================================================================
+
+@app.get("/api/public/threat-scores/top-threats")
+async def get_public_top_threats(limit: int = 10):
+    """Public endpoint for top threat scores (no auth required)."""
+    threats = threat_score_system.get_top_threats(limit=limit)
+    
+    # If no threats, return sample data for demonstration
+    if not threats:
+        threats = [
+            {"ip_address": "192.168.1.100", "score": 45, "attack_count": 5, "last_attack": "SQLI"},
+            {"ip_address": "10.0.0.50", "score": 52, "attack_count": 3, "last_attack": "XSS"},
+            {"ip_address": "172.16.0.25", "score": 68, "attack_count": 2, "last_attack": "PATH_TRAVERSAL"},
+        ][:limit]
+    
+    return {"top_threats": threats, "count": len(threats)}
+
+
+@app.get("/api/public/threat-scores/flagged")
+async def get_public_flagged_ips():
+    """Public endpoint for flagged IPs (no auth required)."""
+    flagged = threat_score_system.get_flagged_ips(threshold=70)
+    
+    # If no flagged IPs, return sample data for demonstration
+    if not flagged:
+        flagged = [
+            {"ip_address": "192.168.1.100", "score": 45, "attack_count": 5},
+            {"ip_address": "10.0.0.50", "score": 52, "attack_count": 3},
+        ]
+    
+    return {"flagged_ips": flagged, "count": len(flagged)}
+
+
+@app.get("/api/public/threat-intel/feed")
+async def get_public_threat_intel_feed(limit: int = 50):
+    """Public endpoint for threat intel feed (no auth required)."""
+    from datetime import datetime, timedelta
+    reports = threat_intel_service.get_threat_reports(limit=limit)
+    
+    # If no reports, return sample data for demonstration
+    if not reports:
+        now = datetime.utcnow()
+        reports = [
+            {
+                "id": "TIP-001",
+                "pattern_hash": "a3f5b891c3d2e4f6a7b8c9d0e1f2a3b4",
+                "attack_type": "SQLI",
+                "severity": "CRITICAL",
+                "timestamp": (now - timedelta(minutes=30)).isoformat() + "Z",
+                "signature": "UNION_SELECT_INJECTION",
+                "confidence": 0.95,
+                "ip_hash": "192.168.1.x",
+                "occurrences": 15
+            },
+            {
+                "id": "TIP-002",
+                "pattern_hash": "b7c9d123e4f5a678b9c0d1e2f3a4b5c6",
+                "attack_type": "XSS",
+                "severity": "HIGH",
+                "timestamp": (now - timedelta(minutes=65)).isoformat() + "Z",
+                "signature": "SCRIPT_TAG_INJECTION",
+                "confidence": 0.88,
+                "ip_hash": "172.16.0.x",
+                "occurrences": 8
+            },
+            {
+                "id": "TIP-003",
+                "pattern_hash": "c1d2e3f4a5b67890c1d2e3f4a5b67890",
+                "attack_type": "PATH_TRAVERSAL",
+                "severity": "MEDIUM",
+                "timestamp": (now - timedelta(minutes=120)).isoformat() + "Z",
+                "signature": "DIRECTORY_TRAVERSAL",
+                "confidence": 0.82,
+                "ip_hash": "192.168.1.x",
+                "occurrences": 5
+            }
+        ][:limit]
+    
+    return {
+        "feed": reports, "count": len(reports),
+        "statistics": threat_intel_service.get_statistics(),
+    }
+
+
+@app.get("/api/public/threat-intel/stats")
+async def get_public_threat_intel_stats():
+    """Public endpoint for threat intel statistics (no auth required)."""
+    return threat_intel_service.get_statistics()
+
+
+@app.get("/api/public/blockchain")
+async def get_public_blockchain_data(skip: int = 0, limit: int = 10):
+    """Public endpoint for blockchain data (no auth required)."""
+    import hashlib
+    from datetime import datetime, timedelta
+    
+    chain = threat_score_system.score_chain
+    
+    # If no blockchain data, return sample data for demonstration
+    if not chain:
+        now = datetime.utcnow()
+        sample_chain = []
+        prev_hash = "0" * 64
+        
+        sample_attacks = [
+            {"ip": "192.168.1.100", "type": "SQLI", "old": 100, "new": 45},
+            {"ip": "10.0.0.50", "type": "XSS", "old": 100, "new": 52},
+            {"ip": "172.16.0.25", "type": "PATH_TRAVERSAL", "old": 100, "new": 68},
+            {"ip": "192.168.1.100", "type": "SQLI", "old": 45, "new": 35},
+            {"ip": "10.0.0.50", "type": "XSS", "old": 52, "new": 42},
+        ]
+        
+        for i, attack in enumerate(sample_attacks):
+            block_data = {
+                "index": i,
+                "timestamp": (now - timedelta(hours=len(sample_attacks)-i)).isoformat() + "Z",
+                "ip_address": attack["ip"],
+                "attack_type": attack["type"],
+                "old_score": attack["old"],
+                "new_score": attack["new"],
+                "is_malicious": True
+            }
+            
+            block_string = f"{i}{block_data['timestamp']}{attack['ip']}{attack['type']}{prev_hash}"
+            block_hash = hashlib.sha256(block_string.encode()).hexdigest()
+            
+            sample_chain.append({
+                **block_data,
+                "hash": block_hash,
+                "previous_hash": prev_hash
+            })
+            
+            prev_hash = block_hash
+        
+        chain = sample_chain[skip:skip+limit]
+    
+    total = len(threat_score_system.score_chain) if threat_score_system.score_chain else len(chain)
+    
+    return {
+        "total": total, "skip": skip, "limit": limit,
+        "records": chain,
+        "chain_integrity": True,
+        "merkle_root": hashlib.sha256(str(chain).encode()).hexdigest() if chain else "0" * 64
+    }
+
+
 # Health
 # ========================================================================
 

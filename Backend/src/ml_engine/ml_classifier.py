@@ -79,6 +79,8 @@ class MLClassifier:
             r"docker\s+(ps|images|run|build|stop|start)",
             r"systemctl\s+(status|start|stop|restart)",
             r"journalctl\s+-u",
+            r"^login:",                    # Login attempts (case insensitive)
+            r"^login:[a-z0-9_.-]+$",       # LOGIN:username format
         ]
         for pattern in benign_patterns:
             if re.search(pattern, text_lower):
@@ -311,7 +313,8 @@ class MLClassifier:
         # =====================================================================
         # Brute Force (heuristic: short text with common keywords)
         # =====================================================================
-        bf_keywords = ["password", "123456", "admin", "root"]
+        # Only flag as brute force if it looks like a password attempt, NOT a username
+        bf_keywords = ["password", "123456"]  # Removed "admin" and "root" - these are valid usernames
         if len(text) < 15 and any(keyword in text_lower for keyword in bf_keywords):
             if any(c.isdigit() for c in text) or "password" in text_lower:
                 return AttackType.BRUTE_FORCE, 0.75

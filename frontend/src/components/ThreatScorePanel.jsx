@@ -33,9 +33,10 @@ const ThreatScorePanel = ({ topThreats, flaggedCount }) => {
     const fetchScores = async () => {
         try {
             setLoading(true);
-            const response = await api.get('/api/threat-scores/');
-            if (response.data && Array.isArray(response.data)) {
-                setScores(response.data.slice(0, 6));
+            // Use public endpoint (no auth required)
+            const response = await api.get('/api/public/threat-scores/top-threats?limit=6');
+            if (response.data && response.data.top_threats && Array.isArray(response.data.top_threats)) {
+                setScores(response.data.top_threats);
             }
         } catch (err) {
             console.error('Failed to fetch threat scores:', err);

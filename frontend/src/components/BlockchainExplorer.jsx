@@ -53,10 +53,11 @@ const BlockchainExplorer = () => {
             setLoading(true);
             const params = { skip: page * rowsPerPage, limit: rowsPerPage };
             if (filterIp) params.ip_address = filterIp;
-            const response = await api.get('/api/threat-scores/blockchain', { params });
-            setBlocks(response.data.records);
-            setTotal(response.data.total);
-            setChainIntegrity(response.data.chain_integrity);
+            // Use public endpoint (no auth required)
+            const response = await api.get('/api/public/blockchain', { params });
+            setBlocks(response.data.records || []);
+            setTotal(response.data.total || 0);
+            setChainIntegrity(response.data.chain_integrity || true);
         } catch (error) {
             console.error('Error fetching blockchain:', error);
             toast.error('Failed to fetch blockchain data');

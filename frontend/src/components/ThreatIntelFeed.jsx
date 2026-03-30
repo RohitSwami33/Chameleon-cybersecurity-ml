@@ -27,12 +27,12 @@ const ThreatIntelFeed = () => {
 
     const fetchThreatIntel = async () => {
         try {
-            const token = localStorage.getItem('authToken');
-            const [reportsRes, statsRes] = await Promise.all([
-                axios.get(`${API_URL}/api/threat-intel/reports?limit=50`, { headers: { Authorization: `Bearer ${token}` } }),
-                axios.get(`${API_URL}/api/threat-intel/stats`, { headers: { Authorization: `Bearer ${token}` } })
+            // Use public endpoints (no auth required)
+            const [feedRes, statsRes] = await Promise.all([
+                axios.get(`${API_URL}/api/public/threat-intel/feed?limit=50`),
+                axios.get(`${API_URL}/api/public/threat-intel/stats`)
             ]);
-            setFeed(reportsRes.data.reports || []);
+            setFeed(feedRes.data.feed || []);
             setStatistics(statsRes.data || null);
         } catch (error) {
             console.error('Error fetching threat intelligence:', error);

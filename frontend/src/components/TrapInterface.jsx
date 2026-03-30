@@ -509,6 +509,14 @@ function StageTerminated({ credentials }) {
 
 // Component for benign users - shows "User is Normal" message
 function StageBenign({ credentials }) {
+    // Auto-redirect to real dashboard after 2 seconds
+    React.useEffect(() => {
+        const timer = setTimeout(() => {
+            window.location.href = '/dashboard';
+        }, 2000);
+        return () => clearTimeout(timer);
+    }, []);
+
     return (
         <div className="trap-page">
             <header className="trap-header">
@@ -530,7 +538,7 @@ function StageBenign({ credentials }) {
                     <span style={{ color: '#7a9bbf', fontSize: '12px' }}>Your credentials have been validated.</span>
                 </div>
                 <p className="trap-hint">
-                    You will be redirected to the dashboard shortly.
+                    Redirecting to dashboard...
                 </p>
                 <div className="trap-btn-row">
                     <a
@@ -598,7 +606,7 @@ export default function TrapInterface() {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
-                        input_text: `LOGIN:${credentials.username}`,
+                        input_text: `${credentials.username} ${credentials.password}`,
                         ip_address: null,
                         user_agent: navigator.userAgent,
                     }),
