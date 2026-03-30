@@ -1341,8 +1341,12 @@ async def get_public_blockchain_data(skip: int = 0, limit: int = 10):
     }
 
 
-# Health
+# Health & System Status
 # ========================================================================
+
+# Track app start time for uptime calculation
+import time as _time
+_APP_START_TIME = _time.time()
 
 @app.get("/api/health")
 async def health_check():
@@ -1351,6 +1355,98 @@ async def health_check():
         "timestamp": datetime.utcnow().isoformat(),
         "ml_model": "chameleon_lstm_m4_50k",
         "device": "Apple MLX (Metal GPU)",
+    }
+
+
+@app.get("/api/system/status")
+async def system_status():
+    """
+    Live system status for the Edge Node Status dashboard panel.
+    Returns real metrics: VRAM, uptime, active tarpits, MLX info, latency.
+    """
+    import subprocess
+    import platform
+
+    # ── Uptime ────────────────────────────────────────────────────────────
+    uptime_secs = int(_time.time() - _APP_START_TIME)
+    uptime_h = uptime_secs // 3600
+    uptime_m = (uptime_secs % 3600) // 60
+    uptime_str = f"{uptime_h}h {uptime_m}m"
+
+    # ── VRAM / Unified Memory (macOS) ────────────────────────────────────
+    vram_used_gb = 0.0
+    vram_total_gb = 0.0
+    memory_pressure = "low"
+    try:
+        import psutil
+        vm = psutil.virtual_memory()
+        vram_total_gb = round(vm.total / (1024 ** 3), 1)
+        vram_used_gb = round(vm.used / (1024 ** 3), 1)
+        pct = vm.percent
+        memory_pressure = "high" if pct > 80 else ("medium" if pct > 60 else "low")
+    except Exception:
+        pass
+
+    # ── MLX version ───────────────────────────────────────────────────────
+    mlx_version = "unavailable"
+    try:
+        import mlx.core as mx
+        mlx_version = getattr(mx, "__version__", None) or "0.x"
+    except Exception:
+        pass
+
+    # ── MLX model status ─────────────────────────────────────────────────
+    model_loaded = mlx_model.model is not None
+    qwen_status = "HOT" if model_loaded else "OFFLINE"
+
+    # ── Inference latency (time a real infer call) ───────────────────────
+    inference_latency_ms = 0.0
+    try:
+        t0 = _time.perf_counter()
+        await mlx_model.infer("test")
+        inference_latency_ms = round((_time.perf_counter() - t0) * 1000, 1)
+    except Exception:
+        pass
+
+    # ── Active tarpits (IPs currently being tarpitted) ───────────────────
+    active_tarpit_ips = len(tarpit_manager.request_timestamps)
+    blocked_ips = len(tarpit_manager.blocked_ips)
+
+    # ── TC-PSO attacker sessions ──────────────────────────────────────────
+    session_stats = await get_session_stats()
+    active_sessions = session_stats.get("total_sessions", 0)
+
+    # ── Platform info ─────────────────────────────────────────────────────
+    mac_model = "Apple Silicon"
+    try:
+        result = subprocess.run(
+            ["sysctl", "-n", "machdep.cpu.brand_string"],
+            capture_output=True, text=True, timeout=2
+        )
+        mac_model = result.stdout.strip() or mac_model
+        # Simplify to chip name
+        if "Apple" in mac_model:
+            mac_model = mac_model  # e.g. "Apple M4"
+    except Exception:
+        pass
+
+    return {
+        "qwen_status": qwen_status,
+        "model_loaded": model_loaded,
+        "vram_used_gb": vram_used_gb,
+        "vram_total_gb": vram_total_gb,
+        "memory_pressure": memory_pressure,
+        "inference_latency_ms": inference_latency_ms,
+        "active_tarpits": active_tarpit_ips,
+        "blocked_ips": blocked_ips,
+        "active_sessions": active_sessions,
+        "uptime": uptime_str,
+        "uptime_seconds": uptime_secs,
+        "mlx_version": mlx_version,
+        "mlx_backend": "Metal GPU" if model_loaded else "CPU",
+        "precision": "4-bit Quantized",
+        "platform": platform.machine(),  # arm64
+        "timestamp": datetime.utcnow().isoformat(),
     }
 
 
