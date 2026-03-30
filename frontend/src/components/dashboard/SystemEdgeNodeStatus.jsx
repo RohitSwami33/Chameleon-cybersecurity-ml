@@ -110,7 +110,7 @@ const SystemEdgeNodeStatus = ({ className = '' }) => {
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         <StatCard
           icon={Cpu}
-          label="Qwen 2B Status"
+          label="Qwen 3.5 0.8B Status"
           value={status.qwen_status}
           badge={status.qwen_status}
         />
