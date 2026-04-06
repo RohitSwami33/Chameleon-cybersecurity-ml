@@ -45,10 +45,12 @@ The defining outcome of this simulation validates the mathematical bounds of our
 Under maximum connection duress holding 100 suspended penalty states simultaneously:
 
 ### Peak Memory Consumption: `11.91 MB`
-> *Significance: Outstanding.* Standard RRT generation and active machine learning evaluation traditionally scale exponentially (O(b^d) space bounds). The Semantic-RRT bounds and precise event loops proved an insanely constrained memory ceiling, never breaching 12 megabytes to contain 100 active attackers navigating fake network layouts.
+> *Significance: Outstanding.* Standard RRT generation techniques traditionally expand massive tree branches into physical RAM, forcing memory usage to explode exponentially—represented as $O(b^d)$ time/space complexity. 
+Because our architecture uses **Semantic-RRT** generating fake file paths on-the-fly and the **BiLSTM** pre-filtering initial payloads, the system completely bypasses massive memory buffers. The `11.91 MB` recorded natively via the `ps -o rss` system hook represents the pure base cost of an ASGI Python worker holding 100 zero-data network sockets. Nothing more.
 
 ### Peak CPU Consumption: `3.5%`
-> *Significance: Phenomenal.* While maintaining exactly 100 persistent mathematical penalty timers (ranging from 500ms to 18,000ms), the CPU rested practically idle. The server utilizes `asyncio` to natively park the delayed network sockets, preventing any localized Denial of Service vulnerability on the Honeypot node.
+> *Significance: Phenomenal.* Traditional thread-per-request architectures spin up 100 independent CPU processes under load, easily causing Denial of Service spikes.
+Our backend leverages Python's pure `asyncio` event loop. When the **TC-PSO** mechanism calculates a heavy 18-second tarpit penalty, the node drops the connection completely from the CPU and "parks" it via the OS multiplexer. The CPU drops to 0% usage for that specific packet until the 18 seconds conclude, resulting in a microscopic `3.5%` total utilization to hold 100 heavy-attack payloads hostage simultaneously.
 
 ---
 
