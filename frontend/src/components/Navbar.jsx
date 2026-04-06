@@ -62,9 +62,11 @@ const NAV_ITEMS = [
     { path: '/dashboard/systems', label: 'Advanced Systems', Icon: SecurityIcon },
     { path: '/dashboard/analytics', label: 'Analytics', Icon: AssessmentIcon },
     { path: '/dashboard/threat-intel', label: 'Threat Intel', Icon: SecurityIcon },
+    { path: '/dashboard/footprint', label: '👣 Attacker Footprint', Icon: SecurityIcon },
     { path: '/dashboard/chatbot', label: 'AI Assistant', Icon: SmartToyIcon },
     { path: '/blockchain', label: 'Blockchain', Icon: LinkIcon },
 ];
+
 
 /* ─── Shared style tokens ────────────────────────────────────────────────── */
 const NAV_FONT = '"IBM Plex Mono", monospace';

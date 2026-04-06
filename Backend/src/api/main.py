@@ -989,10 +989,54 @@ async def honeypot_log(request: Request, background_tasks: BackgroundTasks):
     return {"status": "logged"}
 
 
+@app.get("/api/honeypot/logs")
+async def honeypot_logs(
+    limit: int = 200,
+    offset: int = 0,
+    username: str = Depends(verify_token),
+):
+    """
+    Returns paginated honeypot event logs for the Attacker Footprint dashboard.
+    Protected — requires admin JWT.
+    """
+    try:
+        async with db.session_factory() as session:
+            from sqlalchemy import select, desc
+            stmt = (
+                select(HoneypotLog)
+                .order_by(desc(HoneypotLog.created_at))
+                .limit(limit)
+                .offset(offset)
+            )
+            result = await session.execute(stmt)
+            rows = result.scalars().all()
+
+            logs = []
+            for row in rows:
+                meta = row.log_metadata or {}
+                logs.append({
+                    "id": str(row.id),
+                    "attacker_ip": row.attacker_ip,
+                    "honeypot_event": meta.get("honeypot_event", "UNKNOWN"),
+                    "fingerprint_data": meta.get("fingerprint_data", {}),
+                    "user_agent": meta.get("user_agent", ""),
+                    "classification": meta.get("classification"),
+                    "created_at": row.created_at.isoformat() if row.created_at else None,
+                })
+
+            return {"logs": logs, "total": len(logs), "offset": offset}
+    except Exception as e:
+        logger.error(f"Error fetching honeypot logs: {e}")
+        return {"logs": [], "total": 0, "error": str(e)}
+
+
+
+
 @app.get("/api/blockchain/verify")
 async def verify_blockchain(username: str = Depends(verify_token)):
     integrity = blockchain_logger.verify_chain_integrity()
     return {"integrity": integrity, "chain_length": len(blockchain_logger.chain)}
+
 
 
 # ========================================================================

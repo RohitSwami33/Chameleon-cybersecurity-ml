@@ -26,6 +26,7 @@ import AnalyticsPage from './pages/AnalyticsPage';
 import ThreatIntelPage from './pages/ThreatIntelPage';
 import ChatbotPage from './pages/ChatbotPage';
 import AdvancedSystemsPage from './pages/AdvancedSystemsPage';
+import AttackerFootprintPage from './pages/AttackerFootprintPage';
 
 /**
  * Chameleon Forensics — MUI Dark Theme
@@ -324,6 +325,16 @@ function AnimatedRoutes() {
               <ProtectedRoute>
                 <PageTransition>
                   <ChatbotPage />
+                </PageTransition>
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/dashboard/footprint"
+            element={
+              <ProtectedRoute>
+                <PageTransition>
+                  <AttackerFootprintPage />
                 </PageTransition>
               </ProtectedRoute>
             }
