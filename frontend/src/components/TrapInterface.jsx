@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import '../trap.css';
+import { FakeTerminal, FakeDatabase, FakeSecurityControls } from './FakeComponents';
 
 /* ── Stage machine ──────────────────────────────────────────── */
 const STAGES = {
@@ -609,6 +610,8 @@ function StageDashboard({ data, onItemClick, clickedItem, activeDelay, activePat
                         ['📈', 'Reports', 'reports'],
                         ['🔔', 'Alerts', 'alerts'],
                         ['🌐', 'Network Map', 'network'],
+                        ['💻', 'Terminal', 'terminal'],
+                        ['🗄', 'Database', 'database'],
                         ['⚙', 'Settings', 'settings'],
                     ].map(([icon, label, key]) => (
                         <button
@@ -642,7 +645,14 @@ function StageDashboard({ data, onItemClick, clickedItem, activeDelay, activePat
                         </div>
                     )}
 
-                    {/* Stats row */}
+                    {/* conditional views */}
+                    {activeTab === 'terminal' && <FakeTerminal activeDelay={activeDelay} onCommand={(cmd) => { logEvent('TERMINAL_COMMAND', { cmd }); onItemClick('terminal_exec'); }} />}
+                    {activeTab === 'database' && <FakeDatabase activeDelay={activeDelay} onQuery={(q) => { logEvent('DATABASE_QUERY', { query: q }); onItemClick('db_query'); }} />}
+                    {activeTab === 'security' && <FakeSecurityControls activeDelay={activeDelay} onToggle={(tgt) => { logEvent('SECURITY_TOGGLE', { target: tgt }); onItemClick('sec_toggle'); }} />}
+                    
+                    {activeTab === 'dashboard' && (
+                        <>
+                            {/* Stats row */}
                     <div className="trap2-stats-row">
                         {data.stats.map(s => (
                             <div key={s.label} className="trap2-stat-card" onClick={() => onItemClick(s.label)}>
@@ -704,13 +714,31 @@ function StageDashboard({ data, onItemClick, clickedItem, activeDelay, activePat
                                 <div className="trap2-file-viewer">
                                     <div className="trap2-file-viewer-header">
                                         <span>📄 {fileContent.path}</span>
-                                        <button onClick={() => setFileContent(null)}>✕</button>
+                                        <div>
+                                            <button 
+                                                onClick={() => { logEvent('FILE_DOWNLOAD_ATTEMPT', { file: fileContent.path }); onItemClick('download'); }} 
+                                                style={{ marginRight: '12px', background: 'rgba(0,200,255,0.1)', border: '1px solid #00c8ff', color: '#00c8ff', padding: '4px 8px', borderRadius: '4px', cursor: 'pointer', fontFamily: 'monospace', fontSize: '11px' }}
+                                            >
+                                                ⬇ Download
+                                            </button>
+                                            <button onClick={() => setFileContent(null)} style={{ background: 'transparent', border: 'none', color: '#7a9bbf', cursor: 'pointer', fontSize: '14px' }}>✕</button>
+                                        </div>
                                     </div>
-                                    <pre className="trap2-file-content">{fileContent.content}</pre>
+                                    <pre className="trap2-file-content" style={{ position: 'relative' }}>
+                                        {fileContent.content}
+                                        {activeDelay > 0 && clickedItem === 'download' && (
+                                            <div style={{ position: 'absolute', bottom: 10, left: 10, right: 10, background: 'rgba(0,0,0,0.9)', padding: '16px', border: '1px solid #ffaa00', borderRadius: '4px', display: 'flex', flexDirection: 'column', gap: '8px', zIndex: 10 }}>
+                                                <span style={{ color: '#ffaa00', fontSize: '12px', fontFamily: 'monospace' }}>[SYS] Extracting encrypted BLOB chunks...</span>
+                                                <div className="trap2-prog-track" style={{ width: '100%', height: '6px', background: '#333' }}><div className="trap2-prog-fill trap2-health-yellow" style={{ width: '45%' }} /></div>
+                                            </div>
+                                        )}
+                                    </pre>
                                 </div>
                             )}
                         </div>
                     </div>
+                    </>
+                    )}
                 </main>
             </div>
         </div>
