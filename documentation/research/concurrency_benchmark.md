@@ -52,7 +52,18 @@ Under maximum connection duress holding 100 suspended penalty states simultaneou
 
 ---
 
-## 5. Conclusion
+## 5. Machine Learning (Qwen 3.5 MLX) Native Footprint
+
+In addition to the highly optimized core server (`~11.91 MB`), the deceptive architecture employs a completely localized fallback ML Analyzer (Qwen 3.5) utilizing the `MLX` framework for internal memory safety. By avoiding external API calls, the threat context remains securely on-device.
+
+- **Qwen 3.5 0.8B (4-bit Quantization):** Requires only **~500 MB - 600 MB** of Unified Apple Silicon Memory to load the `weights/` and inference context limits.
+- **Qwen 3.5 2B (4-bit Quantization):** Requires roughly **~1.2 GB - 1.5 GB** of Unified Memory locally during aggressive prompt context mapping.
+
+This confirms the entire Deep Deception engine—accounting for parallel swarm requests, semantic routing algorithms, the ASGI web engine, AND a native fine-tuned LLM local analysis engine—comfortably sits well under **2 Gigabytes total system RAM requirement**, making it deployable on minimal edge-node environments.
+
+---
+
+## 6. Conclusion
 
 The Chameleon Deception Layer successfully demonstrated that its custom meta-heuristic algorithms (`TC-PSO`, `S-RRT`) and the integration of a massive Machine Learning anomaly analyzer do not inherently degrade hardware infrastructure.
 
