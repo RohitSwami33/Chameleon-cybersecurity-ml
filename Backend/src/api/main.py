@@ -83,6 +83,10 @@ from src.utils.login_rate_limiter import login_limiter
 from src.utils.threat_score import threat_score_system
 from src.utils.threat_intel_service import threat_intel_service
 from src.utils.chatbot_service import get_chatbot
+from src.utils.bumblebee_deception import (
+    generate_fake_scan_bait,
+    get_fake_mcp_config_bait,
+)
 from src.utils.utils import get_current_time
 
 # ── SIEM Export ────────────────────────────────────────────────────────
@@ -254,11 +258,15 @@ async def handle_deception_layer(payload: str, request_data: dict, request: Requ
         # Record command execution for PSO fitness
         session_tracker.record_command(session_id)
 
+        # Generate fake Bumblebee scan bait to deceive the attacker
+        bumblebee_bait = generate_fake_scan_bait(ip, 0.99)
+
         return JSONResponse(content={
             "status": "success",
             "output": f"{fake_output}root@web-prod-04:/var/www/html/backend# ",
             "execution_time_ms": int(optimal_delay * 1000),
             "schema_id": schema_id,
+            "bumblebee_scan": bumblebee_bait,
         }, status_code=200)
     else:
         # Generic deception response
@@ -290,6 +298,7 @@ class TrapExecuteResponse(BaseModel):
     is_malicious: bool
     hash: str
     session_id: Optional[str] = Field(None, description="Honeytoken beacon session UUID")
+    bumblebee_scan: Optional[dict] = Field(None, description="Fake Bumblebee supply-chain scan results served as deception bait")
 
 
 class ChatMessage(BaseModel):
@@ -474,6 +483,8 @@ async def trap_execute(
     # ── Step 2: Deceptive Response (threshold gate) ─────────────────────
     DECEPTION_THRESHOLD = 0.85
 
+    bumblebee_bait = None
+
     if prediction_score > DECEPTION_THRESHOLD:
         # High-confidence attack → call DeepSeek LLM for realistic fake output
         try:
@@ -485,6 +496,9 @@ async def trap_execute(
             logger.error("DeepSeek LLM call failed, falling back to static: %s", e)
             response_text = _static_fallback(command)
             honeytoken_session_id = None
+
+        # Generate fake Bumblebee supply-chain scan as additional deception bait
+        bumblebee_bait = generate_fake_scan_bait(ip_address, prediction_score)
     else:
         # Low/medium confidence → cheap static reply to save API costs
         response_text = _static_fallback(command)
@@ -503,12 +517,23 @@ async def trap_execute(
     # ── Step 4: Save to PostgreSQL (inline async — non-blocking) ────────
     #    Prediction score + hash stored in the JSONB metadata column
     metadata: Dict[str, Any] = {
+        "classification": {
+            "attack_type": "ATTACKER_IN_DECEPTION" if is_malicious else "BENIGN",
+            "confidence": round(prediction_score, 6),
+            "is_malicious": is_malicious,
+        },
+        "deception_response": {
+            "message": response_text,
+            "delay_applied": 0.0,
+            "http_status": 200,
+        },
         "prediction_score": round(prediction_score, 6),
         "is_malicious": is_malicious,
         "hash": interaction_hash,
         "user_agent": request.headers.get("User-Agent"),
         "model": "chameleon_lstm_m4_50k",
         "honeytoken_session_id": honeytoken_session_id,
+        "bumblebee_bait": bumblebee_bait,
     }
 
     # Resolve tenant (single-tenant mode → first tenant in DB)
@@ -542,7 +567,30 @@ async def trap_execute(
         is_malicious=is_malicious,
         hash=interaction_hash,
         session_id=honeytoken_session_id,
+        bumblebee_scan=bumblebee_bait,
     )
+
+
+# ========================================================================
+# ★  GET /api/bumblebee/scan  — Bumblebee Deception Endpoint
+# ========================================================================
+
+@app.get("/api/bumblebee/scan")
+async def bumblebee_scan_endpoint(
+    request: Request,
+    threat_level: Optional[float] = Query(0.99, ge=0.0, le=1.0),
+):
+    """
+    Serves fake Bumblebee supply-chain scan results as deception bait.
+    Attackers probing for supply-chain vulnerabilities get realistic-looking
+    findings that waste their time and reveal their presence.
+
+    The threat_level parameter mimics the BiLSTM anomaly score A(t) ∈ [0,1]
+    and controls how many fake findings are returned (higher = more).
+    """
+    ip_address = get_client_ip(request)
+    bait = generate_fake_scan_bait(ip_address, threat_level)
+    return JSONResponse(content=bait, status_code=200)
 
 
 # ========================================================================
