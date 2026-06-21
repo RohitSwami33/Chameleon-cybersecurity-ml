@@ -25,7 +25,7 @@ This project introduces **4 novel mathematical equations** across 2 new algorith
 
 | Metric | Standard PSO | **TC-PSO (Novel)** | Δ |
 |--------|-------------|----------------|---|
-| Average Final Fitness (5 runs) | 5.19 | **7.30** | **+40.5%** |
+| Average Final Fitness (5 runs) | 2.60 | **3.85** | **+48.1%** |
 | Dynamic inertia at A=0.85 | 0.729 (static) | **0.419** | Adapts to threat |
 | Anomaly awareness | ❌ None | ✅ BiLSTM-integrated | — |
 | Convergence behaviour | Uniform | **Faster under high threat** | — |
@@ -38,8 +38,8 @@ This project introduces **4 novel mathematical equations** across 2 new algorith
 
 | Metric | Standard RRT | **S-RRT (Novel)** | Δ |
 |--------|-------------|----------------|---|
-| Best Fitness (5 runs, PSI=2.8) | ~60,556 | **~411,619** | **+579.7%** |
-| Fitness advantage at PSI=3.0 | Baseline | **+740.6%** | Exponential |
+| Best Fitness (5 runs) | 450.2 | **1,615.8** | **+258.9%** |
+| Fitness advantage at PSI=3.0 | Baseline | **+329.2%** | Exponential |
 | Mean node count (20 gens) | 6.58 | **6.58** | Stable (bounded) |
 | Fitness growth with PSI | Linear | **Exponential (×e per unit PSI)** | — |
 | Memory unbounded risk | ✅ Present | ❌ Eliminated (depth-decay) | — |
